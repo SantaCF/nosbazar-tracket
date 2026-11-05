@@ -1,18 +1,19 @@
 """Fetch every bazaar listing for the tracked items on one NosTale server and save them.
 
 Writes:
-  data/listings/YYYY-MM-DD.csv  every listing seen in each run (for sale/vanish analysis)
+  data/listings/YYYY-MM-DD/HHMM.csv.gz  every listing seen in the run, identical listings
+                                       grouped with a count (for sale/vanish analysis)
   data/summary.csv              one row per item per run (count, quantity, min/p20/median/p80/max)
   data/items_resolved.json      which items each search line matched
 """
-import csv, json, os, statistics, sys, time, urllib.parse, urllib.request
+import collections, csv, gzip, json, os, statistics, sys, time, urllib.parse, urllib.request
 from datetime import datetime, timezone
 
 API = "https://nosbazar.com/api"
 SERVER = int(os.environ.get("NOS_SERVER", "1"))  # 1 = EU-Dragonveil
 UA = "nosbazar-tracker (personal price history, github.com/SantaCF/nosbazar-tracket)"
 PAGE = 30
-MAX_PAGES = 40
+MAX_PAGES = 100
 MAX_MATCHES = 5
 
 
@@ -31,6 +32,9 @@ def call(path, body=None):
 
 
 def resolve(query):
+    if query.isdigit():  # a vnum written directly in config/items.txt
+        names = call(f"/items/static/{query}").get("name", {})
+        return [{"vnum": int(query), "name": names.get("IT") or names.get("UK") or query}]
     res = call("/items/name-search?" + urllib.parse.urlencode({"q": query, "lang": "IT"}))
     return [{"vnum": m["vnum"], "name": m["name"]} for m in res.get("matches", [])][:MAX_MATCHES]
 
@@ -74,14 +78,13 @@ def main():
         time.sleep(1)
     json.dump(resolved, open("data/items_resolved.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 
-    lpath = f"data/listings/{now:%Y-%m-%d}.csv"
-    new_l = not os.path.exists(lpath)
+    os.makedirs(f"data/listings/{now:%Y-%m-%d}", exist_ok=True)
+    lpath = f"data/listings/{now:%Y-%m-%d}/{now:%H%M}.csv.gz"
     spath = "data/summary.csv"
     new_s = not os.path.exists(spath)
-    with open(lpath, "a", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf:
+    with gzip.open(lpath, "wt", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf:
         lw, sw = csv.writer(lf), csv.writer(sf)
-        if new_l:
-            lw.writerow(["ts", "vnum", "name", "owner", "amount", "price", "minutes_left", "is_package"])
+        lw.writerow(["ts", "vnum", "owner", "amount", "price", "minutes_left", "is_package", "count"])
         if new_s:
             sw.writerow(["ts", "vnum", "name", "listings", "quantity", "min", "p20", "median", "p80", "max"])
         for vnum, name in items.items():
@@ -90,9 +93,10 @@ def main():
             except Exception as e:
                 print(f"search failed for {name}: {e}", file=sys.stderr)
                 continue
-            for r in rows:
-                lw.writerow([ts, vnum, name, r.get("owner_name"), r.get("amount"), r.get("bazar_price"),
-                             r.get("minutes_left"), int(bool(r.get("is_package")))])
+            groups = collections.Counter((r.get("owner_name"), r.get("amount"), r.get("bazar_price"),
+                                          r.get("minutes_left"), int(bool(r.get("is_package")))) for r in rows)
+            for key, n in sorted(groups.items(), key=lambda kv: kv[0][2]):
+                lw.writerow([ts, vnum, *key, n])
             prices = sorted(r["bazar_price"] for r in rows)
             qty = sum(r.get("amount", 0) for r in rows)
             sw.writerow([ts, vnum, name, len(rows), qty, prices[0] if prices else "", pct(prices, .2),

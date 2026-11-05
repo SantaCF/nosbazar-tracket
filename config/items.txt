@@ -1,8 +1,9 @@
 # Una ricerca per riga, in italiano (come nel gioco). Righe con # sono ignorate.
 # Ogni ricerca traccia fino a 5 item che contengono quel testo nel nome.
+# Puoi anche scrivere direttamente il numero dell'item (vnum), es. 1028 = Cristallo di luna nuova.
 Pietra Gillion
 Polvere del sottosuolo
-Cristallo di luna nuova
+1028
 Mezza luna
 Piuma d'angelo
 Pietra per la PTS
