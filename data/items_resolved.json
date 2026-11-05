@@ -56,5 +56,47 @@
       "vnum": 1027,
       "name": "Sabbia del Fiume di Tuono"
     }
+  ],
+  "1030": [
+    {
+      "vnum": 1030,
+      "name": "Cristallo di luna piena"
+    }
+  ],
+  "2196": [
+    {
+      "vnum": 2196,
+      "name": "Sgombro"
+    }
+  ],
+  "1242": [
+    {
+      "vnum": 1242,
+      "name": "Pozione HP divina"
+    }
+  ],
+  "1245": [
+    {
+      "vnum": 1245,
+      "name": "Pozione del recupero degli SpP base"
+    }
+  ],
+  "1249": [
+    {
+      "vnum": 1249,
+      "name": "Pozione dell'esperienza"
+    }
+  ],
+  "1429": [
+    {
+      "vnum": 1429,
+      "name": "Perla Arcobaleno"
+    }
+  ],
+  "5911": [
+    {
+      "vnum": 5911,
+      "name": "Fiore di ghiaccio"
+    }
   ]
 }
