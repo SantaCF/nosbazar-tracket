@@ -1,0 +1,203 @@
+Items
+
+Bonuses
+
+SkillGet Life Coaching
+
+Effects
+
+Quest
+
+NPC
+
+TS
+
+Maps
+
+Simulators
+
+Other
+
+Guest
+
+Donate ranking - last 30 days
+	jojot3	62.87 PLN
+	MisiePysie	20.00 PLN
+Search
+ Search
+NosApki > Simulators > Card upgrade
+Card upgrade
+Card upgrade
+
+Success: -%
+
+Soul destroyed: -%
+
+Failure: -%
+
+Card
+
+Requires:
+
+-
+
+Gold
+
+Requires:
+
+- Piece
+
+Requires:
+
+- Piece
+
+Requires:
+
+- Piece
+
+Requires:
+
+- Piece
+
+Upgrade
+
+Settings
+
++ 
+ Soul destroyed
+
+Upgrade...
+
+  time(s)
+ until reach +
+
+Use item
+
+ 
+ 
+
+Event
+
+ %
+Statistics
+	Success	Soul destroyed	Failure
++1			
++2			
++3			
++4			
++5			
++6			
++7			
++8			
++9			
++10			
++11			
++12			
++13			
++14			
++15			
++16			
++17			
++18			
++19			
++20			
+Total	0	0	0
+Select
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Usable items
+ 
+ 
+ 
+ 
+ 
+ 
+
+Adverts
+
+Discover more
+Play Tabletop RPGs
+Play MMO Games
+Learn Game Design
+ 
+        
+
+Creator
+
+Cous
+
+	
+
+They helped Cous
+
+
+
+
+<Piekar> BloodySelene Bloomex
+Blowa friends111 Hades783
+	
+
+Translators
+
+ŠOTEK
+Enriqi
+Worldie
+Afos
+	
+Hades783
+Cous
+†Kuroyami†
+Cous
+
+Images and sounds from NosTale belong to Gameforge / EntwellFind Stock Photos
+
+© 2017 - 2026 NosApki
