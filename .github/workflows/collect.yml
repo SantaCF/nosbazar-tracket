@@ -34,7 +34,7 @@ jobs:
           git diff --no-color -U0 data/prices.csv | grep '^+[^+]' | cut -c2- > /tmp/run/prices.csv || true
           git diff --no-color -U0 data/summary.csv | grep '^+[^+]' | cut -c2- > /tmp/run/summary.csv || true
           git ls-files --others --exclude-standard data/listings > /tmp/run/new_files
-          tar -cf /tmp/run/files.tar data/items_resolved.json $(cat /tmp/run/new_files)
+          tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $(cat /tmp/run/new_files)
           [ -s /tmp/run/new_files ] || { echo "Nessun dato nuovo"; exit 0; }
           for i in 1 2 3 4 5; do
             git fetch -q origin main && git reset -q --hard origin/main
