@@ -6,20 +6,7 @@ on:
 jobs:
   lookup:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
-      - run: |
-          while IFS= read -r q; do
-            [ -z "$q" ] && continue
-            echo "== $q"
-            curl -sS -G "https://nosbazar.com/api/items/name-search" --data-urlencode "q=$q" --data-urlencode "lang=IT"; echo
-            sleep 1
-          done <<'LIST'
-          luna piena
-          sgombro
-          Sgombro
-          pozione
-          perla arcobaleno
-          Perla
-          fiore di ghiaccio
-          Fiore
-          LIST
+      - uses: actions/checkout@v4
+      - run: python3 scripts/scan.py --cats
