@@ -36,3 +36,23 @@ Piuma d'angelo
 2214
 2208
 2215
+
+# Upgrade SP (materiali da nosapki, simulatore "Card upgrade")
+2283
+2511
+2622
+2284
+2512
+2620
+2285
+2513
+2621
+2630
+2748
+1363
+1364
+# Upgrade equipaggiamento (simulatore "Equipment upgrade")
+1015
+2774
+1218
+5369
