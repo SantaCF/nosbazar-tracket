@@ -14,3 +14,15 @@ Piuma d'angelo
 1016
 1027
 # Attrezzi per gemme non tracciati: prezzo NPC fisso 5.000 da Malcom Mix
+# Aggiunti su richiesta di Alessio (05/11):
+1030
+# 1030 = Cristallo di luna piena (50 polvere + 5 mezze lune + 1 attrezzo, da nosapki)
+2196
+# 2196 = Sgombro; pozioni che lo usano: 1242 Pozione divina (3), 1245 Pozione SP base (5), 1249 Pozione esperienza (7)
+1242
+1245
+1249
+1429
+# 1429 = Perla Arcobaleno
+5911
+# 5911 = Fiore di ghiaccio
