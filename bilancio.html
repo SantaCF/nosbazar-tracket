@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bilancio NosTale</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#067647; --down:#b42318; --link:#1f6feb; --acc:#2e90fa; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#47cd89; --down:#f97066; --link:#58a6ff; --acc:#58a6ff; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px; } h2 { font-size:16px; margin:22px 0 4px; }
+  a { color:var(--link); }
+  .muted { color:var(--muted); font-size:13px; }
+  .nav { margin:4px 0 12px; font-size:14px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin-top:10px; }
+  .tile { background:var(--card); border-radius:10px; padding:10px; } .tile b { display:block; font-size:19px; margin-top:2px; }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+  input, select, button { font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
+  input { min-width:0; } button { cursor:pointer; } button.main { background:var(--acc); color:#fff; border-color:var(--acc); }
+  table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th:first-child, td:first-child { text-align:left; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .chart { position:relative; height:260px; background:var(--card); border-radius:12px; padding:8px; margin-top:10px; }
+  .x { background:none; border:none; color:var(--muted); padding:0 4px; font-size:16px; }
+  @media (max-width:480px) { table { font-size:12px; } th, td { padding:6px 2px; } .hide-s { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bilancio</h1>
+  <div class="nav"><a href="./">Prezzi</a> · <a href="metodi.html">Metodi</a> · <a href="flipping.html">Flipping</a> · <b>Bilancio</b></div>
+  <div class="muted" id="updated">Caricamento…</div>
+  <div class="row"><label class="muted">Personaggi che vendono (separati da virgola) <input id="seller" style="width:14em" placeholder="NomePersonaggio"></label>
+    <label class="muted"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia NosBazar</label></div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="chart"><canvas id="c"></canvas></div>
+
+  <h2>Aggiorna</h2>
+  <div class="row">
+    <select id="kind"><option value="gold">Oro che ho adesso</option><option value="out">Spesa fuori dal giro (medaglia, pet, SP…)</option><option value="in">Oro aggiunto da fuori</option></select>
+    <input id="amount" inputmode="numeric" placeholder="importo" style="width:9em">
+    <input id="note" placeholder="nota (facoltativa)" style="width:10em">
+    <button class="main" id="add">Salva</button>
+  </div>
+  <p class="muted">"Oro che ho adesso" = l'oro del personaggio (e del magazzino, se lo usi). Il valore dei tuoi annunci lo aggiungo io, letto dal bazar, e lo salvo insieme all'oro: aggiorna l'oro ogni tanto (per esempio la sera) e il guadagno resta preciso. Le spese fuori dal giro e l'oro aggiunto da fuori non contano come guadagno o perdita.</p>
+  <div class="wrap"><table id="moves"></table></div>
+
+  <h2>Lotti prodotti</h2>
+  <div class="row">
+    <select id="lotItem" style="max-width:14em"></select>
+    <input id="lotQty" inputmode="numeric" placeholder="pezzi" style="width:6em">
+    <input id="lotCost" inputmode="numeric" placeholder="costo totale" style="width:9em">
+    <button class="main" id="addLot">Aggiungi lotto</button>
+  </div>
+  <p class="muted">Puoi salvarli anche dalla lista della spesa della pagina Metodi ("Salva lotto"). Pareggio = prezzo minimo di vendita per non perderci, commissione compresa. "In vendita" = pezzi di quell'item nei tuoi annunci dell'ultimo giro (tutti i lotti dello stesso item insieme).</p>
+  <div class="wrap"><table id="lots"></table></div>
+
+  <h2>Backup</h2>
+  <div class="row"><button id="exp">Esporta</button><button id="imp">Importa</button></div>
+  <p class="muted">I dati restano salvati solo in questo browser. "Esporta" copia tutto negli appunti: incollalo da qualche parte (note, mail) per non perderlo. "Importa" lo ripristina, anche su un altro telefono.</p>
+</main>
+<script>
+const KEY = "bilancio";
+const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
+const short = n => n == null || isNaN(n) ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 2 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
+const sign = n => (n > 0 ? "+" : "") + short(n);
+const cls = n => n > 0 ? "pos" : n < 0 ? "neg" : "";
+const day = s => new Date(s).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const num = s => +String(s).replace(/[^0-9]/g, "") || 0;
+const parse = l => { const out = []; let cur = "", q = false;
+  for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
+  out.push(cur); return out; };
+const csv = t => { const [h, ...ls] = t.trim().split(/\r?\n/), k = parse(h); return ls.map(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); return o; }); };
+function load() { try { return Object.assign({ seller: "", moves: [], lots: [] }, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return { seller: "", moves: [], lots: [] }; } }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
+let db = load(), items = {}, book = [], lastTs, chart;
+const tax = () => document.getElementById("medal").checked ? 0 : 0.005;
+
+(async () => {
+  const latest = csv(await (await fetch("data/latest.csv?" + Date.now())).text());
+  latest.forEach(r => items[r.vnum] = { name: r.name, sell: +r.sell || +r.wp10 || +r.min || 0 });
+  lastTs = latest[0]?.ts;
+  const ts = new Date(lastTs), pad = n => String(n).padStart(2, "0");
+  try {
+    const res = await fetch(`data/listings/${ts.getUTCFullYear()}-${pad(ts.getUTCMonth() + 1)}-${pad(ts.getUTCDate())}/${pad(ts.getUTCHours())}${pad(ts.getUTCMinutes())}.csv.gz`);
+    const buf = await res.arrayBuffer(); let text;
+    try { text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); } catch (e) { text = new TextDecoder().decode(buf); }
+    book = csv(text);
+  } catch (e) { book = []; }
+  document.getElementById("updated").textContent = "Annunci e prezzi dell'ultimo giro: " + day(lastTs);
+  const sel = document.getElementById("lotItem");
+  sel.innerHTML = Object.entries(items).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([v, it]) => `<option value="${v}">${it.name}</option>`).join("");
+  const s = document.getElementById("seller"); s.value = db.seller;
+  s.onchange = () => { db.seller = s.value.trim(); save(); render(); };
+  const md = document.getElementById("medal"); try { md.checked = localStorage.getItem("medal") === "1"; } catch (e) {}
+  md.onchange = () => { try { localStorage.setItem("medal", md.checked ? "1" : "0"); } catch (e) {} render(); };
+  render();
+})().catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; render(); });
+
+// Tuoi annunci dell'ultimo giro: vnum -> pezzi; valore al prezzo di vendita realistico, commissione tolta.
+function myListings() {
+  const names = db.seller.toLowerCase().split(",").map(x => x.trim()).filter(Boolean), out = {};
+  if (!names.length) return out;
+  book.forEach(r => { if (names.includes(r.owner.toLowerCase())) out[r.vnum] = (out[r.vnum] || 0) + (+r.amount || 0) * (+r.count || 1); });
+  return out;
+}
+function listedValue(mine) { return Object.entries(mine).reduce((t, [v, q]) => t + q * (items[v]?.sell || 0) * (1 - tax()), 0); }
+
+function render() {
+  const mine = myListings(), listed = listedValue(mine);
+  const moves = db.moves.slice().sort((a, b) => a.t.localeCompare(b.t));
+  const golds = moves.filter(m => m.kind === "gold");
+  // Patrimonio a ogni "oro che ho adesso" = oro + valore annunci in quel momento (salvato con la voce).
+  // Guadagno = patrimonio - primo patrimonio - oro aggiunto da fuori + spese fuori dal giro (dopo il primo).
+  const first = golds[0], lastG = golds[golds.length - 1];
+  const nowWorth = lastG ? lastG.amount + lastG.listed : null;   // al momento dell'ultimo aggiornamento dell'oro
+  const adj = since => moves.filter(m => m.t > since && m.kind !== "gold").reduce((t, m) => t + (m.kind === "out" ? m.amount : -m.amount), 0);
+  const gain = first ? nowWorth - (first.amount + first.listed) + adj(first.t) : null;
+  const days = first ? (Date.now() - new Date(first.t)) / 864e5 : 0;
+  const spent = moves.filter(m => m.kind === "out").reduce((t, m) => t + m.amount, 0);
+  document.getElementById("tiles").innerHTML = `
+    <div class="tile"><span class="muted">Patrimonio${lastG ? " al " + day(lastG.t) : ""}</span><b>${short(nowWorth)}</b><span class="muted">oro ${short(lastG?.amount)} + annunci ${short(lastG?.listed)}</span></div>
+    <div class="tile"><span class="muted">Guadagno dal ${first ? day(first.t).slice(0, 5) : "-"}</span><b class="${cls(gain)}">${gain == null ? "-" : sign(gain)}</b><span class="muted">${days >= 1 ? sign(gain / days) + " al giorno" : "senza spese e aggiunte"}</span></div>
+    <div class="tile"><span class="muted">In vendita ora</span><b>${short(listed)}</b><span class="muted">${db.seller ? Object.values(mine).reduce((a, b) => a + b, 0).toLocaleString("it-IT") + " pezzi" : "scrivi il nome del personaggio"}</span></div>
+    <div class="tile"><span class="muted">Spese fuori dal giro</span><b>${short(spent)}</b><span class="muted">totale</span></div>`;
+  // Grafico: guadagno cumulato a ogni aggiornamento dell'oro.
+  const pts = golds.map(g => ({ t: g.t, v: g.amount + g.listed - (first.amount + first.listed) + adj(first.t) - adj(g.t) }));
+  const css = getComputedStyle(document.documentElement);
+  chart?.destroy();
+  if (typeof Chart !== "undefined" && pts.length > 1) chart = new Chart(document.getElementById("c"), { type: "line",
+    data: { labels: pts.map(p => day(p.t)), datasets: [{ label: "Guadagno", data: pts.map(p => Math.round(p.v)), borderColor: css.getPropertyValue("--acc"), backgroundColor: css.getPropertyValue("--acc"), pointRadius: 3, tension: .2 }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => fmt(c.parsed.y) } } },
+      scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { ticks: { color: css.getPropertyValue("--muted"), callback: short } } } } });
+  document.getElementById("c").parentElement.style.display = pts.length > 1 ? "" : "none";
+  const label = { gold: "Oro in gioco", out: "Spesa fuori", in: "Aggiunto" };
+  document.getElementById("moves").innerHTML = moves.length ? "<tr><th>Quando</th><th>Tipo</th><th>Importo</th><th class='hide-s'>Nota</th><th></th></tr>" +
+    moves.slice().reverse().map(m => `<tr><td>${day(m.t)}</td><td>${label[m.kind]}</td><td>${fmt(m.amount)}${m.kind === "gold" ? `<br><span class="muted">+ annunci ${short(m.listed)}</span>` : ""}</td><td class="hide-s">${m.note || ""}</td><td><button class="x" data-del="${m.t}">✕</button></td></tr>`).join("")
+    : '<tr><td class="muted">Ancora niente: scrivi l\'oro che hai adesso e tocca Salva.</td></tr>';
+  // Lotti
+  const open = db.lots.filter(l => !l.closed);
+  document.getElementById("lots").innerHTML = db.lots.length ? "<tr><th>Lotto</th><th>Costo/pz</th><th>Pareggio</th><th>Vendi ora a</th><th>Margine</th><th></th></tr>" +
+    db.lots.slice().reverse().map(l => { const it = items[l.vnum] || {}, unit = l.cost / l.qty, be = unit / (1 - tax()), sell = it.sell || 0, m = sell * (1 - tax()) - unit;
+      return `<tr style="${l.closed ? "opacity:.5" : ""}"><td>${l.name}<br><span class="muted">${fmt(l.qty)} pz · ${day(l.t).slice(0, 5)}${mine[l.vnum] ? " · in vendita " + fmt(mine[l.vnum]) : ""}</span></td><td>${fmt(unit)}</td><td><b>${fmt(Math.ceil(be))}</b></td><td>${fmt(sell)}</td>
+        <td class="${cls(m)}">${sign(m)}/pz<br><span class="muted">${sign(m * l.qty)} sul lotto</span></td>
+        <td><button class="x" data-close="${l.t}" title="chiudi">${l.closed ? "↺" : "✓"}</button><button class="x" data-dellot="${l.t}">✕</button></td></tr>`; }).join("")
+    : '<tr><td class="muted">Nessun lotto salvato.</td></tr>';
+}
+document.getElementById("add").onclick = () => {
+  const kind = document.getElementById("kind").value, amount = num(document.getElementById("amount").value);
+  if (!amount) return;
+  db.moves.push({ t: new Date().toISOString(), kind, amount, note: document.getElementById("note").value.trim(), listed: kind === "gold" ? Math.round(listedValue(myListings())) : 0 });
+  document.getElementById("amount").value = ""; document.getElementById("note").value = ""; save(); render();
+};
+document.getElementById("addLot").onclick = () => {
+  const v = document.getElementById("lotItem").value, qty = num(document.getElementById("lotQty").value), cost = num(document.getElementById("lotCost").value);
+  if (!qty || !cost) return;
+  db.lots.push({ t: new Date().toISOString(), vnum: v, name: items[v]?.name || v, qty, cost });
+  document.getElementById("lotQty").value = ""; document.getElementById("lotCost").value = ""; save(); render();
+};
+document.body.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.del && confirm("Cancellare questa voce?")) { db.moves = db.moves.filter(m => m.t !== b.dataset.del); save(); render(); }
+  if (b.dataset.dellot && confirm("Cancellare questo lotto?")) { db.lots = db.lots.filter(l => l.t !== b.dataset.dellot); save(); render(); }
+  if (b.dataset.close) { const l = db.lots.find(l => l.t === b.dataset.close); l.closed = !l.closed; save(); render(); }
+});
+document.getElementById("exp").onclick = async () => {
+  const s = JSON.stringify(db);
+  try { await navigator.clipboard.writeText(s); alert("Copiato negli appunti: incollalo in una nota per tenerlo da parte."); }
+  catch (e) { prompt("Copia questo testo e tienilo da parte:", s); }
+};
+document.getElementById("imp").onclick = () => {
+  const s = prompt("Incolla qui il testo esportato:"); if (!s) return;
+  try { const d = JSON.parse(s); if (!Array.isArray(d.moves) || !Array.isArray(d.lots)) throw 0; if (confirm("Sostituire i dati di questo browser con quelli incollati?")) { db = Object.assign({ seller: "" }, d); save(); document.getElementById("seller").value = db.seller; render(); } }
+  catch (e) { alert("Testo non valido."); }
+};
+</script>
+</body>
+</html>
