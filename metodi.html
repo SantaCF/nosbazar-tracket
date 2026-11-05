@@ -21,7 +21,7 @@
   th:first-child, td:first-child { text-align:left; }
   .pos { color:var(--up); } .neg { color:var(--down); }
   .wrap { overflow-x:auto; }
-  @media (max-width:480px) { #t th:nth-child(5), #t td:nth-child(5) { display:none; } #t { font-size:13px; } }
+  @media (max-width:480px) { #t th:nth-child(5), #t td:nth-child(5) { display:none; } #t, #k { font-size:12px; } #k th, #k td { padding:6px 2px; } }
 </style>
 </head>
 <body>
@@ -33,6 +33,12 @@
     <select id="metric"><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select>
   </label>
   <div class="chart"><canvas id="c"></canvas></div>
+  <h2 style="font-size:16px">Quanto puoi fare con i tuoi soldi</h2>
+  <label class="muted">Oro disponibile adesso
+    <input id="cap" inputmode="numeric" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:12em" value="25.000.000">
+  </label>
+  <div class="wrap"><table id="k"></table></div>
+  <p class="muted">Costo = oro speso per un craft (o una run PTS). Massimo = oro disponibile ÷ costo. Consigliati = il massimo, ma senza superare quanti pezzi il bazar vende in un giorno (stima del tracker, se c'è). Solo metodi in guadagno all'ultimo giro.</p>
   <h2 style="font-size:16px">Ultimo giro</h2>
   <div class="wrap"><table id="t"></table></div>
   <p class="muted">Ricette e ipotesi come nel calcolatore: commissione 0,5%, 40 craft al minuto, PTS 50-60 con 3 account, ciclo 5 minuti e mezze lune prodotte da te. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. È oro all'ora <b>teorico</b>: non tiene conto di quanti pezzi il bazar assorbe né del capitale (lo fa il foglio Confronto). Nel grafico non compaiono i metodi in perdita in tutti i giri (in tabella restano, in rosso). Sono prezzi di annuncio, non di vendita.</p>
@@ -42,23 +48,24 @@ const TAX = 0.005, CRAFT_H = 40 * 60;
 const NPC = { 1072: 5000, 2029: 500, 2097: 100 };
 // Ogni metodo: ingredienti comprati, prodotti venduti, unità per ora.
 const halfMoonCost = p => 20 * p(1014) + 5 * p(1028) + NPC[1072];
+// unit = un craft (o una run per la PTS): cost = oro speso, gain = ricavo netto, perH = unità all'ora,
+// prod/out = prodotto venduto e pezzi per unità (per il limite di vendita giornaliero).
 const METHODS = [
-  { name: "PTS 50-60", need: [1012, 1092, 1014, 1028, 1013, 1016, 1027], color: "#2e90fa",
-    perHour: p => { const acc = 3, runs = 12;
-      const reward = acc * (30 * p(1013) + 4 * p(1016) + 70 * p(1027)) * (1 - TAX);
-      const cost = 31 * p(1012) + 5 * halfMoonCost(p) + p(1092) + acc * p(1012);
-      return (reward - cost) * runs; } },
-  { name: "Mezze lune", need: [1014, 1028, 1029], color: "#7a5af8",
-    perHour: p => (p(1029) * (1 - TAX) - halfMoonCost(p)) * CRAFT_H },
-  { name: "Luna piena", need: [1014, 1029, 1030], color: "#f79009",
-    perHour: p => (p(1030) * (1 - TAX) - (50 * p(1014) + 5 * p(1029) + NPC[1072])) * CRAFT_H },
-  { name: "Pozione HP divina", need: [1011, 2196, 1242], color: "#12b76a",
-    perHour: p => (10 * p(1242) * (1 - TAX) - (30 * p(1011) + 20 * NPC[2029] + 20 * NPC[2097] + 3 * p(2196))) * CRAFT_H },
-  { name: "Pozione dell'esperienza", need: [1241, 2196, 2206, 2214, 1249], color: "#ee46bc",
-    perHour: p => (p(1249) * (1 - TAX) - (p(1241) + 5 * NPC[2029] + 5 * NPC[2097] + 7 * p(2196) + 7 * p(2206) + p(2214))) * CRAFT_H },
-  { name: "Pozione SP base", need: [1241, 2196, 2208, 2215, 1245], color: "#0ba5ec",
-    perHour: p => (p(1245) * (1 - TAX) - (p(1241) + 5 * NPC[2029] + 5 * NPC[2097] + 5 * p(2196) + 5 * p(2208) + p(2215))) * CRAFT_H },
+  { name: "PTS 50-60", unit: "run", need: [1012, 1092, 1014, 1028, 1013, 1016, 1027], color: "#2e90fa", perH: 12, prod: 1013, out: 90,
+    cost: p => 31 * p(1012) + 5 * halfMoonCost(p) + p(1092) + 3 * p(1012),
+    gain: p => 3 * (30 * p(1013) + 4 * p(1016) + 70 * p(1027)) * (1 - TAX) },
+  { name: "Mezze lune", unit: "craft", need: [1014, 1028, 1029], color: "#7a5af8", perH: CRAFT_H, prod: 1029, out: 1,
+    cost: p => halfMoonCost(p), gain: p => p(1029) * (1 - TAX) },
+  { name: "Luna piena", unit: "craft", need: [1014, 1029, 1030], color: "#f79009", perH: CRAFT_H, prod: 1030, out: 1,
+    cost: p => 50 * p(1014) + 5 * p(1029) + NPC[1072], gain: p => p(1030) * (1 - TAX) },
+  { name: "Pozione HP divina", unit: "craft", need: [1011, 2196, 1242], color: "#12b76a", perH: CRAFT_H, prod: 1242, out: 10,
+    cost: p => 30 * p(1011) + 20 * NPC[2029] + 20 * NPC[2097] + 3 * p(2196), gain: p => 10 * p(1242) * (1 - TAX) },
+  { name: "Pozione dell'esperienza", unit: "craft", need: [1241, 2196, 2206, 2214, 1249], color: "#ee46bc", perH: CRAFT_H, prod: 1249, out: 1,
+    cost: p => p(1241) + 5 * NPC[2029] + 5 * NPC[2097] + 7 * p(2196) + 7 * p(2206) + p(2214), gain: p => p(1249) * (1 - TAX) },
+  { name: "Pozione SP base", unit: "craft", need: [1241, 2196, 2208, 2215, 1245], color: "#0ba5ec", perH: CRAFT_H, prod: 1245, out: 1,
+    cost: p => p(1241) + 5 * NPC[2029] + 5 * NPC[2097] + 5 * p(2196) + 5 * p(2208) + p(2215), gain: p => p(1245) * (1 - TAX) },
 ];
+METHODS.forEach(m => m.perHour = p => (m.gain(p) - m.cost(p)) * m.perH);
 const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
 const short = n => n == null ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
 const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
@@ -66,7 +73,11 @@ const parse = l => { const out = []; let cur = "", q = false;
   for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
   out.push(cur); return out; };
 let chart, byTs, times;
-fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
+let soldDay = {};
+fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t => { if (!t) return;
+  const [h, ...ls] = t.trim().split(/\r?\n/); const k = parse(h), iv = k.indexOf("vnum"), is = k.indexOf("sold_day");
+  if (is >= 0) ls.forEach(l => { const v = parse(l); if (v[is] !== "") soldDay[v[iv]] = +v[is]; }); }).catch(() => {})
+.then(() => fetch("data/prices.csv?" + Date.now())).then(r => r.text()).then(text => {
   const [head, ...lines] = text.trim().split(/\r?\n/);
   const keys = parse(head);
   byTs = new Map();
@@ -77,10 +88,29 @@ fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
   const sel = document.getElementById("metric");
   try { const s = localStorage.getItem("metric"); if (s) sel.value = s; } catch (e) {}
   sel.onchange = () => { try { localStorage.setItem("metric", sel.value); } catch (e) {} draw(sel.value); };
+  const cap = document.getElementById("cap");
+  try { const c = localStorage.getItem("cap"); if (c) cap.value = c; } catch (e) {}
+  cap.oninput = () => { try { localStorage.setItem("cap", cap.value); } catch (e) {} capacity(sel.value); };
   draw(sel.value);
 }).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 
+function priceAt(ts, metric) { const row = byTs.get(ts); return v => { const x = row[v] && +row[v][metric]; return x > 0 ? x : NaN; }; }
+function capacity(metric) {
+  const capital = +String(document.getElementById("cap").value).replace(/[^0-9]/g, "") || 0;
+  const p = priceAt(times[times.length - 1], metric);
+  const rows = METHODS.map(m => { const c = m.cost(p), g = m.gain(p);
+    if (!(c > 0) || !(g > c)) return null;
+    const max = Math.floor(capital / c), sd = soldDay[m.prod];
+    const advised = sd ? Math.min(max, Math.floor(sd / m.out)) : max;
+    return { m, c, profit: g - c, max, advised, limited: sd != null && advised < max, minutes: advised / m.perH * 60 }; })
+    .filter(Boolean).sort((a, b) => b.profit * b.advised - a.profit * a.advised);
+  const t = n => n >= 60 ? Math.floor(n / 60) + "h " + Math.round(n % 60) + "m" : Math.round(n) + " min";
+  document.getElementById("k").innerHTML = "<tr><th>Metodo</th><th>Costo</th><th>Massimo</th><th>Consigl.</th><th>Guadagno</th><th>Tempo</th></tr>" +
+    rows.map(r => `<tr><td>${r.m.name}</td><td>${fmt(r.c)}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.advised)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.profit * r.advised)}</td><td>${t(r.minutes)}</td></tr>`).join("")
+    || '<tr><td class="muted">Nessun metodo in guadagno all\'ultimo giro.</td></tr>';
+}
 function draw(metric) {
+  capacity(metric);
   const series = METHODS.map(m => ({ m, data: times.map(ts => {
     const row = byTs.get(ts), price = v => { const x = row[v] && +row[v][metric]; return x > 0 ? x : NaN; };
     if (m.need.some(v => !(price(v) > 0))) return null;
