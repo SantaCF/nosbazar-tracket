@@ -33,5 +33,34 @@
       "name": "Scrigno del caso Piuma d'angelo"
     }
   ],
-  "Pietra per la PTS": []
+  "1092": [
+    {
+      "vnum": 1092,
+      "name": "Pezzo spazio-temporale (gruppo)"
+    }
+  ],
+  "1012": [
+    {
+      "vnum": 1012,
+      "name": "Seme della potenza"
+    }
+  ],
+  "1016": [
+    {
+      "vnum": 1016,
+      "name": "Pietra dell'anima completa"
+    }
+  ],
+  "1027": [
+    {
+      "vnum": 1027,
+      "name": "Sabbia del Fiume di Tuono"
+    }
+  ],
+  "Attrezzi di produzione per gemme": [
+    {
+      "vnum": 1072,
+      "name": "Attrezzi di produzione per gemme, Cellon e cristalli"
+    }
+  ]
 }
