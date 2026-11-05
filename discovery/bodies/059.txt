@@ -1,0 +1,1 @@
+{"CZ":"Ohnivý kanonýr","DE":"Feuerkanonier","ES":"Servidor del cañón de fuego","FR":"Canonnier de feu","IT":"Cannoniere di fuoco","PL":"Ognisty Kanonier","TR":"Ateş Topçusu","UK":"Fire Cannoneer"}

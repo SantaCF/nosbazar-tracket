@@ -1,0 +1,1 @@
+{"CZ":"Modrý mág","DE":"Eismagier","ES":"Mago azul","FR":"Mage de glace","IT":"Mago Blu","PL":"Lodowy Mag","TR":"Buz Büyücüsü","UK":"Blue Magician"}

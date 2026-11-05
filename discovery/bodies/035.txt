@@ -1,0 +1,1 @@
+{"CZ":"Náhrdelník","DE":"Halskette","ES":"Collar","FR":"Collier","IT":"Collana","PL":"Naszyjnik","TR":"Kolye","UK":"Necklace"}

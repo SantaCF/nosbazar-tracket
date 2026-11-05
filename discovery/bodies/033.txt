@@ -1,0 +1,1 @@
+{"CZ":"Kostýmová Křídla","DE":"Kostümflügel","ES":"Alas de atuendo","FR":"Ailes de costume","IT":"Ali del costume","PL":"Skrzydła Kostiumu","TR":"Kostüm kanatları","UK":"Costume Wings"}

@@ -1,0 +1,1 @@
+{"CZ":"Brnění","DE":"Rüstung","ES":"Armadura","FR":"Armure","IT":"Armatura","PL":"Zbroja","TR":"Zırh","UK":"Armour"}

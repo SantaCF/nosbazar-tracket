@@ -1,0 +1,1 @@
+{"CZ":"Dračí Rytíř","DE":"Drachenritter","ES":"Caballero Draconiano","FR":"Chevalier dragon","IT":"Cavalcadraghi","PL":"Smoczy Rycerz","TR":"Ejderha şövalyesi","UK":"Dragon Knight"}

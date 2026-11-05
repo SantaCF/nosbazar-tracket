@@ -1,0 +1,1 @@
+{"CZ":"Vyhledávání...","DE":"Suche läuft...","ES":"Búsqueda en curso...","FR":"Recherche en cours...","IT":"Ricerca in corso...","PL":"Wyszukiwanie w toku...","TR":"Aranıyor...","UK":"Searching..."}

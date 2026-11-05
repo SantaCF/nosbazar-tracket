@@ -1,0 +1,1 @@
+{"CZ":"Materiál","DE":"Verbesserungsmaterial","ES":"Material","FR":"Matériel d'amélioration","IT":"Materiale","PL":"Materiały do ulepszania","TR":"Malzeme","UK":"Material"}

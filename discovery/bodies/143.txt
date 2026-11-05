@@ -1,0 +1,1 @@
+{"CZ":"[4] Vynikající","DE":"[4] Exzellent","ES":"[4]Excelente","FR":"[4] Excellent","IT":"[4]Ottimo","PL":"[4] Doskonały","TR":"[4]Mükemmel","UK":"[4]Excellent"}

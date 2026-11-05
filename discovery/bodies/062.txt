@@ -1,0 +1,1 @@
+{"CZ":"Vulkáno","DE":"Vulkano","ES":"Volcano","FR":"Volcanor","IT":"Vulcano","PL":"Vulkano","TR":"Volkan","UK":"Volcano"}

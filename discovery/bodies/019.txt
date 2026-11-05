@@ -1,0 +1,1 @@
+{"CZ":"Dobrodruh","DE":"Abenteurer","ES":"Aventurero","FR":"Aventurier","IT":"Avventuriero","PL":"Poszukiwacz przygód","TR":"Maceracı","UK":"Adventurer"}

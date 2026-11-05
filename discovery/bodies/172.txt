@@ -1,0 +1,1 @@
+{"CZ":"Nebyl nalezen žádný předmět.","DE":"Es wurde kein Item gefunden.","ES":"No se ha encontrado ningún ítem.","FR":"Aucun objet n'a pu être trouvé.","IT":"Non č stato trovato alcun item.","PL":"Nie znaleziono żadnego przedmiotu.","TR":"Eşya bulunamadı.","UK":"No item has been found."}

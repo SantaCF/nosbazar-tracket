@@ -1,0 +1,1 @@
+{"CZ":"Prázdná perla domácího zvířete","DE":"Leere Haustierperle","ES":"Perla mascota vacía","FR":"Perle de familier vide","IT":"Perla Animale Domestico Vuota","PL":"Pusta Perła Zwierzaka","TR":"Boş Evcil Hayvan İncisi","UK":"Empty Pet Bead"}

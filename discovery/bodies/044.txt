@@ -1,0 +1,1 @@
+{"CZ":"Bojovník","DE":"Krieger","ES":"Guerrero","FR":"Guerrier","IT":"Guerriero","PL":"Żelazny Wojownik","TR":"Savaşçı","UK":"Warrior"}

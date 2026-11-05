@@ -1,0 +1,1 @@
+{"CZ":"Malé množství","DE":"Anzahl aufsteigend","ES":"Cantidad, ascendente","FR":"Petite quantité","IT":"Quantitŕ piccola","PL":"Ilość (rosnąco)","TR":"Küçük Miktar","UK":"Amount (ascending)"}

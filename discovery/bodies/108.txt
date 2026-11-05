@@ -1,0 +1,1 @@
+{"CZ":"Event","DE":"Event","ES":"Evento","FR":"Évènement","IT":"Evento","PL":"Event","TR":"Etkinlik","UK":"Event"}

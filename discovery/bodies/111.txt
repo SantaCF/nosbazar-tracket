@@ -1,0 +1,1 @@
+{"CZ":"Svačina","DE":"Snack","ES":"Aperitivo","FR":"En-cas","IT":"Snack","PL":"Przekąska","TR":"Atıştırmalıklar","UK":"Snack"}

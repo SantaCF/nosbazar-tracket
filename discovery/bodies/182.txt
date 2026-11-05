@@ -1,0 +1,1 @@
+{"CZ":"Dní","DE":"Tag(e)","ES":"Día(s)","FR":"Jours","IT":"Giorno\\i","PL":"d","TR":"Gün","UK":"Day(s)"}

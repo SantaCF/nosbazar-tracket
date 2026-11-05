@@ -1,0 +1,1 @@
+{"CZ":"Všichni","DE":"Alle","ES":"Todos","FR":"Tous","IT":"Tutto","PL":"Wszystko","TR":"Hepsi","UK":"All"}

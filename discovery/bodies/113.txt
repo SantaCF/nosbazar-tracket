@@ -1,0 +1,1 @@
+{"CZ":"Přísady","DE":"Zutaten","ES":"Ingredientes","FR":"Ingrédients","IT":"Ingredienti","PL":"Składniki","TR":"Malzemeler","UK":"Ingredients"}

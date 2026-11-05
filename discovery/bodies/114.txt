@@ -1,0 +1,1 @@
+{"CZ":"Partnerův předmět","DE":"Partneritem","ES":"Objeto de compañero","FR":"Objet du partenaire","IT":"Item del Compagno","PL":"Przedmiot partnera","TR":"Partner Eşyası","UK":"Partner item"}

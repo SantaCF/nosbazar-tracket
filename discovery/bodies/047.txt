@@ -1,0 +1,1 @@
+{"CZ":"Padouch","DE":"Schurke","ES":"Asesino","FR":"Assassin","IT":"Assassino","PL":"Zabójca","TR":"Cambaz","UK":"Assassin"}

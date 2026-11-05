@@ -1,0 +1,1 @@
+{"CZ":"Spotřební Zboží","DE":"Verbrauchsitem","ES":"Ítem de consumo","FR":"Objet consommable","IT":"Oggetto di consumo","PL":"Przedmiot Konsumpcyjny","TR":"Tükenen Eşya","UK":"Consumer item"}

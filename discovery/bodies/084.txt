@@ -1,0 +1,1 @@
+{"CZ":"Mlžný Lovec","DE":"Nebeljäger","ES":"Cazanieblas","FR":"Chasseur nébuleux","IT":"Cacciatore della nebbia","PL":"Łowca Mgły","TR":"Sis Avcısı","UK":"Fog Hunter"}

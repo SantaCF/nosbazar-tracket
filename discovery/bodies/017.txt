@@ -1,0 +1,1 @@
+{"CZ":"Bojovník s mečem","DE":"Schwertkämpfer","ES":"Espadachín","FR":"Épéiste","IT":"Spadaccino","PL":"Wojownik","TR":"Kılıç Savaşçısı","UK":"Swordsman"}

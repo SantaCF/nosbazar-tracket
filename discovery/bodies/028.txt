@@ -1,0 +1,1 @@
+{"CZ":"Zbraň","DE":"Waffe","ES":"Arma","FR":"Arme","IT":"Arma","PL":"Broń","TR":"Silah","UK":"Weapon"}

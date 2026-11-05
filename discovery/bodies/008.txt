@@ -1,0 +1,1 @@
+{"CZ":"Specialista","DE":"Spezialist","ES":"Especialista","FR":"Spécialiste","IT":"Specialista","PL":"Specjalista","TR":"Uzman","UK":"Specialist"}

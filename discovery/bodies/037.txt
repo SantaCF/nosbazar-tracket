@@ -1,0 +1,1 @@
+{"CZ":"Víla","DE":"Fee","ES":"Hada","FR":"Fée","IT":"Fata","PL":"Wróżka","TR":"Peri","UK":"Fairy"}

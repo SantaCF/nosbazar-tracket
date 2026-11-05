@@ -1,0 +1,1 @@
+{"CZ":"Přízrak smrti","DE":"Todesbringer","ES":"Cosechador de almas","FR":"Mortifère","IT":"Portatore di morte","PL":"Zwiastun Śmierci","TR":"Ölüm Habercisi","UK":"Death Reaper"}

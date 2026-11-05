@@ -1,0 +1,1 @@
+{"CZ":"Jméno","DE":"Name","ES":"Nombre","FR":"Nom","IT":"Nome","PL":"Nazwa","TR":"İsim","UK":"Name"}

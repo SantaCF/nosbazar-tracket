@@ -1,0 +1,1 @@
+{"CZ":"[3] Vysoce kvalitní","DE":"[3] Hohe Qualität","ES":"[3]Calidad superior","FR":"[3] De grande qualité","IT":"[3]Alta qualitŕ","PL":"[3] Wartościowy","TR":"[3]Yüksek Kalite","UK":"[3]High quality"}

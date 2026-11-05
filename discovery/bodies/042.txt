@@ -1,0 +1,1 @@
+{"CZ":"Křižák","DE":"Kreuzritter","ES":"Caballero de la cruz","FR":"Croisé","IT":"Crociato","PL":"Krzyżowiec","TR":"Haçlı Şövalye","UK":"Crusader"}

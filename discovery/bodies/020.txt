@@ -1,0 +1,1 @@
+{"CZ":"Klobouk","DE":"Hut","ES":"Sombrero","FR":"Chapeau","IT":"Cappello","PL":"Kapelusz","TR":"Şapka","UK":"Hat"}

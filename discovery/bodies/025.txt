@@ -1,0 +1,1 @@
+{"CZ":"Rukavice","DE":"Handschuhe","ES":"Guantes","FR":"Gants","IT":"Guanti","PL":"Rękawice","TR":"Eldiven","UK":"Gloves"}

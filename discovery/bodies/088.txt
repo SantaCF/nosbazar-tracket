@@ -1,0 +1,1 @@
+{"CZ":"Admirál Yi","DE":"Admiral Yi","ES":"Almirante Yi","FR":"Amiral Yi","IT":"Ammiraglio Yi","PL":"Admirał Yi","TR":"Amiral Yi","UK":"Admiral Yi"}

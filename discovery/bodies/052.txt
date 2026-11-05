@@ -1,0 +1,1 @@
+{"CZ":"Červený mág","DE":"Feuermagier","ES":"Mago rojo","FR":"Mage du feu","IT":"Mago Rosso","PL":"Ognisty Mag","TR":"Ateş Büyücüsü","UK":"Red Magician"}

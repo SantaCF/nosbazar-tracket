@@ -1,0 +1,1 @@
+{"CZ":"Kostým (ž)","DE":"Kostüm (w)","ES":"Atuendo (f)","FR":"Costume (f)","IT":"Costume (f)","PL":"Kostium (k)","TR":"Kostümler (k)","UK":"Costume (f)"}

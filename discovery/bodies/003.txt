@@ -1,0 +1,1 @@
+{"CZ":"NosBazar","DE":"NosBasar","ES":"NosBazar","FR":"NosBazar","IT":"NosBazar","PL":"NosBazar","TR":"NosPazar","UK":"NosBazaar"}

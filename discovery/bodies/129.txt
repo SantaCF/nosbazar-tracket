@@ -1,0 +1,1 @@
+{"CZ":"Šampión 1 - 10","DE":"Heldenlevel 1-10","ES":"Nivel héroe 1-10","FR":"Niv. héro. 1-10","IT":"Livello eroe 1-10","PL":"Pz. Bohatera 1-10","TR":"Kahram. sev. 1-10","UK":"Champion Lv 1-10"}

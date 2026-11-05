@@ -1,0 +1,1 @@
+{"CZ":"Plamenný Druid","DE":"Flammendruide","ES":"Druida flamígero","FR":"Druide ardent","IT":"Druido del fuoco","PL":"Płomienny Druid","TR":"Alev Druidi","UK":"Flame Druid"}

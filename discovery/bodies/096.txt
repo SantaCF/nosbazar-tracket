@@ -1,0 +1,1 @@
+{"CZ":"Útok zblízka","DE":"Nahkampf","ES":"Ataque cuerpo a cuerpo","FR":"Combat rapproché","IT":"Corpo a corpo","PL":"Walka wręcz","TR":"Yakın saldırı","UK":"Close Attack"}

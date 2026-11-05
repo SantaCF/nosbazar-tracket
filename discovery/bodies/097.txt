@@ -1,0 +1,1 @@
+{"CZ":"Prázdná perla vozítka","DE":"Leere Reittierperle","ES":"Perla de montura vacía","FR":"Perle pour monture vide","IT":"Perla per mezzi di trasporto vuota","PL":"Pusta perła wierzchowca","TR":"Boş Taşıt İncisi","UK":"Empty Mount Bead"}

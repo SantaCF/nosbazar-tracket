@@ -1,0 +1,1 @@
+{"CZ":"Úroveň","DE":"Level","ES":"Nivel","FR":"Niveau","IT":"Livello","PL":"Poziom","TR":"Seviye","UK":"Level"}

@@ -1,0 +1,1 @@
+{"CZ":"Kostýmový Klobouk","DE":"Kostümhut","ES":"Gorro de disfraz","FR":"Chapeau de costume","IT":"Cappello del Costume","PL":"Kapelusz Kostiumu","TR":"Kostüm Şapkası","UK":"Costume Hat"}

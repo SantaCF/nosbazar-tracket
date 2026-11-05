@@ -1,0 +1,1 @@
+{"CZ":"Počet","DE":"Anzahl","ES":"Cantidad","FR":"Quantité","IT":"Quantitŕ","PL":"Liczba","TR":"Miktar","UK":"Amount"}

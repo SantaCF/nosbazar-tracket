@@ -1,0 +1,1 @@
+{"CZ":"Svatební kostým","DE":"Hochzeitskostüm","ES":"Atuendo de boda","FR":"Costume de mariage","IT":"Costume da cerimonia","PL":"Strój weselny","TR":"Düğün kostümü","UK":"Wedding Costume"}

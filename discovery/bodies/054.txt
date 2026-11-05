@@ -1,0 +1,1 @@
+{"CZ":"Pyžamo","DE":"Pijama","ES":"Pijama","FR":"Pyjama","IT":"Pijama","PL":"Piżama","TR":"Pijama","UK":"Pyjama"}

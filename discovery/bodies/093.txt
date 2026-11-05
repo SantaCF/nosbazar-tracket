@@ -1,0 +1,1 @@
+{"CZ":"Perla domácího zvířete","DE":"Haustierperle","ES":"Perla mascota","FR":"Perle de familier","IT":"Perla animale domestico","PL":"Perła Zwierzaka","TR":"Evcil Hayvan İncisi","UK":"Pet Bead"}

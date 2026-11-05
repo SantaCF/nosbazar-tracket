@@ -1,0 +1,1 @@
+{"CZ":"Prsten","DE":"Ring","ES":"Anillo","FR":"Anneau","IT":"Anello","PL":"Pierścień","TR":"Yüzük","UK":"Ring"}

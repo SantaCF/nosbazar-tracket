@@ -1,0 +1,1 @@
+{"CZ":"Bojový démon","DE":"Dämonenkrieger","ES":"Guerrero demoníaco","FR":"Guerrier-démon","IT":"Guerriero demoniaco","PL":"Wojownik Demonów","TR":"Savaşçı İblis","UK":"Demon Warrior"}

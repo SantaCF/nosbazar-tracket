@@ -1,0 +1,1 @@
+{"CZ":"Hledat","DE":"Suche","ES":"Búsqueda","FR":"Recherche","IT":"Cerca","PL":"Szukaj","TR":"Arama","UK":"Search"}

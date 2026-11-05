@@ -1,0 +1,1 @@
+{"CZ":"Šampión 91-99","DE":"Heldenlevel 91-99","ES":"Nivel de héroe 91-99","FR":"Niveau héroïque 91 à 99","IT":"Livello eroe 91-99","PL":"Poziom bohatera 91-99","TR":"Kahraman seviyesi 91-99","UK":"Champion Lv 91-99"}

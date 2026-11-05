@@ -1,0 +1,1 @@
+{"CZ":"Útok zdálky","DE":"Fernangriff","ES":"Ataque a larga distancia","FR":"Attaque à distance","IT":"Raggio d'attacco lungo","PL":"Długodystansowy atak","TR":"Uzaktan saldırı","UK":"Remote Attack"}

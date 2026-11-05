@@ -1,0 +1,1 @@
+{"CZ":"Kostýmový Klobouk (ž)","DE":"Kostümhut (w)","ES":"Somb. de atuendo (f)","FR":"Chapeau costume (f)","IT":"Cappello costume (f)","PL":"Kapelusz Kostiumu (k)","TR":"Kostüm şapkası (k)","UK":"Costume Hat (f)"}

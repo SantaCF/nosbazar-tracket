@@ -1,0 +1,1 @@
+{"CZ":"Prázdná perla partnera","DE":"Leere Partnerperle","ES":"Perla del Compañero vacía","FR":"Perle de partenaire vide","IT":"Perla del Compagno Vuota","PL":"Pusta Perła Partnera","TR":"Boş Partner İncisi","UK":"Empty Partner Bead"}

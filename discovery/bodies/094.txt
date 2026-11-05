@@ -1,0 +1,1 @@
+{"CZ":"Perla partnera","DE":"Partnerperle","ES":"Perla del Compañero","FR":"Perle de partenaire","IT":"Perla del Compagno","PL":"Perła Partnera","TR":"Partner İncisi","UK":"Partner Bead"}

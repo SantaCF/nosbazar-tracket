@@ -1,0 +1,1 @@
+{"CZ":"[1] Užitečný","DE":"[1] Nützlich","ES":"[1]Útil","FR":"[1] Utile","IT":"[1]Utile","PL":"[1] Przydatny","TR":"[1]Kullanışlı","UK":"[1]Useful"}

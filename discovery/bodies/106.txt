@@ -1,0 +1,1 @@
+{"CZ":"Speciální předměty","DE":"Spezial-Items","ES":"Objetos especiales","FR":"Objets spéciaux","IT":"Item speciali","PL":"Przedmioty specjalne","TR":"Özel Nesneler","UK":"Special items"}

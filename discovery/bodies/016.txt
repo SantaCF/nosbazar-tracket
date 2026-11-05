@@ -1,0 +1,1 @@
+{"CZ":"Různé","DE":"Sonstiges","ES":"Otros","FR":"Divers","IT":"Altro","PL":"Pozostałe Informacje","TR":"Diğer","UK":"Miscellaneous"}

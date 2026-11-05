@@ -1,0 +1,1 @@
+{"CZ":"Kategorie","DE":"Kategorie","ES":"Categoría","FR":"Catégorie","IT":"Categoria","PL":"Kategoria","TR":"Kategori","UK":"Category"}

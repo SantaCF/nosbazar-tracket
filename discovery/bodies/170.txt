@@ -1,0 +1,1 @@
+{"CZ":"Level Upgradu","DE":"Upgrade-Stufe","ES":"Nivel de mejora","FR":"Niveau d'amélioration","IT":"Livello di upgrade","PL":"Poziom ulepszeń","TR":"Geliştirme basamağı","UK":"Upgrade Level"}

@@ -1,0 +1,1 @@
+{"CZ":"Ulož Vozítko","DE":"Reittier aufbewahren","ES":"Guardar montura","FR":"Stocker la monture","IT":"Custodisci mezzo trasp.","PL":"Przechowaj Wierzchowca","TR":"Taşıtı muhafaza et","UK":"Store mount"}

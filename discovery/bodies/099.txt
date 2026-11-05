@@ -1,0 +1,1 @@
+{"CZ":"Magie","DE":"Magie","ES":"Magia","FR":"Magie","IT":"Magia","PL":"Magia","TR":"Sihir","UK":"Magic"}

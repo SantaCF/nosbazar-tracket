@@ -1,0 +1,1 @@
+{"CZ":"Nízká cena","DE":"Preis aufsteigend","ES":"Precio, ascendente","FR":"Prix croissant","IT":"Prezzo basso","PL":"Cena (rosnąco)","TR":"Düşük Fiyat","UK":"Price (ascending)"}

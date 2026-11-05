@@ -1,0 +1,1 @@
+{"CZ":"Léčivý lektvar","DE":"Erholungstrank","ES":"Poción de Curación","FR":"Potion de récupération","IT":"Pozione della guarigione","PL":"Eliksiry","TR":"Şifa İksiri","UK":"Healing potion"}

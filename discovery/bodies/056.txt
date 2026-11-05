@@ -1,0 +1,1 @@
+{"CZ":"Jajamaru","DE":"Jajamaru","ES":"Jajamaru","FR":"Jajamaru","IT":"Jajamaru","PL":"Jajamaru","TR":"Jajamaru","UK":"Jajamaru"}

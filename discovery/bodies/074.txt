@@ -1,0 +1,1 @@
+{"CZ":"Vodopádový Zuřivec","DE":"Wasserfall-Axtkämpfer","ES":"Hachero de la cascada","FR":"Hacheur","IT":"Guerriero d'ascia della cascata","PL":"Topornik Wodospadu","TR":"Şelale Balta Savaşçısı","UK":"Waterfall Berserker"}
