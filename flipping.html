@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flipping NosTale</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#067647; --down:#b42318; --link:#1f6feb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#47cd89; --down:#f97066; --link:#58a6ff; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px; } h2 { font-size:16px; margin:20px 0 0; }
+  a { color:var(--link); }
+  .muted { color:var(--muted); font-size:13px; }
+  .nav { margin:4px 0 12px; font-size:14px; }
+  .ctl { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
+  select, input:not([type=checkbox]) { font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
+  table { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
+  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
+  th:first-child, td:first-child { text-align:left; }
+  tr[data-i] { cursor:pointer; } tr[data-i] td:first-child { color:var(--link); text-decoration:underline; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .tag { display:inline-block; font-size:11px; padding:1px 6px; border-radius:8px; background:var(--card); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .wrap { overflow-x:auto; }
+  dialog { border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--fg); width:min(560px, calc(100vw - 32px)); padding:16px; }
+  dialog::backdrop { background:rgba(0,0,0,.4); }
+  @media (max-width:480px) { table { font-size:12px; } th, td { padding:6px 2px; } .hide-s { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Opportunità di flipping · EU-Dragonveil</h1>
+  <div class="nav"><a href="./">Prezzi</a> · <a href="metodi.html">Metodi</a> · <b>Flipping</b> · <a href="bilancio.html">Bilancio</a></div>
+  <div class="muted" id="updated">Caricamento…</div>
+  <div class="ctl" style="margin-top:10px">
+    <label class="muted">Oro disponibile <input id="cap" inputmode="numeric" style="width:9em" value="25.000.000"></label>
+    <label class="muted">Rivendere entro <select id="hz"><option value="1">1 ora</option><option value="3" selected>3 ore</option><option value="6">6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select></label>
+    <label class="muted"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia NosBazar</label>
+  </div>
+  <h2>Compra e rivendi subito</h2>
+  <div class="wrap"><table id="now"></table></div>
+  <p class="muted">Compri gli annunci più economici e rimetti in vendita appena sotto il prezzo che resta. Per ogni item provo tutte le quantità e tengo quella col guadagno più alto, con due vincoli. Il primo: i pezzi davanti ai tuoi, più i tuoi, devono vendersi entro il tempo scelto secondo la stima dei venduti al giorno. Il secondo: non vendi sopra il prezzo sotto cui sta il 25% dei pezzi, né sopra il livello più alto toccato di solito dal prezzo più basso nelle ultime 24 ore (perché oltre, di solito, qualcuno rimette annunci più bassi). Mostro solo i guadagni da almeno l'1%. Commissione compresa, oro disponibile rispettato.</p>
+  <h2>Sotto il solito</h2>
+  <div class="wrap"><table id="hold"></table></div>
+  <p class="muted">Item che adesso si comprano sotto il loro prezzo di vendita abituale (mediana delle ultime ore del prezzo di vendita realistico). Guadagno se il prezzo torna lì: è una scommessa, non un guadagno sicuro. Quantità limitata a quanti pezzi il bazar vende in un giorno. Più giorni di dati raccogliamo, più "il solito" è affidabile.</p>
+  <p class="muted">La stima dei venduti è per eccesso, perché conta anche chi ritira gli annunci: se i numeri ti sembrano ottimistici, abbassa le ore. Sono considerati solo gli item che il tracker segue (config/items.txt).</p>
+  <dialog id="dlg"><div id="dlgBody"></div><form method="dialog" style="text-align:right;margin-top:12px"><button style="font-size:16px;padding:8px 16px">Chiudi</button></form></dialog>
+</main>
+<script>
+const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
+const short = n => n == null ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
+const pct = x => (x * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
+const hrs = h => h < 1 ? "<1 h" : fmt(h) + " h";
+const parse = l => { const out = []; let cur = "", q = false;
+  for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
+  out.push(cur); return out; };
+const csv = t => { const [h, ...ls] = t.trim().split(/\r?\n/), k = parse(h); return ls.map(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); return o; }); };
+const get = (u, opt) => fetch(u + "?" + Date.now()).then(r => r.ok ? r.text() : (opt ? "" : Promise.reject(u)));
+const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
+
+let items = {}, book = {}, sellHist = {}, lastTs;
+const capital = () => +String(document.getElementById("cap").value).replace(/[^0-9]/g, "") || 0;
+const hours = () => +document.getElementById("hz").value;
+const medal = () => document.getElementById("medal").checked;
+const feeFor = (gross, q) => medal() ? 0 : Math.max(gross * 0.005, 500 * Math.ceil(q / 999));
+
+(async () => {
+  const latest = csv(await get("data/latest.csv"));
+  latest.forEach(r => items[r.vnum] = { vnum: r.vnum, name: r.name, day: +r.sold_day || 0, wp10: +r.wp10, wp25: +r.wp25, qty: +r.quantity });
+  lastTs = latest[0]?.ts;
+  csv(await get("data/sell.csv", true) || "ts,vnum,sell\n").forEach(r => (sellHist[r.vnum] ??= []).push([r.ts, +r.sell]));
+  const ts = new Date(lastTs), pad = n => String(n).padStart(2, "0");
+  const res = await fetch(`data/listings/${ts.getUTCFullYear()}-${pad(ts.getUTCMonth() + 1)}-${pad(ts.getUTCDate())}/${pad(ts.getUTCHours())}${pad(ts.getUTCMinutes())}.csv.gz`);
+  const buf = await res.arrayBuffer(); let text;
+  try { text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); } catch (e) { text = new TextDecoder().decode(buf); }
+  csv(text).forEach(o => { for (let c = 0; c < (+o.count || 1); c++) (book[o.vnum] ??= []).push([+o.price, +o.amount, o.owner]); });
+  Object.values(book).forEach(a => a.sort((x, y) => x[0] - y[0]));
+  document.getElementById("updated").textContent = "Annunci dell'ultimo giro: " + new Date(lastTs).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const cap = document.getElementById("cap"), hz = document.getElementById("hz"), md = document.getElementById("medal");
+  if (store("cap")) cap.value = store("cap"); if (store("hz")) hz.value = store("hz"); md.checked = store("medal") === "1";
+  cap.oninput = () => { store("cap", cap.value); render(); };
+  hz.onchange = () => { store("hz", hz.value); render(); };
+  md.onchange = () => { store("medal", md.checked ? "1" : "0"); render(); };
+  render();
+})().catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
+
+// Prezzo a cui rivendere q pezzi sul libro che resta dopo l'acquisto (rest = [[prezzo, pezzi], ...]):
+// il più alto tale che i pezzi più economici del tuo + i tuoi si vendano entro la domanda d, mai sopra cap.
+function resell(rest, q, d, cap) {
+  if (!rest.length || q > d) return null;
+  let below = 0, price = Math.min(rest[0][0] - 1, cap), ahead = 0;
+  for (let k = 0; k < rest.length; k++) {
+    const [pr, am] = rest[k];
+    if (k > 0 && pr !== rest[k - 1][0]) { if (below + q <= d && pr - 1 <= cap) { price = pr - 1; ahead = below; } else break; }
+    below += am;
+  }
+  return { price, ahead };
+}
+function flipNow(it) {
+  const a = book[it.vnum]; if (!a || !(it.day > 0)) return null;
+  const d = it.day * hours() / 24, money = capital(), hi = floorHigh(it.vnum);
+  // Tetto al prezzo di rivendita: il 25% dei pezzi in vendita e il livello più alto (75° percentile) a cui è stato
+  // il prezzo di vendita realistico nelle ultime 24 ore: oltre quello qualcuno di solito rimette annunci più bassi.
+  const cap = Math.min(it.wp25 || it.wp10, hi || it.wp10);
+  let q = 0, cost = 0, best = null;
+  for (let i = 0; i < a.length; i++) {
+    const [p, am] = a[i]; if (p >= cap) break;
+    let take = am; if (cost + take * p > money) take = Math.floor((money - cost) / p); if (take <= 0) break;
+    q += take; cost += take * p;
+    const rest = (take < am ? [[p, am - take]] : []).concat(a.slice(i + 1).map(x => [x[0], x[1]]));
+    const s = resell(rest, q, d, cap); if (!s || s.price <= p) { if (take < am) break; continue; }
+    const gross = q * s.price, profit = gross - feeFor(gross, q) - cost;
+    if (!best || profit > best.profit) best = { it, kind: "now", q, cost, top: p, sell: s.price, profit, hours: (s.ahead + q) / it.day * 24, fee: feeFor(gross, q), lots: i + 1 };
+    if (take < am) break;
+  }
+  return best && best.profit > 0 && best.profit >= best.cost * 0.01 ? best : null;
+}
+function floorHigh(v) {
+  const h = sellHist[v]; if (!h || h.length < 4) return null;
+  const since = new Date(h[h.length - 1][0]) - 24 * 3600e3, x = h.filter(r => new Date(r[0]) >= since).map(r => r[1]).sort((a, b) => a - b);
+  return x[Math.floor(x.length * 0.75)];
+}
+// "Il solito": mediana del prezzo di vendita realistico nei giri più vecchi di 2 ore (servono almeno 6 ore di dati).
+function usual(v) {
+  const h = sellHist[v]; if (!h || h.length < 8) return null;
+  const end = new Date(h[h.length - 1][0]) - 2 * 3600e3, old = h.filter(x => new Date(x[0]) <= end).map(x => x[1]).sort((x, y) => x - y);
+  const span = (new Date(h[h.length - 1][0]) - new Date(h[0][0])) / 3600e3;
+  if (old.length < 8 || span < 6) return null;
+  return { price: old[Math.floor(old.length / 2)], span };
+}
+function flipHold(it) {
+  const a = book[it.vnum], u = usual(it.vnum); if (!a || !u || !(it.day > 0)) return null;
+  const target = u.price - 1, money = capital(), maxQ = it.day;
+  let q = 0, cost = 0, best = null;
+  for (let i = 0; i < a.length; i++) {
+    const [p, am] = a[i]; if (p >= target * 0.98) break;   // serve almeno un 2% di margine per pezzo
+    let take = Math.min(am, maxQ - q); if (cost + take * p > money) take = Math.floor((money - cost) / p); if (take <= 0) break;
+    q += take; cost += take * p;
+    const gross = q * target, profit = gross - feeFor(gross, q) - cost;
+    if (!best || profit > best.profit) best = { it, kind: "hold", q, cost, top: p, sell: target, profit, usual: u, fee: feeFor(gross, q), lots: i + 1 };
+    if (take < am) break;
+  }
+  return best && best.profit > 0 && best.profit >= best.cost * 0.01 ? best : null;
+}
+let rowsNow = [], rowsHold = [];
+function render() {
+  const all = Object.values(items);
+  rowsNow = all.map(flipNow).filter(Boolean).sort((x, y) => y.profit - x.profit);
+  rowsHold = all.map(flipHold).filter(Boolean).sort((x, y) => y.profit - x.profit);
+  const head = last => `<tr><th>Item</th><th>Compra</th><th>Rivendi a</th><th>Guadagno</th><th>Rend.</th><th class="hide-s">${last}</th></tr>`;
+  const row = (r, i, extra) => `<tr data-i="${i}"><td>${r.it.name}</td><td>${fmt(r.q)}<br><span class="muted">fino a ${fmt(r.top)}</span></td><td>${fmt(r.sell)}</td><td class="pos">${short(r.profit)}</td><td>${pct(r.profit / r.cost)}</td><td class="hide-s">${extra}</td></tr>`;
+  document.getElementById("now").innerHTML = rowsNow.length ? head("Vendi in") + rowsNow.map((r, i) => row(r, i, hrs(r.hours))).join("")
+    : '<tr><td class="muted">Nessuna rivendita in guadagno adesso con questi parametri.</td></tr>';
+  document.getElementById("hold").innerHTML = rowsHold.length ? head("Solito") + rowsHold.map((r, i) => row(r, i, fmt(r.usual.price))).join("")
+    : '<tr><td class="muted">Niente sotto il solito, o ancora pochi dati (servono almeno 6 ore per item).</td></tr>';
+  document.getElementById("now").onclick = e => { const tr = e.target.closest("tr[data-i]"); if (tr) detail(rowsNow[+tr.dataset.i]); };
+  document.getElementById("hold").onclick = e => { const tr = e.target.closest("tr[data-i]"); if (tr) detail(rowsHold[+tr.dataset.i]); };
+}
+function detail(r) {
+  const a = book[r.it.vnum], lines = [];
+  let left = r.q;
+  for (const [p, am, owner] of a) { if (left <= 0) break; const t = Math.min(am, left); left -= t; lines.push([p, t, owner]); }
+  const byOwner = {}; lines.forEach(([, t, o]) => byOwner[o] = (byOwner[o] || 0) + t);
+  const topOwner = Object.entries(byOwner).sort((x, y) => y[1] - x[1])[0];
+  const shown = lines.slice(0, 12).map(([p, t, o]) => `<tr><td>${o}</td><td>${fmt(t)}</td><td>${fmt(p)}</td></tr>`).join("") + (lines.length > 12 ? `<tr><td class="muted">… altri ${lines.length - 12} annunci</td><td></td><td></td></tr>` : "");
+  document.getElementById("dlgBody").innerHTML = `<h3 style="margin:0 0 4px;font-size:17px">${r.it.name}</h3>
+    <div class="muted">${r.kind === "now" ? "Compra e rivendi subito" : "Sotto il solito: scommessa che il prezzo torni a " + fmt(r.usual.price) + " (mediana di " + fmt(r.usual.span) + " ore di dati)"}</div>
+    <table><tr><td>Compri</td><td><b>${fmt(r.q)}</b> pezzi da ${fmt(r.lots)} annunci, fino a ${fmt(r.top)}</td></tr>
+    <tr><td>Spendi</td><td>${fmt(r.cost)} (in media ${fmt(r.cost / r.q)} l'uno)</td></tr>
+    <tr><td>Rimetti in vendita a</td><td><b>${fmt(r.sell)}</b></td></tr>
+    <tr><td>Commissione</td><td>${fmt(r.fee)}</td></tr>
+    <tr><td><b>Guadagno</b></td><td class="pos"><b>${fmt(r.profit)}</b> (${pct(r.profit / r.cost)})</td></tr>
+    ${r.kind === "now" ? `<tr><td>Tempo stimato per vendere</td><td>${hrs(r.hours)}</td></tr>` : ""}
+    <tr><td>Venduti al giorno (stima)</td><td>${fmt(r.it.day)}</td></tr>
+    <tr><td>Pezzi in vendita ora</td><td>${fmt(r.it.qty)}</td></tr></table>
+    ${topOwner && topOwner[1] / r.q > 0.6 && lines.length > 1 ? `<p class="warn" style="color:var(--down)">Il ${pct(topOwner[1] / r.q)} dei pezzi è di un solo venditore (${topOwner[0]}): potrebbe rimetterne altri allo stesso prezzo.</p>` : ""}
+    <div class="wrap"><table><tr><th>Venditore</th><th>Pezzi</th><th>Prezzo</th></tr>${shown}</table></div>
+    <p class="muted">Annunci dell'ultimo giro: nel frattempo qualcuno potrebbe averli già comprati. Controlla in gioco prima di comprare.</p>`;
+  document.getElementById("dlg").showModal();
+}
+</script>
+</body>
+</html>

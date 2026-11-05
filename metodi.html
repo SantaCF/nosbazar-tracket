@@ -32,7 +32,7 @@
 <body>
 <main>
   <h1>Oro all'ora per metodo · EU-Dragonveil</h1>
-  <div class="nav"><a href="./">← Prezzi</a> · <b>Metodi</b></div>
+  <div class="nav"><a href="./">← Prezzi</a> · <b>Metodi</b> · <a href="flipping.html">Flipping</a> · <a href="bilancio.html">Bilancio</a></div>
   <div class="muted" id="updated">Caricamento…</div>
   <label class="muted">Prezzi usati
     <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select>
@@ -229,8 +229,17 @@ async function shopping(r, p) {
       <table><tr><td>Costo materiali</td><td>${fmt(x.cost)}</td></tr><tr><td>Commissione da tenere da parte</td><td>${fmt(x.fee)}</td></tr>
       <tr><td><b>Totale da avere</b></td><td><b>${fmt(x.cost + x.fee)}</b></td></tr><tr><td>Incasso netto (commissione tolta)</td><td>${fmt(x.net)}</td></tr>
       <tr><td><b>Guadagno</b></td><td class="${x.profit >= 0 ? "pos" : "neg"}"><b>${fmt(x.profit)}</b></td></tr></table>
+      <button id="saveLot" style="font-size:16px;padding:8px 14px;margin-top:8px">Salva lotto nel Bilancio</button>
       <p class="muted">Acquisto: compri dagli annunci più economici in su fino alla quantità che ti serve (ultimo giro), "fino a" è il prezzo più alto che paghi. Vendita: il prezzo più alto a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto secondo la stima venduti/giorno (che è per eccesso: conta anche chi ritira), mai sopra il riferimento 10%. Più pezzi metti, più devi scendere.${r.m.name === "PTS 50-60" ? " PTS: 31 semi di produzione + 1 di ingresso per ognuno dei 3 account; mezze lune prodotte da te (5 per run)." : ""}</p>`; };
   body.innerHTML = render(r.top.n);
+  // "Salva lotto": registra nel Bilancio i pezzi prodotti con il costo reale dei materiali (per più prodotti, diviso in base al valore).
+  body.onclick = e => { if (e.target.id !== "saveLot") return;
+    const n = +String(document.getElementById("dlgN").value).replace(/[^0-9]/g, "") || 0, x = plan(r.m, n, p); if (!n) return;
+    let b; try { b = JSON.parse(localStorage.getItem("bilancio") || "{}"); } catch (err) { b = {}; }
+    b.moves ??= []; b.lots ??= []; b.seller ??= "";
+    const tot = x.sell.reduce((t, s) => t + s.price * s.q * n, 0) || 1, t0 = new Date().toISOString();
+    x.sell.forEach((s, i) => b.lots.push({ t: t0.replace("Z", i + "Z"), vnum: String(s.v), name: nm(s.v), qty: s.q * n, cost: Math.round(x.cost * s.price * s.q * n / tot), from: r.m.name }));
+    try { localStorage.setItem("bilancio", JSON.stringify(b)); e.target.textContent = "Salvato ✓ (vedi pagina Bilancio)"; } catch (err) { e.target.textContent = "Non salvato: memoria del browser non disponibile"; } };
   body.oninput = e => { if (e.target.id !== "dlgN") return; const n = +e.target.value.replace(/[^0-9]/g, "") || 0;
     const pos = e.target.selectionStart; body.innerHTML = render(n); const inp = document.getElementById("dlgN"); inp.focus(); try { inp.setSelectionRange(pos, pos); } catch (x) {} };
   document.getElementById("dlg").showModal();
