@@ -6,4 +6,5 @@ Polvere del sottosuolo
 1028
 Mezza luna
 Piuma d'angelo
-Pietra per la PTS
+1092
+# 1092 = Pezzo spazio-temporale (gruppo), pietra PTS
