@@ -1,0 +1,8 @@
+# Una ricerca per riga, in italiano (come nel gioco). Righe con # sono ignorate.
+# Ogni ricerca traccia fino a 5 item che contengono quel testo nel nome.
+Pietra Gillion
+Polvere del sottosuolo
+Cristallo di luna nuova
+Mezza luna
+Piuma d'angelo
+Pietra per la PTS

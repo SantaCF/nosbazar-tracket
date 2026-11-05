@@ -1,0 +1,104 @@
+"""Fetch every bazaar listing for the tracked items on one NosTale server and save them.
+
+Writes:
+  data/listings/YYYY-MM-DD.csv  every listing seen in each run (for sale/vanish analysis)
+  data/summary.csv              one row per item per run (count, quantity, min/p20/median/p80/max)
+  data/items_resolved.json      which items each search line matched
+"""
+import csv, json, os, statistics, sys, time, urllib.parse, urllib.request
+from datetime import datetime, timezone
+
+API = "https://nosbazar.com/api"
+SERVER = int(os.environ.get("NOS_SERVER", "1"))  # 1 = EU-Dragonveil
+UA = "nosbazar-tracker (personal price history, github.com/SantaCF/nosbazar-tracket)"
+PAGE = 30
+MAX_PAGES = 40
+MAX_MATCHES = 5
+
+
+def call(path, body=None):
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(API + path, data=data, headers={"User-Agent": UA, "Content-Type": "application/json"})
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.load(r)
+        except Exception as e:  # network hiccup: retry with backoff
+            if attempt == 2:
+                raise
+            time.sleep(5 * (attempt + 1))
+    time.sleep(1)
+
+
+def resolve(query):
+    res = call("/items/name-search?" + urllib.parse.urlencode({"q": query, "lang": "IT"}))
+    return [{"vnum": m["vnum"], "name": m["name"]} for m in res.get("matches", [])][:MAX_MATCHES]
+
+
+def search(name, vnum):
+    out = []
+    for page in range(MAX_PAGES):
+        body = {"server": SERVER, "filters": {"index": page, "category": 0, "sub_category": 0, "level": 0,
+                "rare": 0, "upgrade": 0, "order": 0, "vnum": []}, "lang": "IT", "name": name}
+        items = call("/search", body).get("items", [])
+        out += [i for i in items if i.get("item_vnum") == vnum]
+        time.sleep(1)
+        if len(items) < PAGE:
+            break
+    return out
+
+
+def pct(sorted_vals, p):
+    if not sorted_vals:
+        return ""
+    k = (len(sorted_vals) - 1) * p
+    lo, hi = int(k), min(int(k) + 1, len(sorted_vals) - 1)
+    return round(sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (k - lo))
+
+
+def main():
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    ts = now.isoformat()
+    queries = [l.strip() for l in open("config/items.txt", encoding="utf-8") if l.strip() and not l.startswith("#")]
+    os.makedirs("data/listings", exist_ok=True)
+
+    resolved, items = {}, {}
+    for q in queries:
+        try:
+            resolved[q] = resolve(q)
+        except Exception as e:
+            print(f"name-search failed for {q!r}: {e}", file=sys.stderr)
+            resolved[q] = []
+        for m in resolved[q]:
+            items[m["vnum"]] = m["name"]
+        time.sleep(1)
+    json.dump(resolved, open("data/items_resolved.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+
+    lpath = f"data/listings/{now:%Y-%m-%d}.csv"
+    new_l = not os.path.exists(lpath)
+    spath = "data/summary.csv"
+    new_s = not os.path.exists(spath)
+    with open(lpath, "a", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf:
+        lw, sw = csv.writer(lf), csv.writer(sf)
+        if new_l:
+            lw.writerow(["ts", "vnum", "name", "owner", "amount", "price", "minutes_left", "is_package"])
+        if new_s:
+            sw.writerow(["ts", "vnum", "name", "listings", "quantity", "min", "p20", "median", "p80", "max"])
+        for vnum, name in items.items():
+            try:
+                rows = search(name, vnum)
+            except Exception as e:
+                print(f"search failed for {name}: {e}", file=sys.stderr)
+                continue
+            for r in rows:
+                lw.writerow([ts, vnum, name, r.get("owner_name"), r.get("amount"), r.get("bazar_price"),
+                             r.get("minutes_left"), int(bool(r.get("is_package")))])
+            prices = sorted(r["bazar_price"] for r in rows)
+            qty = sum(r.get("amount", 0) for r in rows)
+            sw.writerow([ts, vnum, name, len(rows), qty, prices[0] if prices else "", pct(prices, .2),
+                         pct(prices, .5), pct(prices, .8), prices[-1] if prices else ""])
+            print(f"{name} ({vnum}): {len(rows)} annunci, {qty} pezzi, min {prices[0] if prices else '-'}")
+
+
+if __name__ == "__main__":
+    main()
