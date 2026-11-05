@@ -61,7 +61,35 @@ def pct(sorted_vals, p):
     return round(sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (k - lo))
 
 
-LOT = 1000  # units for the "cost to buy a lot" metric
+LOT_SHARE = 0.02  # default lot = 2% of all units on sale, so the lot scales with how mass-produced an item is
+
+
+def read_config(path="config/items.txt"):
+    """Return [(query, lot_override_or_None)]. A line may end with "| <units>" to fix the lot size."""
+    out = []
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        query, _, lot = line.partition("|")
+        lot = lot.strip().replace(".", "")
+        out.append((query.strip(), int(lot) if lot.isdigit() else None))
+    return out
+
+
+def lot_overrides(config, resolved):
+    """Map vnum -> fixed lot size, using the search results saved for each config line."""
+    out = {}
+    for query, lot in config:
+        if lot:
+            for m in resolved.get(query, []):
+                out[m["vnum"]] = lot
+    return out
+
+
+def lot_size(rows, override=None):
+    total = sum(r.get("amount", 0) for r in rows)
+    return override or max(1, round(total * LOT_SHARE))
 
 
 def wpct(rows, p):
@@ -79,7 +107,7 @@ def wpct(rows, p):
     return rows[-1]["bazar_price"]
 
 
-def lot_cost(rows, lot=LOT):
+def lot_cost(rows, lot):
     """Average unit price paid to buy the cheapest `lot` units on sale."""
     left, spent = lot, 0
     for r in sorted(rows, key=lambda r: r["bazar_price"]):
@@ -91,19 +119,21 @@ def lot_cost(rows, lot=LOT):
     return round(spent / (lot - left)) if lot > left else ""
 
 
-def price_row(ts, vnum, name, rows):
+def price_row(ts, vnum, name, rows, override=None):
     prices = [r["bazar_price"] for r in rows]
+    lot = lot_size(rows, override)
     return [ts, vnum, name, len(rows), sum(r.get("amount", 0) for r in rows), min(prices) if prices else "",
-            wpct(rows, .05), wpct(rows, .10), wpct(rows, .25), wpct(rows, .50), lot_cost(rows)]
+            wpct(rows, .05), wpct(rows, .10), wpct(rows, .25), wpct(rows, .50), lot, lot_cost(rows, lot) if rows else ""]
 
 
-PRICE_HEADER = ["ts", "vnum", "name", "listings", "quantity", "min", "wp05", "wp10", "wp25", "wmedian", "lot1000"]
+PRICE_HEADER = ["ts", "vnum", "name", "listings", "quantity", "min", "wp05", "wp10", "wp25", "wmedian", "lot_size", "lot_price"]
 
 
 def main():
     now = datetime.now(timezone.utc).replace(microsecond=0)
     ts = now.isoformat()
-    queries = [l.strip() for l in open("config/items.txt", encoding="utf-8") if l.strip() and not l.startswith("#")]
+    config = read_config()
+    queries = [q for q, _ in config]
     os.makedirs("data/listings", exist_ok=True)
 
     resolved, items = {}, {}
@@ -117,6 +147,7 @@ def main():
             items[m["vnum"]] = m["name"]
         time.sleep(1)
     json.dump(resolved, open("data/items_resolved.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    overrides = lot_overrides(config, resolved)
 
     os.makedirs(f"data/listings/{now:%Y-%m-%d}", exist_ok=True)
     lpath = f"data/listings/{now:%Y-%m-%d}/{now:%H%M}.csv.gz"
@@ -142,7 +173,7 @@ def main():
                                           r.get("minutes_left"), int(bool(r.get("is_package")))) for r in rows)
             for key, n in sorted(groups.items(), key=lambda kv: kv[0][2]):
                 lw.writerow([ts, vnum, *key, n])
-            pw.writerow(price_row(ts, vnum, name, rows))
+            pw.writerow(price_row(ts, vnum, name, rows, overrides.get(vnum)))
             prices = sorted(r["bazar_price"] for r in rows)
             qty = sum(r.get("amount", 0) for r in rows)
             sw.writerow([ts, vnum, name, len(rows), qty, prices[0] if prices else "", pct(prices, .2),

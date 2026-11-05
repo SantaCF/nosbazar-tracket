@@ -31,7 +31,7 @@
   <select id="item" aria-label="Item"></select>
   <div class="tiles" id="tiles"></div>
   <div class="chart"><canvas id="c"></canvas></div>
-  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto 1000" = prezzo medio pagato comprando i 1.000 pezzi più economici. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
+  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
   <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
   <div class="wrap"><table id="t"></table></div>
 </main>
@@ -61,7 +61,7 @@ fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
     const it = byItem[v], r = it.rows, cur = r[r.length - 1], old = dayAgo(it);
     document.getElementById("tiles").innerHTML = [
       ["Riferimento (10%)", cur.wp10, change(cur.wp10, old.wp10)], ["Minimo", cur.min, ""], ["Mediana pesata", cur.wmedian, ""],
-      ["Lotto 1000", cur.lot1000, ""], ["Pezzi in vendita", cur.quantity, change(cur.quantity, old.quantity)], ["Annunci", cur.listings, ""]]
+      ["Lotto da " + fmt(cur.lot_size) + " pz", cur.lot_price, ""], ["Pezzi in vendita", cur.quantity, change(cur.quantity, old.quantity)], ["Annunci", cur.listings, ""]]
       .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${fmt(n)}</b>${c ? c + ' <span class="muted">24h</span>' : ""}</div>`).join("");
     const css = getComputedStyle(document.documentElement);
     const ds = (label, key, color, dash) => ({ label, data: r.map(x => x[key]), borderColor: color, backgroundColor: color, borderDash: dash, pointRadius: 0, borderWidth: 2, tension: .2 });
