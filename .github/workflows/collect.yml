@@ -17,15 +17,33 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # sempre l'ultima versione, non quella del momento in cui il giro è stato richiesto
       - name: Ricostruisce prices.csv se manca o ha un formato vecchio
         run: head -1 data/prices.csv 2>/dev/null | grep -q lot_price || python3 scripts/backfill_prices.py
       - run: python3 scripts/collect.py
         env:
           NOS_SERVER: '1'   # 1 = EU-Dragonveil
       - name: Salva i dati nel repo
+        # Se nel frattempo main è cambiato, riparte dall'ultima versione e riaggiunge solo i dati di
+        # questo giro, così nessun giro va perso. Se non ci riesce, il job fallisce (e si vede).
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898732+github-actions[bot]@users.noreply.github.com"
-          git add data
-          git commit -q -m "Prezzi $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
-          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+          mkdir -p /tmp/run
+          git diff --no-color -U0 data/prices.csv | grep '^+[^+]' | cut -c2- > /tmp/run/prices.csv || true
+          git diff --no-color -U0 data/summary.csv | grep '^+[^+]' | cut -c2- > /tmp/run/summary.csv || true
+          git ls-files --others --exclude-standard data/listings > /tmp/run/new_files
+          tar -cf /tmp/run/files.tar data/items_resolved.json $(cat /tmp/run/new_files)
+          [ -s /tmp/run/new_files ] || { echo "Nessun dato nuovo"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            tar -xf /tmp/run/files.tar
+            cat /tmp/run/prices.csv >> data/prices.csv
+            cat /tmp/run/summary.csv >> data/summary.csv
+            git add data
+            git commit -q -m "Prezzi $(date -u +%Y-%m-%dT%H:%MZ)"
+            if git push -q origin HEAD:main; then echo "Salvato al tentativo $i"; exit 0; fi
+            sleep $((i * 5))
+          done
+          echo "Impossibile salvare i dati dopo 5 tentativi"; exit 1
