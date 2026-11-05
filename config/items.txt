@@ -8,3 +8,9 @@ Mezza luna
 Piuma d'angelo
 1092
 # 1092 = Pezzo spazio-temporale (gruppo), pietra PTS
+# Dal file "Stima guadagni PTS" di Alessio:
+1012
+# 1012 = Seme della potenza (semi di ingresso/produzione PTS)
+1016
+1027
+Attrezzi di produzione per gemme
