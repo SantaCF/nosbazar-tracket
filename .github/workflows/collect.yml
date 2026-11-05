@@ -17,7 +17,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: "[ -f data/prices.csv ] || python3 scripts/backfill_prices.py"
+      - name: Ricostruisce prices.csv se manca o ha un formato vecchio
+        run: head -1 data/prices.csv 2>/dev/null | grep -q lot_price || python3 scripts/backfill_prices.py
       - run: python3 scripts/collect.py
         env:
           NOS_SERVER: '1'   # 1 = EU-Dragonveil
