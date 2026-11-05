@@ -28,6 +28,24 @@ jobs:
         run: python3 scripts/sales.py || echo "stima vendite non riuscita"
       - name: Prezzo di vendita realistico
         run: python3 scripts/sell.py || echo "prezzo di vendita non riuscito"
+      - name: Recupera lo stato delle notifiche
+        uses: actions/cache/restore@v4
+        with:
+          path: .alerts
+          key: alerts-${{ github.run_id }}
+          restore-keys: alerts-
+      - name: Notifiche sui tuoi annunci (ntfy)
+        run: python3 scripts/alerts.py || echo "notifiche non riuscite"
+        env:
+          NOS_SELLERS: ${{ secrets.NOS_SELLERS }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          ALERT_HOURS: ${{ vars.ALERT_HOURS }}
+      - name: Salva lo stato delle notifiche
+        if: hashFiles('.alerts/state.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .alerts
+          key: alerts-${{ github.run_id }}
       - name: Salva i dati nel repo
         # Se nel frattempo main è cambiato, riparte dall'ultima versione e riaggiunge solo i dati di
         # questo giro, così nessun giro va perso. Se non ci riesce, il job fallisce (e si vede).
