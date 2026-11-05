@@ -22,6 +22,10 @@
   th:first-child, td:first-child { text-align:left; }
   .up { color:var(--up); } .down { color:var(--down); }
   .wrap { overflow-x:auto; }
+  #t tr[data-v] { cursor:pointer; }
+  @media (max-width:480px) { #t th:nth-child(6), #t td:nth-child(6) { display:none; } #t { font-size:13px; } }
+  #t tr[data-v]:hover td, #t tr.sel td { background:var(--card); }
+  #t tr.sel td:first-child { font-weight:600; }
 </style>
 </head>
 <body>
@@ -31,7 +35,7 @@
   <select id="item" aria-label="Item"></select>
   <div class="tiles" id="tiles"></div>
   <div class="chart"><canvas id="c"></canvas></div>
-  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
+  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
   <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
   <div class="wrap"><table id="t"></table></div>
 </main>
@@ -55,14 +59,30 @@ fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
   Object.entries(byItem).filter(([v]) => current.has(v)).sort((a, b) => a[1].name.localeCompare(b[1].name)).forEach(([v, it]) => sel.add(new Option(it.name, v)));
   if (current.has("1013")) sel.value = "1013";
   try { const saved = localStorage.getItem("item"); if (saved && current.has(saved)) sel.value = saved; } catch (e) {}
-  const dayAgo = (it) => { const t = new Date(it.rows[it.rows.length - 1].ts) - 864e5; return it.rows.find(r => new Date(r.ts) >= t) || it.rows[0]; };
-  const change = (now, then) => { if (!then || !now) return ""; const d = (now - then) / then * 100; const c = d > 0.5 ? "up" : d < -0.5 ? "down" : ""; return `<span class="${c}">${d > 0 ? "+" : ""}${d.toFixed(1)}%</span>`; };
+  // Variazione 24h: mediana dei giri nell'ultima ora contro mediana dei giri di 24h prima (±1h),
+  // così un singolo giro anomalo non fa sembrare mosso un prezzo stabile.
+  const med = a => { a = a.filter(x => typeof x === "number").sort((x, y) => x - y); return a.length ? a[a.length >> 1] : null; };
+  const around = (it, key, t, w) => med(it.rows.filter(r => Math.abs(new Date(r.ts) - t) <= w).map(r => r[key]));
+  // Con meno di 24h di dati confronta con le prime ore disponibili e mostra quante ore copre.
+  const d24 = (it, key) => { const t = +new Date(it.rows[it.rows.length - 1].ts), first = +new Date(it.rows[0].ts);
+    const thenT = Math.max(t - 864e5, first + 36e5); if (t - thenT < 2 * 36e5) return null;
+    const now = around(it, key, t, 36e5), then = around(it, key, thenT, 36e5);
+    return now && then ? { d: (now - then) / then * 100, h: Math.round((t - thenT) / 36e5) } : null; };
+  const pct = x => { if (x == null) return '<span class="muted">-</span>'; const d = x.d, c = d > 0.5 ? "up" : d < -0.5 ? "down" : "";
+    return `<span class="${c}">${d > 0 ? "+" : ""}${d.toFixed(1)}%</span>` + (x.h < 23 ? ` <span class="muted">${x.h}h</span>` : ""); };
+  const band = (it, key) => { const t = new Date(it.rows[it.rows.length - 1].ts) - 864e5;
+    const v = it.rows.filter(r => new Date(r.ts) >= t).map(r => r[key]).filter(x => typeof x === "number");
+    return v.length ? fmt(Math.min(...v)) + " – " + fmt(Math.max(...v)) : "-"; };
   function show(v) {
-    const it = byItem[v], r = it.rows, cur = r[r.length - 1], old = dayAgo(it);
+    const it = byItem[v], r = it.rows, cur = r[r.length - 1];
+    sel.value = v;
     document.getElementById("tiles").innerHTML = [
-      ["Riferimento (10%)", cur.wp10, change(cur.wp10, old.wp10)], ["Minimo", cur.min, ""], ["Mediana pesata", cur.wmedian, ""],
-      ["Lotto da " + fmt(cur.lot_size) + " pz", cur.lot_price, ""], ["Pezzi in vendita", cur.quantity, change(cur.quantity, old.quantity)], ["Annunci", cur.listings, ""]]
-      .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${fmt(n)}</b>${c ? c + ' <span class="muted">24h</span>' : ""}</div>`).join("");
+      ["Riferimento (10%)", fmt(cur.wp10), pct(d24(it, "wp10"))], ["Minimo", fmt(cur.min), pct(d24(it, "min"))],
+      ["Banda rif. 24h", band(it, "wp10"), ""], ["Banda minimo 24h", band(it, "min"), ""],
+      ["Mediana pesata", fmt(cur.wmedian), ""], ["Lotto da " + fmt(cur.lot_size) + " pz", fmt(cur.lot_price), ""],
+      ["Pezzi in vendita", fmt(cur.quantity), pct(d24(it, "quantity"))], ["Annunci", fmt(cur.listings), ""]]
+      .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b>${c}</div>`).join("");
+    document.querySelectorAll("#t tr[data-v]").forEach(tr => tr.classList.toggle("sel", tr.dataset.v === String(v)));
     const css = getComputedStyle(document.documentElement);
     const ds = (label, key, color, dash) => ({ label, data: r.map(x => x[key]), borderColor: color, backgroundColor: color, borderDash: dash, pointRadius: 0, borderWidth: 2, tension: .2 });
     chart?.destroy();
@@ -75,10 +95,14 @@ fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
     try { localStorage.setItem("item", v); } catch (e) {}
   }
   sel.onchange = () => show(sel.value);
-  show(sel.value);
   const latest = rows.filter(r => r.ts === last);
-  document.getElementById("t").innerHTML = "<tr><th>Item</th><th>Rif. 10%</th><th>24h</th><th>Minimo</th><th>Pezzi</th></tr>" +
-    latest.map(r => `<tr><td>${r.name}</td><td>${fmt(r.wp10)}</td><td>${change(r.wp10, dayAgo(byItem[r.vnum]).wp10)}</td><td>${fmt(r.min)}</td><td>${fmt(r.quantity)}</td></tr>`).join("");
+  const t = document.getElementById("t");
+  t.innerHTML = "<tr><th>Item</th><th>Rif. 10%</th><th>24h</th><th>Minimo</th><th>24h</th><th>Pezzi</th></tr>" +
+    latest.sort((a, b) => a.name.localeCompare(b.name)).map(r => { const it = byItem[r.vnum];
+      return `<tr data-v="${r.vnum}"><td>${r.name}</td><td>${fmt(r.wp10)}</td><td>${pct(d24(it, "wp10"))}</td><td>${fmt(r.min)}</td><td>${pct(d24(it, "min"))}</td><td>${fmt(r.quantity)}</td></tr>`; }).join("");
+  t.onclick = e => { const tr = e.target.closest("tr[data-v]"); if (!tr) return;
+    show(tr.dataset.v); document.getElementById("item").scrollIntoView({ behavior: "smooth" }); };
+  show(sel.value);
 }).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 </script>
 </body>
