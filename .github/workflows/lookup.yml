@@ -3,18 +3,23 @@ on:
   push:
     branches: [lookup]
   workflow_dispatch:
-    inputs:
-      q:
-        description: 'Testo da cercare (italiano)'
-        required: true
 jobs:
   lookup:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for q in "${{ inputs.q || '(gruppo)' }}" "(group)"; do
-            for lang in IT UK; do
-              echo "== $q [$lang]"
-              curl -sS -G "https://nosbazar.com/api/items/name-search" --data-urlencode "q=$q" --data-urlencode "lang=$lang"; echo
-            done
-          done
+          while IFS= read -r q; do
+            [ -z "$q" ] && continue
+            echo "== $q"
+            curl -sS -G "https://nosbazar.com/api/items/name-search" --data-urlencode "q=$q" --data-urlencode "lang=IT"; echo
+            sleep 1
+          done <<'LIST'
+          luna piena
+          sgombro
+          Sgombro
+          pozione
+          perla arcobaleno
+          Perla
+          fiore di ghiaccio
+          Fiore
+          LIST
