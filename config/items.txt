@@ -28,8 +28,8 @@ Piuma d'angelo
 # 5911 = Fiore di ghiaccio
 # Ingredienti pozioni con sgombro (ricette nosapki craft_profit):
 1011
-2029
-2097
+# 2029 Bottiglia vuota: NPC 500, non tracciata
+# 2097 Pozione magica: NPC 100, non tracciata
 1241
 2206
 2214
