@@ -4,6 +4,7 @@ Writes:
   data/listings/YYYY-MM-DD/HHMM.csv.gz  every listing seen in the run, identical listings
                                        grouped with a count (for sale/vanish analysis)
   data/summary.csv              one row per item per run (count, quantity, min/p20/median/p80/max)
+  data/prices.csv              one row per item per run with quantity-weighted reference prices
   data/items_resolved.json      which items each search line matched
 """
 import collections, csv, gzip, json, os, statistics, sys, time, urllib.parse, urllib.request
@@ -60,6 +61,45 @@ def pct(sorted_vals, p):
     return round(sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * (k - lo))
 
 
+LOT = 1000  # units for the "cost to buy a lot" metric
+
+
+def wpct(rows, p):
+    """Quantity-weighted percentile: the price below which a share p of all listed units sit.
+    A single cheap listing of 1 unit cannot move it, unlike the plain minimum."""
+    rows = sorted(rows, key=lambda r: r["bazar_price"])
+    total = sum(r.get("amount", 0) for r in rows)
+    if not total:
+        return ""
+    target, seen = total * p, 0
+    for r in rows:
+        seen += r.get("amount", 0)
+        if seen >= target:
+            return r["bazar_price"]
+    return rows[-1]["bazar_price"]
+
+
+def lot_cost(rows, lot=LOT):
+    """Average unit price paid to buy the cheapest `lot` units on sale."""
+    left, spent = lot, 0
+    for r in sorted(rows, key=lambda r: r["bazar_price"]):
+        take = min(left, r.get("amount", 0))
+        spent += take * r["bazar_price"]
+        left -= take
+        if not left:
+            return round(spent / lot)
+    return round(spent / (lot - left)) if lot > left else ""
+
+
+def price_row(ts, vnum, name, rows):
+    prices = [r["bazar_price"] for r in rows]
+    return [ts, vnum, name, len(rows), sum(r.get("amount", 0) for r in rows), min(prices) if prices else "",
+            wpct(rows, .05), wpct(rows, .10), wpct(rows, .25), wpct(rows, .50), lot_cost(rows)]
+
+
+PRICE_HEADER = ["ts", "vnum", "name", "listings", "quantity", "min", "wp05", "wp10", "wp25", "wmedian", "lot1000"]
+
+
 def main():
     now = datetime.now(timezone.utc).replace(microsecond=0)
     ts = now.isoformat()
@@ -82,8 +122,13 @@ def main():
     lpath = f"data/listings/{now:%Y-%m-%d}/{now:%H%M}.csv.gz"
     spath = "data/summary.csv"
     new_s = not os.path.exists(spath)
-    with gzip.open(lpath, "wt", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf:
-        lw, sw = csv.writer(lf), csv.writer(sf)
+    ppath = "data/prices.csv"
+    new_p = not os.path.exists(ppath)
+    with gzip.open(lpath, "wt", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf, \
+            open(ppath, "a", newline="", encoding="utf-8") as pf:
+        lw, sw, pw = csv.writer(lf), csv.writer(sf), csv.writer(pf)
+        if new_p:
+            pw.writerow(PRICE_HEADER)
         lw.writerow(["ts", "vnum", "owner", "amount", "price", "minutes_left", "is_package", "count"])
         if new_s:
             sw.writerow(["ts", "vnum", "name", "listings", "quantity", "min", "p20", "median", "p80", "max"])
@@ -97,6 +142,7 @@ def main():
                                           r.get("minutes_left"), int(bool(r.get("is_package")))) for r in rows)
             for key, n in sorted(groups.items(), key=lambda kv: kv[0][2]):
                 lw.writerow([ts, vnum, *key, n])
+            pw.writerow(price_row(ts, vnum, name, rows))
             prices = sorted(r["bazar_price"] for r in rows)
             qty = sum(r.get("amount", 0) for r in rows)
             sw.writerow([ts, vnum, name, len(rows), qty, prices[0] if prices else "", pct(prices, .2),
