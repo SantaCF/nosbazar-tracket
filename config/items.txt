@@ -13,4 +13,4 @@ Piuma d'angelo
 # 1012 = Seme della potenza (semi di ingresso/produzione PTS)
 1016
 1027
-Attrezzi di produzione per gemme
+# Attrezzi per gemme non tracciati: prezzo NPC fisso 5.000 da Malcom Mix
