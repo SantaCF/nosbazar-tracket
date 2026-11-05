@@ -5,6 +5,7 @@ Writes:
                                        grouped with a count (for sale/vanish analysis)
   data/summary.csv              one row per item per run (count, quantity, min/p20/median/p80/max)
   data/prices.csv              one row per item per run with quantity-weighted reference prices
+  data/latest.csv               only the last run's rows of prices.csv (read by the Google Sheet calculator)
   data/items_resolved.json      which items each search line matched
 """
 import collections, csv, gzip, json, os, statistics, sys, time, urllib.parse, urllib.request
@@ -155,6 +156,7 @@ def main():
     new_s = not os.path.exists(spath)
     ppath = "data/prices.csv"
     new_p = not os.path.exists(ppath)
+    latest = []
     with gzip.open(lpath, "wt", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf, \
             open(ppath, "a", newline="", encoding="utf-8") as pf:
         lw, sw, pw = csv.writer(lf), csv.writer(sf), csv.writer(pf)
@@ -173,12 +175,19 @@ def main():
                                           r.get("minutes_left"), int(bool(r.get("is_package")))) for r in rows)
             for key, n in sorted(groups.items(), key=lambda kv: kv[0][2]):
                 lw.writerow([ts, vnum, *key, n])
-            pw.writerow(price_row(ts, vnum, name, rows, overrides.get(vnum)))
+            prow = price_row(ts, vnum, name, rows, overrides.get(vnum))
+            pw.writerow(prow)
+            latest.append(prow)
             prices = sorted(r["bazar_price"] for r in rows)
             qty = sum(r.get("amount", 0) for r in rows)
             sw.writerow([ts, vnum, name, len(rows), qty, prices[0] if prices else "", pct(prices, .2),
                          pct(prices, .5), pct(prices, .8), prices[-1] if prices else ""])
             print(f"{name} ({vnum}): {len(rows)} annunci, {qty} pezzi, min {prices[0] if prices else '-'}")
+    if latest:
+        with open("data/latest.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(PRICE_HEADER)
+            w.writerows(latest)
 
 
 if __name__ == "__main__":
