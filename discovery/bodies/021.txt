@@ -1,0 +1,1 @@
+{"CZ":"Módní Doplňky","DE":"Modeaccessoire","ES":"Accesorios","FR":"Fantaisies","IT":"Accessori","PL":"Akcesorium","TR":"Aksesuar","UK":"Accessory"}

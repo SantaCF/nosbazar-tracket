@@ -1,0 +1,55 @@
+NosBazar
+
+Online bazar search for the MMORPG NosTale
+
+GitHub
+Server:
+EU-Dragonveil
+▾
+Language:
+English
+▾
+NosBazaar
+◀
+◉
+▶
+Name
+Category
+All
+Weapon
+Armour
+Equipment
+Accessories
+Specialist
+Pet
+Partner
+Store mount
+Shell
+Main item
+Consumer item
+Miscellaneous
+Search
+Level
+Rarity Level
+Upgrade Level
+Sort by
+Price (ascending)
+Price (descending)
+Amount (ascending)
+Amount (descending)
+Name	Amount	Price per unit	Time period	Seller
+
+No item has been found.
+
+◀
+▶
+
+© NosBazar contributors. All game content, images and trademarks belong to Gameforge 4D GmbH and Entwell Co., Ltd.
+
+This is an unofficial, non-commercial fan project and is not affiliated with or endorsed by Gameforge or Entwell.
+
+Server online
+GitHub
+Official NosTale website
+
+No cookies are used and no tracking is performed.

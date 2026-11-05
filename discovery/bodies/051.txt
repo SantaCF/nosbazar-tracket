@@ -1,0 +1,1 @@
+{"CZ":"Svatý mág","DE":"Heiliger Magier","ES":"Mago sagrado","FR":"Mage sacré","IT":"Mago sacro","PL":"Święty Mag","TR":"Kutsal Büyücü","UK":"Holy Mage"}

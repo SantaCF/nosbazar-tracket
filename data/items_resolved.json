@@ -1,0 +1,37 @@
+{
+  "Pietra Gillion": [
+    {
+      "vnum": 1013,
+      "name": "Pietra Gillion"
+    }
+  ],
+  "Polvere del sottosuolo": [
+    {
+      "vnum": 1014,
+      "name": "Polvere del sottosuolo"
+    }
+  ],
+  "1028": [
+    {
+      "vnum": 1028,
+      "name": "Cristallo della luna nuova"
+    }
+  ],
+  "Mezza luna": [
+    {
+      "vnum": 1029,
+      "name": "Cristallo di mezza Luna"
+    }
+  ],
+  "Piuma d'angelo": [
+    {
+      "vnum": 2282,
+      "name": "Piuma d'angelo"
+    },
+    {
+      "vnum": 5749,
+      "name": "Scrigno del caso Piuma d'angelo"
+    }
+  ],
+  "Pietra per la PTS": []
+}

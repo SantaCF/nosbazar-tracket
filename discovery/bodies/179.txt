@@ -1,0 +1,275 @@
+{
+    "items": [
+        {
+            "amount": 820,
+            "bazar_price": 4990,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43173,
+            "owner_name": "ultr@instit@"
+        },
+        {
+            "amount": 820,
+            "bazar_price": 4990,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43173,
+            "owner_name": "ultr@instit@"
+        },
+        {
+            "amount": 820,
+            "bazar_price": 4990,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43173,
+            "owner_name": "ultr@instit@"
+        },
+        {
+            "amount": 990,
+            "bazar_price": 4999,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42891,
+            "owner_name": "~Damp"
+        },
+        {
+            "amount": 990,
+            "bazar_price": 4999,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42891,
+            "owner_name": "~Damp"
+        },
+        {
+            "amount": 990,
+            "bazar_price": 4999,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42891,
+            "owner_name": "~Damp"
+        },
+        {
+            "amount": 990,
+            "bazar_price": 4999,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42891,
+            "owner_name": "~Damp"
+        },
+        {
+            "amount": 990,
+            "bazar_price": 4999,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42891,
+            "owner_name": "~Damp"
+        },
+        {
+            "amount": 990,
+            "bazar_price": 4999,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42891,
+            "owner_name": "~Damp"
+        },
+        {
+            "amount": 115,
+            "bazar_price": 5199,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42880,
+            "owner_name": "Mojo_The_Clown"
+        },
+        {
+            "amount": 70,
+            "bazar_price": 5200,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42872,
+            "owner_name": "Tekk†"
+        },
+        {
+            "amount": 41,
+            "bazar_price": 5200,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42874,
+            "owner_name": "walpsim"
+        },
+        {
+            "amount": 116,
+            "bazar_price": 5297,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42793,
+            "owner_name": "patiswisss"
+        },
+        {
+            "amount": 21,
+            "bazar_price": 5298,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 1012,
+            "owner_name": "Xeilir~"
+        },
+        {
+            "amount": 20,
+            "bazar_price": 5299,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 1011,
+            "owner_name": "Jimmyxox"
+        },
+        {
+            "amount": 359,
+            "bazar_price": 5299,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42787,
+            "owner_name": "LuxZane•4"
+        },
+        {
+            "amount": 300,
+            "bazar_price": 5300,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42729,
+            "owner_name": "Semirya"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5300,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43150,
+            "owner_name": "*CastielFu"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5300,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43150,
+            "owner_name": "*CastielFu"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5300,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43150,
+            "owner_name": "*CastielFu"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5300,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43151,
+            "owner_name": "*CastielFu"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5300,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43151,
+            "owner_name": "*CastielFu"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5300,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 43151,
+            "owner_name": "*CastielFu"
+        },
+        {
+            "amount": 900,
+            "bazar_price": 5340,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 42741,
+            "owner_name": "~SaiyanPrince"
+        },
+        {
+            "amount": 64,
+            "bazar_price": 5349,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 40574,
+            "owner_name": "ßadWhite"
+        },
+        {
+            "amount": 994,
+            "bazar_price": 5350,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 6083,
+            "owner_name": "Uposledz"
+        },
+        {
+            "amount": 998,
+            "bazar_price": 5350,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 8020,
+            "owner_name": "Uposledz"
+        },
+        {
+            "amount": 998,
+            "bazar_price": 5350,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 8020,
+            "owner_name": "Uposledz"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5350,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 8020,
+            "owner_name": "Uposledz"
+        },
+        {
+            "amount": 999,
+            "bazar_price": 5350,
+            "data": {},
+            "is_package": false,
+            "item_vnum": 1013,
+            "minutes_left": 8020,
+            "owner_name": "Uposledz"
+        }
+    ],
+    "page_index": 0
+}

@@ -1,0 +1,1 @@
+{"CZ":"Ohnivá Bouře","DE":"Feuersturm","ES":"Tormenta de fuego","FR":"Tempête de feu","IT":"Tempesta di fuoco","PL":"Burza Ognia","TR":"Ateş Fırtınası","UK":"Fire Storm"}

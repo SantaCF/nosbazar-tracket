@@ -1,0 +1,1 @@
+{"CZ":"Anděl odplaty","DE":"Racheengel","ES":"Ángel vengador","FR":"Ange vengeur","IT":"Angelo vendicatore","PL":"Anioł Zemsty","TR":"İntikam Meleği","UK":"Avenging Angel"}

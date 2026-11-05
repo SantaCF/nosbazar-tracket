@@ -1,0 +1,1 @@
+{"CZ":"[8] Fenomenální","DE":"[8] Phänomenal","ES":"[8] Fenomenal","FR":"[8] Phénoménal","IT":"[8] Fenomenale","PL":"[8] Fenomenalny","TR":"[8] Eşsiz","UK":"[8] Phenomenal"}

@@ -1,0 +1,1 @@
+{"CZ":"Příslušenství","DE":"Accessoires","ES":"Accesorios","FR":"Accessoires","IT":"Accessori","PL":"Akcesoria","TR":"Ekipman","UK":"Accessories"}

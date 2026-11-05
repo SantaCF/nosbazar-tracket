@@ -1,0 +1,1 @@
+{"CZ":"Lovec démonů","DE":"Dämonenjäger","ES":"Cazademonios","FR":"Chasseur de démons","IT":"Cacciatore di demoni","PL":"Łowca Demonów","TR":"İblis Avcısı","UK":"Demon Hunter"}

@@ -1,0 +1,1 @@
+{"CZ":"Hromovládce","DE":"Donnerer","ES":"Tronador","FR":"Foudroyeur","IT":"Rombo di tuono","PL":"Donar","TR":"Gök Gürüldeten","UK":"Thunderer"}

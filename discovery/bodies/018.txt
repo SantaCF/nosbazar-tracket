@@ -1,0 +1,1 @@
+{"CZ":"Mág","DE":"Magier","ES":"Mago","FR":"Sorcier","IT":"Mago","PL":"Mag","TR":"Sihirbaz","UK":"Magician"}

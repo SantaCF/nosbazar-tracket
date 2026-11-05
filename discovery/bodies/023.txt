@@ -1,0 +1,1 @@
+{"CZ":"Mistr boje","DE":"Kampfkünstler","ES":"Artista marcial","FR":"Artiste martial","IT":"Artista marziale","PL":"Mistrz Sztuk Walki","TR":"Dövüş ustası","UK":"Martial Artist"}

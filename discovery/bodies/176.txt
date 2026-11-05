@@ -1,0 +1,1 @@
+{"CZ":"Prodejce","DE":"Verkäufer","ES":"Vendedor","FR":"Vendeur","IT":"Venditore","PL":"Sprzedawca","TR":"Satıcı","UK":"Seller"}

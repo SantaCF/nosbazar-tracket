@@ -1,0 +1,1 @@
+{"CZ":"Vzácná úroveň","DE":"Seltenheitslevel","ES":"Nivel de rareza","FR":"Niveau de rareté","IT":"Livello di raritŕ","PL":"Poziom unikalności","TR":"Nadirlik seviyesi","UK":"Rarity Level"}

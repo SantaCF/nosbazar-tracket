@@ -1,0 +1,1 @@
+{"CZ":"Merlin","DE":"Merlin","ES":"Merlín","FR":"Merlin","IT":"Merlino","PL":"Merlin","TR":"Merlin","UK":"Merlin"}

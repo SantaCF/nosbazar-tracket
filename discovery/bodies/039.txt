@@ -1,0 +1,1 @@
+{"CZ":"Amulet","DE":"Amulett","ES":"Amuleto","FR":"Amulette","IT":"Amuleto","PL":"Amulet","TR":"Tılsım","UK":"Amulet"}

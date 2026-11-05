@@ -1,0 +1,1 @@
+{"CZ":"Cena za kus","DE":"Preis pro Stück","ES":"Precio/unidad","FR":"Prix à l'unité","IT":"Prezzo per unitŕ","PL":"Cena za sztukę","TR":"Tane Fiyatı","UK":"Price per unit"}

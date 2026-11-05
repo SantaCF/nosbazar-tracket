@@ -1,0 +1,1 @@
+{"CZ":"[2] Dobrý","DE":"[2] Gut","ES":"[2]Bien","FR":"[2] Bon","IT":"[2]Buono","PL":"[2] Dobry","TR":"[2]İyi","UK":"[2]Good"}

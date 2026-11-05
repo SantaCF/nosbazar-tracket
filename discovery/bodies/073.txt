@@ -1,0 +1,1 @@
+{"CZ":"Vlčí mistr","DE":"Meister Wolf","ES":"Maestro Lobo","FR":"Maître loup","IT":"Maestro Lupo","PL":"Mistrz Wilk","TR":"Usta Kurt","UK":"Master Wolf"}

@@ -1,0 +1,1 @@
+{"CZ":"Mušle","DE":"Muschel","ES":"Concha","FR":"Coquillage","IT":"Pietra","PL":"Osłona","TR":"Midye","UK":"Shell"}

@@ -1,0 +1,1 @@
+{"CZ":"Šampión","DE":"Heldenausrüstung","ES":"Equipo de héroe","FR":"Équip. héroïque","IT":"Armatura eroe","PL":"Wyposażenie","TR":"Kahraman Teçhizatı","UK":"Champion gear"}

@@ -1,0 +1,1 @@
+{"CZ":"Výrobní předměty","DE":"Werkzeug","ES":"Objeto de producción","FR":"Objet","IT":"Item della produzione","PL":"Narzędzia","TR":"Üretim Eşyaları","UK":"Production item"}

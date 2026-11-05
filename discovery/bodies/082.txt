@@ -1,0 +1,1 @@
+{"CZ":"Hydraulická Pěst","DE":"Hydraulikfaust","ES":"Puño hidráulico","FR":"Hydraupoing","IT":"Pugno idrodinamico","PL":"Hydrauliczna Pięść","TR":"Hidrolik yumruk","UK":"Hydraulic Fist"}

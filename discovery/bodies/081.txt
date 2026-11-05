@@ -1,0 +1,1 @@
+{"CZ":"Gravitace","DE":"Gravitas","ES":"Grávitas","FR":"Gravitas","IT":"Gravitans","PL":"Gravitas","TR":"Yer çekmesi","UK":"Gravity"}

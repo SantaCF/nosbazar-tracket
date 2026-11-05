@@ -1,0 +1,1 @@
+{"CZ":"Ničitel","DE":"Zerstörer","ES":"Destructor","FR":"Destructeur","IT":"Distruttore","PL":"Niszczyciel","TR":"Yokedici","UK":"Destroyer"}

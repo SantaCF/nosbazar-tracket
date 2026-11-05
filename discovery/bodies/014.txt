@@ -1,0 +1,1 @@
+{"CZ":"Hlavní Item","DE":"Hauptitem","ES":"Ítem principal","FR":"Objet principal","IT":"Oggetto principale","PL":"Główny Przedmiot","TR":"Ana Eşya","UK":"Main item"}

@@ -1,0 +1,1 @@
+{"CZ":"Temný mág","DE":"Schattenmagier","ES":"Mago de las tinieblas","FR":"Mage ténébreux","IT":"Mago Nero","PL":"Mroczny Mag","TR":"Karanlık Büyücü","UK":"Dark Gunner"}

@@ -1,0 +1,1 @@
+{"CZ":"Věštec","DE":"Seher","ES":"Vidente","FR":"Devin","IT":"Veggente","PL":"Prorok","TR":"Kâhin","UK":"Seer"}

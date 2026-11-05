@@ -1,0 +1,1 @@
+{"CZ":"pirát","DE":"Pirat","ES":"Pirata","FR":"Pirate","IT":"Pirata","PL":"Pirat","TR":"Korsan","UK":"Pirate"}

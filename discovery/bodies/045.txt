@@ -1,0 +1,1 @@
+{"CZ":"Ninja","DE":"Ninja","ES":"Ninja","FR":"Ninja","IT":"Ninja","PL":"Ninja","TR":"Ninja","UK":"Ninja"}

@@ -1,0 +1,1 @@
+{"CZ":"Vládce přílivu","DE":"Gezeitenbändiger","ES":"Señor de las mareas","FR":"Sa Majesté des marées","IT":"Signore delle maree","PL":"Władca Fal","TR":"Gelgit kontrolü","UK":"Tide Lord"}

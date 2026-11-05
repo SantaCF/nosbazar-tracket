@@ -1,0 +1,1 @@
+{"CZ":"Mystické umění","DE":"Mystische Künste","ES":"Artes Místicas","FR":"Arts mystiques","IT":"Mystic Art","PL":"Mistyczny Artysta","TR":"Mistik Sanatlar","UK":"Mystic Arts"}

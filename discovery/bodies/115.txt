@@ -1,0 +1,1 @@
+{"CZ":"Předmět prodeje","DE":"Verkaufsitem","ES":"Ítem en venta","FR":"Objet en vente","IT":"Item in vendita","PL":"Przedmiot sprzedaży","TR":"Satış Eşyası","UK":"Sale item"}

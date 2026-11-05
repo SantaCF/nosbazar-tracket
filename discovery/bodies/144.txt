@@ -1,0 +1,1 @@
+{"CZ":"[5] Antický","DE":"[5] Antik","ES":"[5]Antiguo","FR":"[5] Ancestral","IT":"[5]Antico","PL":"[5] Antyczny","TR":"[5]Antik","UK":"[5]Ancient"}

@@ -1,0 +1,1 @@
+{"CZ":"Zuřivec","DE":"Berserker","ES":"Berserker","FR":"Berserk","IT":"Berserker","PL":"Berserk","TR":"Berserker","UK":"Berserker"}

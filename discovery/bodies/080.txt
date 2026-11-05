@@ -1,0 +1,1 @@
+{"CZ":"Odpalovač","DE":"Grenadier","ES":"Granadero","FR":"Grenadier","IT":"Granatiere","PL":"Grenadier","TR":"El bombacısı","UK":"Blaster"}

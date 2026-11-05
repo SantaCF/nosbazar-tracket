@@ -1,0 +1,1 @@
+{"CZ":"Bojový mnich","DE":"Kampfmönch","ES":"Monje de lucha","FR":"Moine pugnace","IT":"Monaco bellicoso","PL":"Bojowy Mnich","TR":"Savaş Keşişi","UK":"Battle Monk"}

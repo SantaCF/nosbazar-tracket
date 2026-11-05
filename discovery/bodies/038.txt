@@ -1,0 +1,1 @@
+{"CZ":"Náramek","DE":"Armreif","ES":"Brazalete","FR":"Bracelet","IT":"Bracciale","PL":"Bransoletka","TR":"Bilezik","UK":"Bracelet"}

@@ -1,0 +1,1 @@
+{"CZ":"Lovec","DE":"Jäger","ES":"Cazador","FR":"Ranger","IT":"Cacciatore","PL":"Myśliwy","TR":"Avcı","UK":"Ranger"}

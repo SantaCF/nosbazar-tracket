@@ -1,0 +1,1 @@
+{"CZ":"Kněz Voodoo","DE":"Voodoopriester","ES":"Sacerdote vudú","FR":"Prêtre vaudou","IT":"Sacerdote voodoo","PL":"Kapłan Voodoo","TR":"Vudu Rahibi","UK":"Voodoo Priest"}

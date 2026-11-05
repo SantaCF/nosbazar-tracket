@@ -1,0 +1,1 @@
+{"CZ":"Mazlíček","DE":"Haustier","ES":"Mascota","FR":"Familier","IT":"Animale domestico","PL":"Zwierzak","TR":"Evcil Hayvan","UK":"Pet"}

@@ -1,0 +1,1 @@
+{"CZ":"Šampión 11 - 20","DE":"Heldenlevel 11-20","ES":"Nivel héroe 11-20","FR":"Niv. héro. 11-20","IT":"Livello eroe 11-20","PL":"Pz. Bohatera 11-20","TR":"Kahram. sev. 11-20","UK":"Champion Lv 11-20"}

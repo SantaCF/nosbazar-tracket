@@ -1,0 +1,1 @@
+{"CZ":"Lukostřelec","DE":"Bogenschütze","ES":"Arquero","FR":"Archer","IT":"Arciere","PL":"Łucznik","TR":"Okçu","UK":"Archer"}

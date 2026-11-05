@@ -1,0 +1,52 @@
+{
+  "attack_type": 0,
+  "buffs": [],
+  "description": {
+    "CZ": "\"Musí být vylepšeno, abys obdržel drahý kámen duše, Cellon a křišťál\nAbys to\nmohl vylepšit kup zušlechťovač a udělej na něj dvojí klik.\n\n\"",
+    "DE": "Kann veredelt werden, um einen Seelenstein, Cellon und einen Kristall zu erhalten.\nUm es zu veredeln, kaufe einen Veredler und doppelklicke darauf.\n\n",
+    "ES": "Puede pulirse para obtener una Gema del Alma, Cellon y un Cristal.\nPara pulirla, compra un Pulidor y haz doble clic en él.\n\n",
+    "FR": "Cet objet peut être affiné pour obtenir une gemme d'âme, du cellon et un cristal.\nPour l'affiner, achète un affineur et double-clique dessus.\n\n",
+    "IT": "Si puň raffinare per ricevere una Pietra dell'anima, Cellon e un cristallo.\nPer effettuare la raffinazione, acquista un Raffinatore e cliccaci sopra due volte.\n\n",
+    "PL": "Musi zostać uszlachetniony, aby pozyskać Kamień Duszy, Cellon i Kryształ\nAby dokonać uszlachetnienia, musisz zakupić uszlachetniacz i kliknąć na niego dwa razy.\n\n",
+    "TR": "Bir ruh taşı, Cellon ve bir kristal elde etmek için arıtılabilir.\nArıtmak için bir arıtıcı satın al ve üzerine çift tıkla.\n\n",
+    "UK": "Can be refined to obtain Soul Gems, Cellons and Crystals.\nTo refine it, purchase a refiner and double-click it.\n\n"
+  },
+  "equip_slot": 0,
+  "flags": {
+    "can_be_colored": false,
+    "female_can_wear": false,
+    "follow_mouse_on_use": false,
+    "is_champion_equip": false,
+    "is_limited": false,
+    "is_time_space_reward_box": false,
+    "male_can_wear": false,
+    "miniland_item": false,
+    "miniland_item_2": false,
+    "no_dropping": false,
+    "no_selling": false,
+    "no_trading": false,
+    "play_sound_on_pickup": true,
+    "show_description_on_hover": false,
+    "show_something_on_hover": false,
+    "show_warning_on_use": false,
+    "use_reputation_as_price": false
+  },
+  "icon_id": 1013,
+  "inventory_tab": 1,
+  "item_subtype": 0,
+  "item_type": 0,
+  "name": {
+    "CZ": "Kámen Gillion",
+    "DE": "Gillionstein",
+    "ES": "Piedra de Gillion",
+    "FR": "Pierre Gillion",
+    "IT": "Pietra Gillion",
+    "PL": "Kamień Gillion",
+    "TR": "Gillion Taşı",
+    "UK": "Gillion Stone"
+  },
+  "price": 50,
+  "required_class": 0,
+  "visual_change_id": 4294967295,
+  "vnum": 1013
+}

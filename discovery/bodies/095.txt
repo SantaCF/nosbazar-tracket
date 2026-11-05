@@ -1,0 +1,1 @@
+{"CZ":"Prázdný držák na karty","DE":"Leerer Kartenhalter","ES":"Portador de tarjetas vacío","FR":"Boîte à carte vide","IT":"Portacarte vuoto","PL":"Pusty Pojemnik na Karty","TR":"Boş Kart Tutacağı","UK":"Empty Card Holder"}

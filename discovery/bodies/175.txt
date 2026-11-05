@@ -1,0 +1,1 @@
+{"CZ":"Doba","DE":"Zeitraum","ES":"Período","FR":"Période","IT":"Periodo di tempo","PL":"Czas","TR":"Süre","UK":"Time period"}

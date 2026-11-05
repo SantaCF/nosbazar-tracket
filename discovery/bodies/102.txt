@@ -1,0 +1,1 @@
+{"CZ":"Oblečení","DE":"Kleidung","ES":"Ropa","FR":"Vêtements","IT":"Abbigliamento","PL":"Ubrania","TR":"Giyim","UK":"Clothing"}

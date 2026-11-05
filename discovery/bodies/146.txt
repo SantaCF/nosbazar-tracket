@@ -1,0 +1,1 @@
+{"CZ":"[7] Legendární","DE":"[7] Legendär","ES":"[7]Legendario","FR":"[7] Légendaire","IT":"[7]Leggendario","PL":"[7] Legendarny","TR":"[7]Efsanevi","UK":"[7]Legendary"}

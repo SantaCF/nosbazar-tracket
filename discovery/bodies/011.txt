@@ -1,0 +1,1 @@
+{"CZ":"Partner","DE":"Partner","ES":"Compañero","FR":"Partenaire","IT":"Compagno","PL":"Partner","TR":"Partner","UK":"Partner"}

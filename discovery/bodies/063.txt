@@ -1,0 +1,1 @@
+{"CZ":"Zvěd","DE":"Späher","ES":"Espía","FR":"Éclaireur","IT":"Esploratore","PL":"Zwiadowca","TR":"Casus","UK":"Scout"}

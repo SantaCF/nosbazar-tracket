@@ -1,0 +1,1 @@
+{"CZ":"Řadit podle","DE":"Sortieren nach","ES":"Ordenar según","FR":"Trier par","IT":"Ordina per","PL":"Sortuj według","TR":"Düzenleme Kriteri","UK":"Sort by"}

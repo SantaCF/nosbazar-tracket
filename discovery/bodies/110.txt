@@ -1,0 +1,1 @@
+{"CZ":"Jídlo","DE":"Essen","ES":"Comida","FR":"Nourriture","IT":"Cibo","PL":"Żywność","TR":"Yemek","UK":"Food"}

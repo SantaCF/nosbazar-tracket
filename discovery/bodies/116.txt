@@ -1,0 +1,1 @@
+{"CZ":"Ryba","DE":"Fisch","ES":"Pescado","FR":"Poisson","IT":"Pesce","PL":"Ryba","TR":"Balık","UK":"Fish"}

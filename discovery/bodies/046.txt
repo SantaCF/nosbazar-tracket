@@ -1,0 +1,1 @@
+{"CZ":"Pytlák","DE":"Wildhüter","ES":"Guardabosques","FR":"Garde-chasse","IT":"Guardacaccia","PL":"Dziki Strażnik","TR":"Doğa Koruyucusu","UK":"Wild Keeper"}

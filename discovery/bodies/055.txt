@@ -1,0 +1,1 @@
+{"CZ":"Kostým slepice","DE":"Huhnkostüm","ES":"Disfraz de pollo","FR":"Costume de poule","IT":"Costume da Pollo","PL":"Kurczak","TR":"Tavuk Kostümü","UK":"Chicken Costume"}

@@ -1,0 +1,1 @@
+{"CZ":"Kostým","DE":"Kostüm","ES":"Disfraz","FR":"Costume","IT":"Costume","PL":"Kostium","TR":"Kostüm","UK":"Costume"}

@@ -1,0 +1,1 @@
+{"CZ":"Gladiátor","DE":"Gladiator","ES":"Gladiador","FR":"Gladiateur","IT":"Gladiatore","PL":"Gladiator","TR":"Gladyatör","UK":"Gladiator"}

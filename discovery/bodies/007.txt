@@ -1,0 +1,1 @@
+{"CZ":"Vybavení","DE":"Ausrüstung","ES":"Equipamiento","FR":"Équipement","IT":"Equipaggiamento","PL":"Wyposażenie","TR":"Teçhizat","UK":"Equipment"}

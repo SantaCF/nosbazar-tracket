@@ -1,0 +1,1 @@
+{"CZ":"Velké množství","DE":"Anzahl absteigend","ES":"Cantidad, descendente","FR":"Grande quantité","IT":"Quantitŕ grande","PL":"Ilość (malejąco)","TR":"Büyük Miktar","UK":"Amount (descending)"}

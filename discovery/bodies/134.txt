@@ -1,0 +1,1 @@
+{"CZ":"Šampión 51 - 60","DE":"Heldenlevel 51-60","ES":"Nivel héroe 51-60","FR":"Niv. héro. 51-60","IT":"Livello eroe 51-60","PL":"Pz. Bohatera 51-60","TR":"Kahram. sev. 51-60","UK":"Champion Lv 51-60"}

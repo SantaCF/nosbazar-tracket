@@ -1,0 +1,1 @@
+{"CZ":"Mini Mazlíček","DE":"Mini-Haustier","ES":"Minimascota","FR":"Minifamilier","IT":"Mini pet","PL":"Minizwierzak","TR":"Mini evcil hayvan","UK":"Mini Pet"}

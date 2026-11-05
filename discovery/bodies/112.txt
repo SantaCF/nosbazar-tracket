@@ -1,0 +1,1 @@
+{"CZ":"Kouzelné předměty","DE":"Magisches Item","ES":"Objeto mágico","FR":"Objet magique","IT":"Oggetti Magici","PL":"Magiczny Przedmiot","TR":"Büyülü Eşya","UK":"Magic item"}

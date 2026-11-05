@@ -1,0 +1,1 @@
+{"CZ":"Boty","DE":"Schuhe","ES":"Zapatos","FR":"Chaussures","IT":"Scarpe","PL":"Buty","TR":"Ayakkabı","UK":"Shoes"}

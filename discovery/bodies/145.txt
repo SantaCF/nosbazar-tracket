@@ -1,0 +1,1 @@
+{"CZ":"[6] Tajemný","DE":"[6] Mysteriös","ES":"[6]Misterioso","FR":"[6] Mystérieux","IT":"[6]Misterioso","PL":"[6] Tajemniczy","TR":"[6]Gizemli","UK":"[6] Mysterious"}

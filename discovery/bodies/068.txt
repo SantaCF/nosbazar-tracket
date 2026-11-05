@@ -1,0 +1,1 @@
+{"CZ":"Arcimág","DE":"Erzmagier","ES":"Archimago","FR":"Archimage","IT":"Arcimago","PL":"Arcymag","TR":"Başbüyücü","UK":"Archmage"}

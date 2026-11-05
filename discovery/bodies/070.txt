@@ -1,0 +1,1 @@
+{"CZ":"Drakonická pěst","DE":"Drachenfaust","ES":"Puño del dragón","FR":"Drakenfer","IT":"Pugno di drago","PL":"Smocza Pięść","TR":"Ejderha yumruğu","UK":"Draconic Fist"}

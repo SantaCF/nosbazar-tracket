@@ -1,0 +1,1 @@
+{"CZ":"Perla vozítka","DE":"Reittierperle","ES":"Perla de montura","FR":"Perle pour monture","IT":"Perla per mezzi di trasporto","PL":"Perła wierzchowca","TR":"Taşıt İncisi","UK":"Mount Bead"}
