@@ -6,8 +6,8 @@ Each run looks for the listings of your characters in the latest snapshot and se
     than yours plus yours exceed what the bazaar sells in that time (sold_day estimate). It suggests the
     price that sells everything within ALERT_HOURS.
 
-Configuration comes from repository secrets, so names are never written in this public repo:
-  NOS_SELLERS   character names, comma separated (not case sensitive)
+Configuration comes from repository settings (Settings > Secrets and variables > Actions), not from this public repo:
+  NOS_SELLERS   variable (or secret): character names, comma separated, not case sensitive
   NTFY_TOPIC    the ntfy topic subscribed in the phone app
   ALERT_HOURS   optional, hours you are willing to wait (default 24)
 State (what was already notified) lives in .alerts/state.json, kept between runs by the Actions cache.

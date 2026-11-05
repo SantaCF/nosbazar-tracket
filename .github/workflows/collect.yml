@@ -37,7 +37,7 @@ jobs:
       - name: Notifiche sui tuoi annunci (ntfy)
         run: python3 scripts/alerts.py || echo "notifiche non riuscite"
         env:
-          NOS_SELLERS: ${{ secrets.NOS_SELLERS }}
+          NOS_SELLERS: ${{ vars.NOS_SELLERS || secrets.NOS_SELLERS }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           ALERT_HOURS: ${{ vars.ALERT_HOURS }}
       - name: Salva lo stato delle notifiche
