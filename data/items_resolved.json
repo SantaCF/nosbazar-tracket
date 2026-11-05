@@ -236,5 +236,107 @@
       "vnum": 5369,
       "name": "Pergamena dorata protettiva dell'equipaggiamento"
     }
+  ],
+  "1428": [
+    {
+      "vnum": 1428,
+      "name": "Profumo"
+    }
+  ],
+  "1296": [
+    {
+      "vnum": 1296,
+      "name": "Amplificatore della fata"
+    }
+  ],
+  "1285": [
+    {
+      "vnum": 1285,
+      "name": "Benedizione dell'angelo custode"
+    }
+  ],
+  "2173": [
+    {
+      "vnum": 2173,
+      "name": "Altoparlante"
+    }
+  ],
+  "1900": [
+    {
+      "vnum": 1900,
+      "name": "Carta dei tarocchi sigillata (Torre)"
+    }
+  ],
+  "1246": [
+    {
+      "vnum": 1246,
+      "name": "Pozione di attacco"
+    }
+  ],
+  "1247": [
+    {
+      "vnum": 1247,
+      "name": "Pozione difensiva"
+    }
+  ],
+  "1248": [
+    {
+      "vnum": 1248,
+      "name": "Pozione energetica"
+    }
+  ],
+  "4194": [
+    {
+      "vnum": 4194,
+      "name": "Perla di fata"
+    }
+  ],
+  "285": [
+    {
+      "vnum": 285,
+      "name": "Perla Animale domestico"
+    }
+  ],
+  "286": [
+    {
+      "vnum": 286,
+      "name": "Perla Compagno"
+    }
+  ],
+  "8581": [
+    {
+      "vnum": 8581,
+      "name": "Perla Allenatore di pet"
+    }
+  ],
+  "4106": [
+    {
+      "vnum": 4106,
+      "name": "Perla per mezzi di trasporto"
+    }
+  ],
+  "284": [
+    {
+      "vnum": 284,
+      "name": "Amuleto del rafforzamento"
+    }
+  ],
+  "4264": [
+    {
+      "vnum": 4264,
+      "name": "Amuleto eroico della benedizione (statico)"
+    }
+  ],
+  "4340": [
+    {
+      "vnum": 4340,
+      "name": "Speedbooster magico (1 giorno)"
+    }
+  ],
+  "4341": [
+    {
+      "vnum": 4341,
+      "name": "Speedbooster magico (3 giorni)"
+    }
   ]
 }
