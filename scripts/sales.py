@@ -109,6 +109,32 @@ def main():
             w.writerow(HEADER)
         w.writerows(rows)
     print(f"sales: {len(rows)} righe da {len(pairs)} coppie di giri")
+    add_daily_to_latest(files)
+
+
+def add_daily_to_latest(files):
+    """Add sold_day (units gone in the last 24h, scaled to a day) to data/latest.csv."""
+    if not os.path.exists("data/latest.csv") or not files:
+        return
+    stamp = lambda path: datetime.fromisoformat(path.split("/")[-2] + "T" + path.split("/")[-1][:2] + ":" + path.split("/")[-1][2:4] + "+00:00")
+    times = [stamp(f) for f in files]
+    since = times[-1] - timedelta(hours=24)
+    covered = sum((b - a).total_seconds() / 60 for a, b in zip(times, times[1:]) if a >= since and (b - a).total_seconds() / 60 <= MAX_GAP_MIN)
+    units = collections.Counter()
+    with open(OUT, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if datetime.fromisoformat(r["ts"]) >= since:
+                units[r["vnum"]] += int(r["units_gone"])
+    with open("data/latest.csv", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+    head = rows[0]
+    if "sold_day" in head:
+        k = head.index("sold_day"); rows = [r[:k] + r[k + 1:] for r in rows]; head = rows[0]
+    out = [head + ["sold_day"]]
+    for r in rows[1:]:
+        out.append(r + [round(units[r[1]] * 1440 / covered) if covered >= 120 else ""])
+    with open("data/latest.csv", "w", newline="", encoding="utf-8") as f:
+        csv.writer(f).writerows(out)
 
 
 if __name__ == "__main__":
