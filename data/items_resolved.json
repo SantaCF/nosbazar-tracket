@@ -134,5 +134,107 @@
       "vnum": 2215,
       "name": "Stoffa leggendaria"
     }
+  ],
+  "2283": [
+    {
+      "vnum": 2283,
+      "name": "Anima brillante verde"
+    }
+  ],
+  "2511": [
+    {
+      "vnum": 2511,
+      "name": "Pelle di drago"
+    }
+  ],
+  "2622": [
+    {
+      "vnum": 2622,
+      "name": "Pietra dell'anima Orchi"
+    }
+  ],
+  "2284": [
+    {
+      "vnum": 2284,
+      "name": "Anima brillante rossa"
+    }
+  ],
+  "2512": [
+    {
+      "vnum": 2512,
+      "name": "Sangue di drago"
+    }
+  ],
+  "2620": [
+    {
+      "vnum": 2620,
+      "name": "Anima degli Eroi leggendari"
+    }
+  ],
+  "2285": [
+    {
+      "vnum": 2285,
+      "name": "Anima brillante blu"
+    }
+  ],
+  "2513": [
+    {
+      "vnum": 2513,
+      "name": "Cuore di drago"
+    }
+  ],
+  "2621": [
+    {
+      "vnum": 2621,
+      "name": "Anima raggiante degli Eroi leggendari"
+    }
+  ],
+  "2630": [
+    {
+      "vnum": 2630,
+      "name": "Gemma del drago"
+    }
+  ],
+  "2748": [
+    {
+      "vnum": 2748,
+      "name": "Frammenti di Dimensiolite"
+    }
+  ],
+  "1363": [
+    {
+      "vnum": 1363,
+      "name": "Pergamena protettiva SP (basso)"
+    }
+  ],
+  "1364": [
+    {
+      "vnum": 1364,
+      "name": "Pergamena protettiva SP (alto)"
+    }
+  ],
+  "1015": [
+    {
+      "vnum": 1015,
+      "name": "Pietra dell'anima"
+    }
+  ],
+  "2774": [
+    {
+      "vnum": 2774,
+      "name": "Polvere di forza dimensionale di Nezarun"
+    }
+  ],
+  "1218": [
+    {
+      "vnum": 1218,
+      "name": "Pergamena protettiva per l'equipaggiamento"
+    }
+  ],
+  "5369": [
+    {
+      "vnum": 5369,
+      "name": "Pergamena dorata protettiva dell'equipaggiamento"
+    }
   ]
 }
