@@ -23,7 +23,7 @@
   .up { color:var(--up); } .down { color:var(--down); }
   .wrap { overflow-x:auto; }
   #t tr[data-v] { cursor:pointer; }
-  @media (max-width:480px) { #t th:nth-child(6), #t td:nth-child(6) { display:none; } #t { font-size:13px; } }
+  @media (max-width:480px) { #t th:nth-child(7), #t td:nth-child(7) { display:none; } #t { font-size:13px; } }
   #t tr[data-v]:hover td, #t tr.sel td { background:var(--card); }
   #t tr.sel td:first-child { font-weight:600; }
 </style>
@@ -35,7 +35,7 @@
   <select id="item" aria-label="Item"></select>
   <div class="tiles" id="tiles"></div>
   <div class="chart"><canvas id="c"></canvas></div>
-  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
+  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza (venduti o ritirati dal venditore, senza contare chi li rimette subito in vendita), riportati a 24 ore: è un massimo, le vendite vere possono essere meno. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
   <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
   <div class="wrap"><table id="t"></table></div>
 </main>
@@ -43,7 +43,7 @@
 const fmt = n => n === "" || n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
 const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
 let chart;
-fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
+Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.now()).then(r => r.ok ? r.text() : ""))).then(([text, salesText]) => {
   const parse = l => { const out = []; let cur = "", q = false;
     for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
     out.push(cur); return out; };
@@ -53,6 +53,18 @@ fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
   const byItem = {};
   rows.forEach(r => (byItem[r.vnum] ??= { name: r.name, rows: [] }).rows.push(r));
   const last = rows[rows.length - 1].ts;
+  // Pezzi spariti prima della scadenza (venduti o ritirati) nelle ultime 24h, riportati a un giorno
+  // sulla base delle ore effettivamente coperte da giri consecutivi (buchi > 40 min esclusi).
+  const since = new Date(last) - 864e5;
+  const tss = [...new Set(rows.map(r => r.ts))].map(t => +new Date(t)).filter(t => t >= since).sort((a, b) => a - b);
+  let covered = 0; for (let i = 1; i < tss.length; i++) { const g = (tss[i] - tss[i - 1]) / 6e4; if (g <= 40) covered += g; }
+  const sold = {};
+  if (salesText) { const [sh, ...sl] = salesText.trim().split(/\r?\n/); const sk = parse(sh);
+    sl.forEach(l => { const v = parse(l), o = {}; sk.forEach((k, i) => o[k] = v[i]);
+      if (+new Date(o.ts) >= since) { const x = (sold[o.vnum] ??= { u: 0, val: 0 }); x.u += +o.units_gone; x.val += +o.value_gone; } }); }
+  const perDay = v => covered >= 120 ? ((sold[v]?.u || 0) * 1440 / covered) : null;
+  const soldPrice = v => sold[v]?.u ? sold[v].val / sold[v].u : null;
+  const covTxt = covered >= 120 ? `stima su ${Math.round(covered / 60)}h di giri` : "servono almeno 2 ore di giri";
   document.getElementById("updated").textContent = "Ultimo aggiornamento: " + when(last) + " · " + rows.filter(r => r.ts === last).length + " item";
   const sel = document.getElementById("item");
   const current = new Set(rows.filter(r => r.ts === last).map(r => String(r.vnum)));
@@ -80,7 +92,9 @@ fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
       ["Riferimento (10%)", fmt(cur.wp10), pct(d24(it, "wp10"))], ["Minimo", fmt(cur.min), pct(d24(it, "min"))],
       ["Banda rif. 24h", band(it, "wp10"), ""], ["Banda minimo 24h", band(it, "min"), ""],
       ["Mediana pesata", fmt(cur.wmedian), ""], ["Lotto da " + fmt(cur.lot_size) + " pz", fmt(cur.lot_price), ""],
-      ["Pezzi in vendita", fmt(cur.quantity), pct(d24(it, "quantity"))], ["Annunci", fmt(cur.listings), ""]]
+      ["Pezzi in vendita", fmt(cur.quantity), pct(d24(it, "quantity"))], ["Annunci", fmt(cur.listings), ""],
+      ["Venduti al giorno (stima)", perDay(v) == null ? "-" : "≈ " + fmt(perDay(v)), `<span class="muted">${covTxt}</span>`],
+      ["Prezzo medio dei venduti", fmt(soldPrice(v)), ""]]
       .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b>${c}</div>`).join("");
     document.querySelectorAll("#t tr[data-v]").forEach(tr => tr.classList.toggle("sel", tr.dataset.v === String(v)));
     const css = getComputedStyle(document.documentElement);
@@ -97,9 +111,9 @@ fetch("data/prices.csv?" + Date.now()).then(r => r.text()).then(text => {
   sel.onchange = () => show(sel.value);
   const latest = rows.filter(r => r.ts === last);
   const t = document.getElementById("t");
-  t.innerHTML = "<tr><th>Item</th><th>Rif. 10%</th><th>24h</th><th>Minimo</th><th>24h</th><th>Pezzi</th></tr>" +
+  t.innerHTML = "<tr><th>Item</th><th>Rif. 10%</th><th>24h</th><th>Minimo</th><th>24h</th><th>Venduti/g</th><th>Pezzi</th></tr>" +
     latest.sort((a, b) => a.name.localeCompare(b.name)).map(r => { const it = byItem[r.vnum];
-      return `<tr data-v="${r.vnum}"><td>${r.name}</td><td>${fmt(r.wp10)}</td><td>${pct(d24(it, "wp10"))}</td><td>${fmt(r.min)}</td><td>${pct(d24(it, "min"))}</td><td>${fmt(r.quantity)}</td></tr>`; }).join("");
+      return `<tr data-v="${r.vnum}"><td>${r.name}</td><td>${fmt(r.wp10)}</td><td>${pct(d24(it, "wp10"))}</td><td>${fmt(r.min)}</td><td>${pct(d24(it, "min"))}</td><td>${fmt(perDay(r.vnum))}</td><td>${fmt(r.quantity)}</td></tr>`; }).join("");
   t.onclick = e => { const tr = e.target.closest("tr[data-v]"); if (!tr) return;
     show(tr.dataset.v); document.getElementById("item").scrollIntoView({ behavior: "smooth" }); };
   show(sel.value);

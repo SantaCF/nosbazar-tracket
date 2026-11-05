@@ -24,6 +24,8 @@ jobs:
       - run: python3 scripts/collect.py
         env:
           NOS_SERVER: '1'   # 1 = EU-Dragonveil
+      - name: Stima vendite tra questo giro e il precedente
+        run: python3 scripts/sales.py || echo "stima vendite non riuscita"
       - name: Salva i dati nel repo
         # Se nel frattempo main è cambiato, riparte dall'ultima versione e riaggiunge solo i dati di
         # questo giro, così nessun giro va perso. Se non ci riesce, il job fallisce (e si vede).
@@ -33,6 +35,7 @@ jobs:
           mkdir -p /tmp/run
           git diff --no-color -U0 data/prices.csv | grep '^+[^+]' | cut -c2- > /tmp/run/prices.csv || true
           git diff --no-color -U0 data/summary.csv | grep '^+[^+]' | cut -c2- > /tmp/run/summary.csv || true
+          git diff --no-color -U0 data/sales.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sales.csv || true
           git ls-files --others --exclude-standard data/listings > /tmp/run/new_files
           tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $(cat /tmp/run/new_files)
           [ -s /tmp/run/new_files ] || { echo "Nessun dato nuovo"; exit 0; }
@@ -41,6 +44,7 @@ jobs:
             tar -xf /tmp/run/files.tar
             cat /tmp/run/prices.csv >> data/prices.csv
             cat /tmp/run/summary.csv >> data/summary.csv
+            cat /tmp/run/sales.csv >> data/sales.csv
             git add data
             git commit -q -m "Prezzi $(date -u +%Y-%m-%dT%H:%MZ)"
             if git push -q origin HEAD:main; then echo "Salvato al tentativo $i"; exit 0; fi
