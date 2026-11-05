@@ -1,0 +1,20 @@
+name: Cerca item per nome
+on:
+  push:
+    branches: [lookup]
+  workflow_dispatch:
+    inputs:
+      q:
+        description: 'Testo da cercare (italiano)'
+        required: true
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for q in "${{ inputs.q || '(gruppo)' }}" "(group)"; do
+            for lang in IT UK; do
+              echo "== $q [$lang]"
+              curl -sS -G "https://nosbazar.com/api/items/name-search" --data-urlencode "q=$q" --data-urlencode "lang=$lang"; echo
+            done
+          done
