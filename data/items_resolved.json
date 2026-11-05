@@ -98,5 +98,53 @@
       "vnum": 5911,
       "name": "Fiore di ghiaccio"
     }
+  ],
+  "1011": [
+    {
+      "vnum": 1011,
+      "name": "Pozione ricostituente gigante"
+    }
+  ],
+  "2029": [
+    {
+      "vnum": 2029,
+      "name": "Bottiglia vuota"
+    }
+  ],
+  "2097": [
+    {
+      "vnum": 2097,
+      "name": "Pozione magica"
+    }
+  ],
+  "1241": [
+    {
+      "vnum": 1241,
+      "name": "Ricetta per beni di consumo"
+    }
+  ],
+  "2206": [
+    {
+      "vnum": 2206,
+      "name": "Mela"
+    }
+  ],
+  "2214": [
+    {
+      "vnum": 2214,
+      "name": "Legno leggendario"
+    }
+  ],
+  "2208": [
+    {
+      "vnum": 2208,
+      "name": "Filo"
+    }
+  ],
+  "2215": [
+    {
+      "vnum": 2215,
+      "name": "Stoffa leggendaria"
+    }
   ]
 }
