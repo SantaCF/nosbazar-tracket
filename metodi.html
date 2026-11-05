@@ -45,6 +45,7 @@
   <label class="muted">Vendere entro
     <select id="hz"><option value="1">1 ora</option><option value="3" selected>3 ore</option><option value="6">6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select>
   </label>
+  <label class="muted" style="display:block;margin-top:6px"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia del NosBazar attiva (niente commissioni)</label>
   <div class="wrap"><table id="k"></table></div>
   <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
   <dialog id="dlg"><div id="dlgBody"></div><form method="dialog" style="text-align:right;margin-top:12px"><button style="font-size:16px;padding:8px 16px">Chiudi</button></form></dialog>
@@ -53,7 +54,10 @@
   <p class="muted">Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account, ciclo 5 minuti e mezze lune prodotte da te. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. Il grafico invece è solo indicativo: per ogni giro passato fa il conto su un pezzo (con "realistico": compri al prezzo lotto 2%, vendi 1 oro sotto il primo annuncio vero) e non mostra i metodi sempre in perdita.</p>
 </main>
 <script>
-const TAX = 0.005, CRAFT_H = 40 * 60;
+const CRAFT_H = 40 * 60;
+// Commissione bazar 0,5% (minimo 500 per annuncio); con la medaglia del NosBazar attiva non si paga.
+let medal = false; try { medal = localStorage.getItem("medal") === "1"; } catch (e) {}
+let TAX = medal ? 0 : 0.005;
 const NPC = { 1072: 5000, 2029: 500, 2097: 100 };
 // Ogni metodo: ingredienti comprati, prodotti venduti, unità per ora.
 const halfMoonCost = p => 20 * p(1014) + 5 * p(1028) + NPC[1072];
@@ -113,6 +117,8 @@ fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t =>
   const cap = document.getElementById("cap");
   try { const c = localStorage.getItem("cap"); if (c) cap.value = c; } catch (e) {}
   cap.oninput = () => { try { localStorage.setItem("cap", cap.value); } catch (e) {} capacity(sel.value); };
+  const md = document.getElementById("medal"); md.checked = medal;
+  md.onchange = () => { medal = md.checked; TAX = medal ? 0 : 0.005; try { localStorage.setItem("medal", medal ? "1" : "0"); } catch (e) {} draw(sel.value); };
   const hz = document.getElementById("hz");
   try { const h = localStorage.getItem("hz"); if (h) hz.value = h; } catch (e) {}
   hz.onchange = () => { try { localStorage.setItem("hz", hz.value); } catch (e) {} capacity(sel.value); };
@@ -179,7 +185,7 @@ function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craf
     if (!w) ok = false; cost += c; buy.push({ v, q, price: p.b(v), cost: c, w });
   }
   for (const [v, q] of OUTS[m.name]) { const s = sellFor(v, q * n, p.s); gross += s.price * q * n; sell.push({ v, q, ...s }); }
-  const fee = n ? Math.max(gross * TAX, 500 * Math.ceil(n * m.out / 999)) : 0;
+  const fee = n && !medal ? Math.max(gross * TAX, 500 * Math.ceil(n * m.out / 999)) : 0;
   return { n, cost, gross, fee, net: gross * (1 - TAX), profit: gross * (1 - TAX) - cost, buy, sell, ok };
 }
 // Quanti craft ci stanno nel tuo oro (costo + commissione) e quanti conviene farne (guadagno totale massimo).
