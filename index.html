@@ -100,13 +100,17 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     document.querySelectorAll("#t tr[data-v]").forEach(tr => tr.classList.toggle("sel", tr.dataset.v === String(v)));
     const css = getComputedStyle(document.documentElement);
     const ds = (label, key, color, dash) => ({ label, data: r.map(x => x[key]), borderColor: color, backgroundColor: color, borderDash: dash, pointRadius: 0, borderWidth: 2, tension: .2 });
+    // Asse y stretto sui dati (minimo e riferimento) così si vedono le variazioni.
+    const ys = r.flatMap(x => [x.min, x.wp10]).filter(y => typeof y === "number" && y > 0);
+    const lo = Math.min(...ys), hi = Math.max(...ys), pad = Math.max((hi - lo) * 0.08, hi * 0.005);
+    const yLo = ys.length ? Math.max(0, Math.floor(lo - pad)) : undefined, yHi = ys.length ? Math.ceil(hi + pad) : undefined;
     chart?.destroy();
     if (typeof Chart === "undefined") return;
     chart = new Chart(document.getElementById("c"), { type: "line",
-      data: { labels: r.map(x => when(x.ts)), datasets: [ds("Riferimento 10%", "wp10", "#2e90fa"), ds("Minimo", "min", "#f79009", [4, 4]), ds("Mediana pesata", "wmedian", "#7a5af8")] },
+      data: { labels: r.map(x => when(x.ts)), datasets: [ds("Riferimento 10%", "wp10", "#2e90fa"), ds("Minimo", "min", "#f79009", [4, 4])] },
       options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
         plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) } } },
-        scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { ticks: { color: css.getPropertyValue("--muted"), callback: fmt } } } } });
+        scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } } } } });
     try { localStorage.setItem("item", v); } catch (e) {}
   }
   sel.onchange = () => show(sel.value);
