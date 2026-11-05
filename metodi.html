@@ -38,7 +38,7 @@
     <input id="cap" inputmode="numeric" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:12em" value="25.000.000">
   </label>
   <div class="wrap"><table id="k"></table></div>
-  <p class="muted">Costo = oro speso per un craft (o una run PTS). Massimo = oro disponibile ÷ costo. Consigliati = il massimo, ma senza superare quanti pezzi il bazar vende in un giorno (stima del tracker, se c'è). Solo metodi in guadagno all'ultimo giro.</p>
+  <p class="muted">Costo = oro speso per un craft (o una run PTS) più la commissione da pagare per metterlo in vendita (0,5%, minimo 500 per annuncio). Massimo = oro disponibile ÷ costo, tenendo da parte le commissioni. Consigliati = il massimo, ma senza superare quanti pezzi il bazar vende in un giorno (stima del tracker, se c'è). Solo metodi in guadagno all'ultimo giro.</p>
   <h2 style="font-size:16px">Ultimo giro</h2>
   <div class="wrap"><table id="t"></table></div>
   <p class="muted">Ricette e ipotesi come nel calcolatore: commissione 0,5%, 40 craft al minuto, PTS 50-60 con 3 account, ciclo 5 minuti e mezze lune prodotte da te. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. È oro all'ora <b>teorico</b>: non tiene conto di quanti pezzi il bazar assorbe né del capitale (lo fa il foglio Confronto). Nel grafico non compaiono i metodi in perdita in tutti i giri (in tabella restano, in rosso). Sono prezzi di annuncio, non di vendita.</p>
@@ -100,9 +100,14 @@ function capacity(metric) {
   const p = priceAt(times[times.length - 1], metric);
   const rows = METHODS.map(m => { const c = m.cost(p), g = m.gain(p);
     if (!(c > 0) || !(g > c)) return null;
-    const max = Math.floor(capital / c), sd = soldDay[m.prod];
+    // La commissione (0,5% del totale, minimo 500 per annuncio) si paga quando metti in vendita:
+    // va tenuta da parte, quindi ogni craft "impegna" costo + commissione.
+    const fee = g / (1 - TAX) * TAX, listings = n => Math.ceil(n * m.out / 999);
+    let max = Math.floor(capital / (c + fee));
+    while (max > 0 && max * (c + fee) + 500 * listings(max) > capital) max--;
+    const sd = soldDay[m.prod];
     const advised = sd ? Math.min(max, Math.floor(sd / m.out)) : max;
-    return { m, c, profit: g - c, max, advised, limited: sd != null && advised < max, minutes: advised / m.perH * 60 }; })
+    return { m, c: c + fee, profit: g - c, max, advised, limited: sd != null && advised < max, minutes: advised / m.perH * 60 }; })
     .filter(Boolean).sort((a, b) => b.profit * b.advised - a.profit * a.advised);
   const t = n => n >= 60 ? Math.floor(n / 60) + "h " + Math.round(n % 60) + "m" : Math.round(n) + " min";
   document.getElementById("k").innerHTML = "<tr><th>Metodo</th><th>Costo</th><th>Massimo</th><th>Consigl.</th><th>Guadagno</th><th>Tempo</th></tr>" +
