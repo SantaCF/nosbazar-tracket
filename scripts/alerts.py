@@ -2,14 +2,14 @@
 
 Each run looks for the listings of your characters in the latest snapshot and sends a notification when:
   - you sold most of an item (SOLD_SHARE, default 80%) and when it is all gone;
-  - selling would take too long at your price (more than ALERT_HOURS, default 24): the units cheaper
+  - selling would take too long at your price (more than ALERT_HOURS, default 6): the units cheaper
     than yours plus yours exceed what the bazaar sells in that time (sold_day estimate). It suggests the
     price that sells everything within ALERT_HOURS.
 
 Configuration comes from repository settings (Settings > Secrets and variables > Actions), not from this public repo:
   NOS_SELLERS   variable (or secret): character names, comma separated, not case sensitive
   NTFY_TOPIC    the ntfy topic subscribed in the phone app
-  ALERT_HOURS   optional, hours you are willing to wait (default 24)
+  ALERT_HOURS   variable, optional: hours you are willing to wait, 1 to 24 (default 6)
 State (what was already notified) lives in .alerts/state.json, kept between runs by the Actions cache.
 Units that vanish before expiry count as sold: if you withdraw a listing yourself it counts as sold too.
 """
@@ -18,7 +18,10 @@ from datetime import datetime, timezone
 
 SELLERS = {s.strip().lower() for s in os.environ.get("NOS_SELLERS", "").split(",") if s.strip()}
 TOPIC = os.environ.get("NTFY_TOPIC", "").strip()
-HOURS = float(os.environ.get("ALERT_HOURS") or 24)
+try:
+    HOURS = min(24.0, max(1.0, float(os.environ.get("ALERT_HOURS") or 6)))   # 1-24 ore, default 6
+except ValueError:
+    HOURS = 6.0
 SOLD_SHARE = 0.8
 STATE = ".alerts/state.json"
 REPEAT_MIN = 6 * 60   # a "slow" warning for the same item is repeated at most every 6 hours
