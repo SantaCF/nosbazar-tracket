@@ -132,3 +132,5 @@ dialog form { text-align:right; margin-top:12px; }
 /* Avviso raccolta ferma. */
 .alert { background:var(--bad-bg); color:var(--down); border:1px solid color-mix(in srgb, var(--down) 40%, transparent); padding:10px 12px; border-radius:12px; margin:0 0 10px; font-size:14px; }
 .alert a { color:inherit; text-decoration:underline; }
+/* Sul telefono i riquadri stanno su due colonne: l'ultimo, se resta da solo, prende tutta la riga. */
+@media (max-width:480px) { .tiles { grid-template-columns:1fr 1fr; } .tiles > .tile:last-child:nth-child(odd) { grid-column:1 / -1; } }
