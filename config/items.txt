@@ -104,3 +104,8 @@ Piuma d'angelo
 # Cellon: Lv2 = 5 Polvere + 5 Cellon Lv1 + 1 attrezzo
 1017
 1018
+# Ingredienti sigilli Ragno nero (2091 Ragnatela x30, 2092 Occhio del Re dei Ragni x3) e Slade (2094 Perla dell'oscurità x40, 2172 Artiglio di Slade x30)
+2091
+2092
+2094
+2172
