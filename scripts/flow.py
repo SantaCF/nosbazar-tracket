@@ -7,7 +7,11 @@ of the previous days, recent days weighing more.
 
     python3 scripts/flow.py     # rebuild data/flow.csv from data/sales.csv and the snapshot list
 
-Output data/flow.csv: hour, vnum, units   (vnum 0: units = covered minutes of that hour)
+Output data/flow.csv: hour, vnum, units   (vnum 0: units = covered minutes of that hour;
+negative vnum: units newly listed at or below the minimum, which go ahead of the existing queue)
+
+What matters to a seller already in the queue is the NET flow: units sold minus new units listed below
+everyone. When others keep undercutting, the queue in front of you does not shrink even if a lot sells.
 """
 import collections, csv, glob, math, os
 from datetime import datetime, timedelta, timezone
@@ -51,8 +55,11 @@ def build():
     if os.path.exists("data/sales.csv"):
         for r in csv.DictReader(open("data/sales.csv", encoding="utf-8")):
             t, p = datetime.fromisoformat(r["ts"]), datetime.fromisoformat(r["prev_ts"])
-            if p >= since and r["units_gone"]:
-                spread(acc, int(r["vnum"]), p.timestamp(), t.timestamp(), int(r["units_gone"]))
+            if p >= since:
+                if r["units_gone"]:
+                    spread(acc, int(r["vnum"]), p.timestamp(), t.timestamp(), int(r["units_gone"]))
+                if r.get("units_under"):
+                    spread(acc, -int(r["vnum"]), p.timestamp(), t.timestamp(), int(r["units_under"]))
     with open(OUT, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["hour", "vnum", "units"])
@@ -72,16 +79,18 @@ def load(path=OUT):
         if v == 0:
             cover[h] = u
         else:
-            units[v][h] = u
+            units[v][h] = u      # negative vnum = undercutting supply
     return cover, units
 
 
 def expected(flow, vnum, start, hours, conf=0.5):
-    """Units of vnum expected to sell in [start, start + hours), from the same window on previous days.
+    """Net units of vnum expected to leave the queue in [start, start + hours) (sold minus new undercutting
+    listings), from the same window on previous days.
     conf = probability of selling at least that much (0.5 = median, 0.8 = beaten on 4 days out of 5).
     Returns (units, days used) or (None, days) when there are fewer than MIN_DAYS comparable days."""
     cover, units = flow
-    u = units.get(int(vnum), {})
+    sold, under = units.get(int(vnum), {}), units.get(-int(vnum), {})
+    u = {h: sold.get(h, 0) - under.get(h, 0) for h in set(sold) | set(under)}
     h0, n = int(start.timestamp() // 3600), max(1, math.ceil(hours))
     pts = []
     for k in range(1, DAYS + 1):
@@ -89,9 +98,20 @@ def expected(flow, vnum, start, hours, conf=0.5):
         cov = sum(cover.get(h, 0) for h in hs) / (60 * n)
         if cov >= MIN_COVER:
             pts.append((sum(u.get(h, 0) for h in hs) / cov * hours / n, DECAY ** (k - 1)))
-    if len(pts) < MIN_DAYS:
-        return None, len(pts)
-    return quantile(pts, 1 - conf), len(pts)
+    if len(pts) >= MIN_DAYS:
+        return max(0, quantile(pts, 1 - conf)), len(pts)
+    # Few days for this time slot: windows of the same length at any hour of the last 72 hours (sees that sales
+    # come in bursts, not the evening/night difference). Same as flow.js.
+    roll = []
+    for k in range(1, 72 - n + 2):
+        hs = range(h0 - k - n + 1, h0 - k + 1)
+        cov = sum(cover.get(h, 0) for h in hs) / (60 * n)
+        if cov >= MIN_COVER:
+            roll.append(sum(u.get(h, 0) for h in hs) / cov * hours / n)
+    if len(roll) >= 6:
+        roll.sort()
+        return max(0, roll[min(len(roll) - 1, int((1 - conf) * len(roll)))]), len(pts)
+    return None, len(pts)
 
 
 def quantile(pts, q):

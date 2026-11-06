@@ -12,7 +12,8 @@ decreases of a listing are always sales.
     python3 scripts/sales.py --all    # rebuild data/sales.csv from every snapshot
 
 Output data/sales.csv: ts, prev_ts, minutes, vnum, name, units_gone, listings_gone,
-value_gone, wavg_price, max_price, units_raw (every unit that vanished, price changes included).
+value_gone, wavg_price, max_price, units_raw (every unit that vanished, price changes included),
+units_under (units newly listed at or below the previous minimum +1%: they go ahead of the existing queue).
 Output data/owners/YYYY-MM-DD.csv: ts, vnum, owner, units, value (sales per seller, used by the
 Bilancio page for your own sales and for competition).
 Adds sold_day (clean) and sold_day_raw (every vanished unit) to data/latest.csv.
@@ -23,7 +24,7 @@ from datetime import datetime, timedelta
 MAX_GAP_MIN = 40       # larger gaps: too much can happen in between, skip
 TOL_MIN = 3            # expiry-time tolerance when matching a listing
 OUT = "data/sales.csv"
-HEADER = ["ts", "prev_ts", "minutes", "vnum", "name", "units_gone", "listings_gone", "value_gone", "wavg_price", "max_price", "units_raw"]
+HEADER = ["ts", "prev_ts", "minutes", "vnum", "name", "units_gone", "listings_gone", "value_gone", "wavg_price", "max_price", "units_raw", "units_under"]
 OWN_DIR = "data/owners"
 OWN_HEADER = ["ts", "vnum", "owner", "units", "value"]
 
@@ -52,11 +53,20 @@ def compare(prev, cur, names):
     seen = {k[0] for k in c}               # items searched successfully in the current run
     # Listings that appeared in this run, per seller and size: (vnum, owner, amount) -> [prices].
     new = collections.defaultdict(list)
+    # Units listed in this run at or below the previous run's minimum (+1%): they jump the queue ahead of
+    # everyone already listed, so they eat the demand left for those listings ("units_under").
+    pmin = {}
+    for key in p:
+        if key[0] in seen:
+            pmin[key[0]] = min(pmin.get(key[0], key[2]), key[2])
+    under = collections.Counter()
     for key, lst in c.items():
         old = [x[0] for x in p.get(key, [])]
         for exp, amt in lst:
             if not any(abs(exp - e) <= TOL_MIN for e in old):
                 new[(key[0], key[1], amt)].append(key[2])
+                if key[0] in pmin and key[2] <= pmin[key[0]] * 1.01:
+                    under[key[0]] += amt
     gone = collections.defaultdict(lambda: [0, 0, 0, 0, 0])   # vnum -> units, listings, value, max price, raw units
     owners = collections.defaultdict(lambda: [0, 0])           # (vnum, owner) -> units, value
     for key, lst in p.items():
@@ -91,8 +101,10 @@ def compare(prev, cur, names):
             g[0] += units; g[1] += 1 if left == 0 else 0; g[2] += units * price; g[3] = max(g[3], price)
             o = owners[(vnum, owner)]; o[0] += units; o[1] += units * price
     out = []
+    for vnum in under:
+        gone[vnum]   # rows also for items with new cheap listings and no sales
     for vnum, (u, l, v, mx, raw) in sorted(gone.items()):
-        out.append([cts.isoformat(), pts.isoformat(), round(minutes), vnum, names.get(vnum, ""), u, l, v, round(v / u) if u else "", mx or "", raw])
+        out.append([cts.isoformat(), pts.isoformat(), round(minutes), vnum, names.get(vnum, ""), u, l, v, round(v / u) if u else "", mx or "", raw, under[vnum]])
     own = [[cts.isoformat(), vnum, owner, u, v] for (vnum, owner), (u, v) in sorted(owners.items())]
     return out, own
 

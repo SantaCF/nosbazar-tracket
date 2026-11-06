@@ -191,7 +191,7 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
       below += am; }
     const range = dm.all && dm.all.length ? ` (nei ${dm.all.length} giorni passati, in queste ore: da ${fmt(Math.min(...dm.all))} a ${fmt(Math.max(...dm.all))})` : "";
     out.innerHTML = `Prezzo consigliato <b>${fmt(Math.max(1, price))}</b><br>` +
-      `Venduti attesi entro ${H === 1 ? "1 ora" : H + " ore"}: ${fmt(dm.units)} pezzi` + (dm.est === "fascia" ? `, superati con fiducia ${Math.round(conf * 100)}%${range}` : ` (media delle ultime 24 ore: i giorni passati con dati completi in queste ore sono ${dm.days}, ne servono almeno 3)`) +
+      `Pezzi che si liberano davanti a te entro ${H === 1 ? "1 ora" : H + " ore"}: ${fmt(dm.units)} (venduti meno i nuovi annunci messi al minimo o sotto)` + (dm.est === "fascia" ? `, superati con fiducia ${Math.round(conf * 100)}%${range}` : dm.est === "finestre" ? `, superati con fiducia ${Math.round(conf * 100)}% nelle finestre da ${H === 1 ? "1 ora" : H + " ore"} delle ultime 72 ore (${dm.windows} finestre, da ${fmt(dm.all[0])} a ${fmt(dm.all[dm.all.length - 1])}). Per la stessa fascia oraria dei giorni passati servono almeno 3 giorni di dati.` : ` (media delle ultime 24 ore: ancora pochi dati)`) +
       `<br>A questo prezzo hai davanti ${fmt(ahead)} pezzi più economici (i tuoi annunci non contano).` + (q > dm.units ? ` <span style="color:var(--up)">Anche al minimo (${fmt(a[0][0] - 1)}) ${fmt(q)} pezzi sono più di quanto si vende in queste ore.</span>` : "") +
       (capped ? " Non salgo sopra il riferimento 10%: oltre è fuori mercato." : "");
   };

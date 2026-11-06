@@ -34,7 +34,7 @@
 
   <h2>I tuoi annunci</h2>
   <div class="wrap"><table id="mine"></table></div>
-  <p class="muted" id="mineNote">"Davanti" = pezzi più economici dei tuoi messi in vendita da altri. "Si vende in" = quanto ci vuole a vendere i pezzi davanti a te più i tuoi, stimato dalle stesse ore dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni. "media 24h" = ancora pochi giorni di dati per quella fascia: uso la media delle ultime 24 ore. Oltre il limite che hai scelto in <a href="impostazioni.html">Impostazioni</a> propongo il prezzo più alto che vende tutto in tempo.</p>
+  <p class="muted" id="mineNote">"Davanti" = pezzi più economici dei tuoi messi in vendita da altri. "Si vende in" = quanto ci vuole a vendere i pezzi davanti a te più i tuoi, stimato dalle stesse ore dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni. Finché per quella fascia oraria ci sono meno di 3 giorni di dati uso tutte le finestre della stessa durata delle ultime 72 ore ("ultime 72h": vede che le vendite arrivano a blocchi, non ancora la differenza sera/notte), e se non bastano la media delle ultime 24 ore ("media 24h"). Oltre il limite che hai scelto in <a href="impostazioni.html">Impostazioni</a> propongo il prezzo più alto che vende tutto in tempo.</p>
 
   <h2>Metodi adesso</h2>
   <div class="wrap"><table id="meth"></table></div>
@@ -99,13 +99,13 @@ async function gz(url) {
       if (price == null) price = ob.length ? ob[0][0] - 1 : top;
       if (price >= top) price = null; else slow++;
     }
-    return { v, it, units, top, low, ahead, hours, price, basis: dm.est };
+    return { v, it, units, top, low, ahead, hours, price, basis: dm.est, limit: dm.units };
   }).sort((a, b) => (b.price != null) - (a.price != null) || b.units * b.top - a.units * a.top);
   const T = document.getElementById("mine");
   T.innerHTML = !names.length ? '<tr><td class="muted">Scrivi il nome del personaggio in <a href="impostazioni.html">Impostazioni</a>.</td></tr>'
     : !rows.length ? '<tr><td class="muted">Nessun annuncio tuo nell\'ultimo giro.</td></tr>'
     : "<tr><th>Item</th><th>Pezzi</th><th>Tuo prezzo</th><th class='hide-s'>Minimo</th><th>Davanti</th><th>Si vende in</th></tr>" +
-      rows.map(r => `<tr><td>${r.it.name}${r.price != null ? `<br><span class="warn">abbassa a <b>${fmt(r.price)}</b> per vendere entro ${dur(H)}</span><br><span class="muted">ribassare costa ${short((r.top - r.price) * r.units + (medal ? 0 : Math.max(r.price * r.units * 0.005, 500 * Math.ceil(r.units / 999))))} (prezzo più basso${medal ? "" : " + nuova commissione"})</span>` : ""}</td><td>${fmt(r.units)}</td><td>${fmt(r.top)}${r.low !== r.top ? `<br><span class="muted">da ${fmt(r.low)}</span>` : ""}</td><td class="hide-s">${fmt(r.it.min)}</td><td>${fmt(r.ahead)}</td><td class="${!r.basis ? "" : r.hours == null || r.hours > H ? "warn" : "pos"}">${!r.basis ? "-" : r.hours == null ? "oltre 7 giorni" : "≈ " + dur(r.hours)}${r.basis === "media24" ? '<br><span class="muted">media 24h</span>' : ""}</td></tr>`).join("");
+      rows.map(r => `<tr><td>${r.it.name}${r.price != null ? `<br><span class="warn">abbassa a <b>${fmt(r.price)}</b> per vendere entro ${dur(H)}${r.limit < r.units ? " (non garantito: gli altri scavalcano quasi quanto si vende)" : ""}</span><br><span class="muted">ribassare costa ${short((r.top - r.price) * r.units + (medal ? 0 : Math.max(r.price * r.units * 0.005, 500 * Math.ceil(r.units / 999))))} (prezzo più basso${medal ? "" : " + nuova commissione"})</span>` : ""}</td><td>${fmt(r.units)}</td><td>${fmt(r.top)}${r.low !== r.top ? `<br><span class="muted">da ${fmt(r.low)}</span>` : ""}</td><td class="hide-s">${fmt(r.it.min)}</td><td>${fmt(r.ahead)}</td><td class="${!r.basis ? "" : r.hours == null || r.hours > H ? "warn" : "pos"}">${!r.basis ? "-" : r.hours == null ? "oltre 7 giorni" : "≈ " + dur(r.hours)}${r.basis === "media24" ? '<br><span class="muted">media 24h</span>' : r.basis === "finestre" ? '<br><span class="muted">ultime 72h</span>' : ""}</td></tr>`).join("");
 
   // Metodi su un pezzo.
   const ms = buildMethods(() => TAX).map(m => { const pb = v => items[v]?.lot, ps = v => items[v]?.sell;
