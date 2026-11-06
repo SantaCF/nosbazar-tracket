@@ -53,11 +53,11 @@
     <label class="muted">Gemma della tua SP <select id="pgem"></select></label>
     <label class="muted">Da <input id="pfrom" inputmode="numeric" style="width:5em"></label>
     <label class="muted">a <input id="pto" inputmode="numeric" style="width:5em"></label>
-    <label class="muted"><span>Costo di una gemma</span> <input id="pgp" inputmode="numeric" placeholder="oro"></label>
+    <label class="muted"><span id="pgpl">Valore di una gemma</span> <input id="pgp" inputmode="numeric" placeholder="oro"></label>
   </div>
   <div class="tiles" id="ptiles"></div>
   <div class="wrap"><table id="psteps"></table></div>
-  <details class="how"><summary>Come funziona</summary><p>Ogni tentativo consuma gemme e oro; se fallisce perdi solo quelli, la carta e i punti fatti restano. Quindi per ogni punto i tentativi attesi sono 1 ÷ probabilità di successo, e la spesa attesa è la somma punto per punto. Le gemme non si scambiano: il loro costo è quello di crearle (scrivilo qui, o lascialo vuoto per vedere solo quante gemme servono). "Nel 90% dei casi" viene da 20.000 simulazioni.</p></details>
+  <details class="how"><summary>Come funziona</summary><p>Ogni tentativo consuma gemme e oro; se fallisce perdi solo quelli, la carta e i punti fatti restano. Quindi per ogni punto i tentativi attesi sono 1 ÷ probabilità di successo, e la spesa attesa è la somma punto per punto. Le gemme non si scambiano: rubini, zaffiri, topazi e ossidiane della completezza si fanno da Sarakael con gli Spiriti di Caligor (2 per le piccole, 3 per le normali), anche loro non scambiabili; le altre arrivano da scrigni o missioni. Scrivi quanto vale per te uno spirito (o la gemma), oppure lascia vuoto per vedere solo quante gemme servono. "Nel 90% dei casi" viene da 20.000 simulazioni.</p></details>
   <p class="muted">Probabilità e materiali: simulatore di perfezionamento di nosapki.com.</p>
   </section>
 </main>
@@ -209,6 +209,7 @@ function draw() {
 // Per blocco di punti: [fino a, successo %, gemme per tentativo, oro per tentativo]. Se fallisce la carta e i punti restano.
 const PF = [[10, 65, 1, 5000], [20, 55, 1, 5000], [30, 35, 2, 10000], [40, 30, 2, 10000], [50, 18, 3, 20000], [60, 17, 3, 20000],
   [80, 15, 4, 50000], [100, 11, 5, 100000]];
+const SPIRITS = { 2514: 2, 2515: 2, 2516: 2, 2517: 2, 2518: 3, 2519: 3, 2520: 3, 2521: 3 };   // Spiriti di Caligor per gemma (Sarakael)
 const pfAt = n => PF.find(b => n <= b[0]);   // dati per fare il punto n
 const GEMS = [[2514, "Rubino piccolo della completezza"], [2515, "Zaffiro piccolo della completezza"], [2517, "Topazio piccolo della completezza"],
   [2516, "Ossidiana piccola della completezza"], [2518, "Rubino della completezza"], [2519, "Zaffiro della completezza"], [2521, "Topazio della completezza"],
@@ -226,7 +227,8 @@ for (const k of ["from", "to"]) $("p" + k).addEventListener("change", () => {
 $("pgp").addEventListener("input", () => { const n = num($("pgp").value); if (n) pf.gp[pf.gem] = $("pgp").value; else delete pf.gp[pf.gem]; pfSave(); drawPf(); });
 
 function drawPf() {
-  const a = +pf.from, b = +pf.to, gp = num(pf.gp[pf.gem]);
+  const a = +pf.from, b = +pf.to, sp = SPIRITS[pf.gem], gp = num(pf.gp[pf.gem]) && num(pf.gp[pf.gem]) * (sp || 1);
+  $("pgpl").textContent = sp ? `Valore di uno Spirito di Caligor (${sp} per gemma)` : "Valore di una gemma";
   let gems = 0, gold = 0, tries = 0;
   for (let n = a + 1; n <= b; n++) { const [, s, g, o] = pfAt(n); gems += g / (s / 100); gold += o / (s / 100); tries += 1 / (s / 100); }
   // Simulazione per il caso sfortunato.
@@ -238,8 +240,8 @@ function drawPf() {
   $("ptiles").innerHTML = gp
     ? `<div class="tile"><div class="muted">Spesa attesa</div><b>${short(gems * gp + gold)}</b><div class="muted">da ${a} a ${b} punti</div></div>` +
       `<div class="tile"><div class="muted">Nel 90% dei casi</div><b>${short(p90)}</b><div class="muted">al massimo · metà delle volte ${short(p50)}</div></div>` +
-      `<div class="tile"><div class="muted">Gemme attese</div><b>${fmt(gems)}</b><div class="muted">${short(gold)} di oro · ${fmt(tries)} tentativi</div></div>`
-    : `<div class="tile"><div class="muted">Gemme attese</div><b>${fmt(gems)}</b><div class="muted">${gemName}</div></div>` +
+      `<div class="tile"><div class="muted">Gemme attese</div><b>${fmt(gems)}</b><div class="muted">${sp ? fmt(gems * sp) + " spiriti · " : ""}${short(gold)} di oro · ${fmt(tries)} tentativi</div></div>`
+    : `<div class="tile"><div class="muted">Gemme attese</div><b>${fmt(gems)}</b><div class="muted">${gemName}${sp ? ` · ${fmt(gems * sp)} Spiriti di Caligor` : ""}</div></div>` +
       `<div class="tile"><div class="muted">Nel 90% dei casi</div><b>${fmt(p90)}</b><div class="muted">gemme al massimo · metà delle volte ${fmt(p50)}</div></div>` +
       `<div class="tile"><div class="muted">Oro</div><b>${short(gold)}</b><div class="muted">${fmt(tries)} tentativi attesi</div></div>`;
   // Tabella per blocchi.
