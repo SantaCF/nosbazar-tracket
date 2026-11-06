@@ -78,3 +78,29 @@ Piuma d'angelo
 # Arbitraggi con i prodotti della PTS (06/11, ricette nosapki):
 5500
 # 5500 = Sigillo raid di Lord Draco (20 Gillion + 20 Sabbia + 20 Semi della potenza, da Grande mago Kan)
+# Altri prodotti delle risorse principali (06/11, ricette nosapki): prima solo prezzi, poi metodi se convengono
+# 5512 Sigillo Glacerus = 20 Semi + 20 Cubetti di ghiaccio (2307) + 20 Fiori di ghiaccio (Felix Frost)
+5512
+2307
+# Sigilli raid con Pezzo spazio-temporale raid (1094): 1127 Mamma Cuby (2 Semi, 2 Luna nuova, 30 Fagioli 2006),
+# 1128 Ginseng (4 Semi, 2 Mezze, 40 Vetro verde 2010), 1129 Castra (6 Semi, 3 Mezze, 30 Vetro rosso 2011),
+# 1130 Ragno nero (8 Semi, 4 Mezze, 30 Ragnatele 2091, 3 Occhi 2092), 1131 Slade (10 Semi, 5 Mezze, 40 Perle oscurità 2094, 30 Artigli 2172)
+1127
+1128
+1129
+1130
+1131
+1094
+2006
+2010
+2011
+# Pezzi di cristallo rosso/blu/bianco: 1 Luna nuova + 1 attrezzo + 5 Pozioni magiche -> 4 pezzi
+1031
+1032
+1033
+# Pietre PTS di gruppo: 1800 (12 Semi, 3 Lune nuove, 1 PTS) e 1806 (40 Semi, 7 Mezze, 1 PTS)
+1800
+1806
+# Cellon: Lv2 = 5 Polvere + 5 Cellon Lv1 + 1 attrezzo
+1017
+1018
