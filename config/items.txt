@@ -98,14 +98,45 @@ Piuma d'angelo
 1031
 1032
 1033
-# Pietre PTS di gruppo: 1800 (12 Semi, 3 Lune nuove, 1 PTS) e 1806 (40 Semi, 7 Mezze, 1 PTS)
-1800
-1806
-# Cellon: Lv2 = 5 Polvere + 5 Cellon Lv1 + 1 attrezzo
-1017
-1018
 # Ingredienti sigilli Ragno nero (2091 Ragnatela x30, 2092 Occhio del Re dei Ragni x3) e Slade (2094 Perla dell'oscurità x40, 2172 Artiglio di Slade x30)
 2091
 2092
 2094
 2172
+# Resistenze (guanti/scarpe splendenti, ricette nosapki 06/11). Lv45 376-379 guanti, 384-387 scarpe: 30 Sabbia + 10 pezzi cristallo + ricetta A + 10 vetro verde + 30 materiale alta qualità + 10 extra.
+# Lv70 380-383 guanti, 388-391 scarpe: 50 Sabbia + 5 Lune piene + ricetta B + 20 vetro verde + 10 extra (2201-2204) + 5 pietra elemento (2209-2212).
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+1237
+1238
+1239
+1240
+1034
+2036
+2040
+2044
+2048
+2201
+2202
+2203
+2204
+2205
+2207
+2209
+2210
+2211
+2212
