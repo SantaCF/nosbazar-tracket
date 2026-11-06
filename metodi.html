@@ -266,7 +266,35 @@ function planList(counts, p) {
       <tr><td><b>Totale</b></td><td></td><td><b>${short(x.cost)}</b></td></tr></table></div>
     ${craftRows ? `<div class="wrap"><table><tr><th>Da craftare</th><th>Totale</th></tr>${craftRows}</table></div>` : ""}
     <div class="wrap"><table><tr><th>Da vendere</th><th>Pezzi</th><th>A</th><th>Incasso</th></tr>${sellRows}
-      <tr><td colspan="3">Commissione da tenere da parte</td><td>${short(x.fee)}</td></tr></table></div>`;
+      <tr><td colspan="3">Commissione da tenere da parte</td><td>${short(x.fee)}</td></tr></table></div>
+    <button id="savePlan" style="margin-top:10px">Salva il piano nel Bilancio</button>
+    <span class="muted" id="savePlanMsg"></span>`;
+  // Un lotto per ogni prodotto da vendere. Costo: ogni metodo porta il suo (costo da solo, riscalato perché la somma
+  // sia il costo vero del piano con gli acquisti in comune); se un metodo usa i prodotti di un altro (mezze lune per la PTS)
+  // il costo di quei pezzi passa a chi li usa; dentro un metodo il costo si divide tra i prodotti in base al valore.
+  // È una stima: si corregge con ✎ nel Bilancio.
+  document.getElementById("savePlan").onclick = e => {
+    let b; try { b = JSON.parse(localStorage.getItem("bilancio") || "{}"); } catch (err) { b = {}; }
+    b.moves ??= []; b.lots ??= []; b.seller ??= "";
+    const t0 = new Date().toISOString(), price = Object.fromEntries(x.sell.map(s => [s.v, s.price]));
+    const act = METHODS.map((m, i) => ({ m, n: counts[i] })).filter(a => a.n);
+    act.forEach(a => { a.cost = plan(a.m, a.n, p).cost; a.outs = a.m.outs.map(([v, q]) => [String(v), q * a.n]); });
+    const scale = x.cost / (act.reduce((t, a) => t + a.cost, 0) || 1); act.forEach(a => a.cost *= scale);
+    Object.entries(x.own).forEach(([v, used]) => {
+      const prod = act.filter(a => a.outs.some(o => o[0] === v)), cons = act.filter(a => a.m.ing.some(([w]) => String(w) === v));
+      const made = prod.reduce((t, a) => t + a.outs.find(o => o[0] === v)[1], 0), need = cons.reduce((t, a) => t + a.m.ing.find(([w]) => String(w) === v)[1] * a.n, 0);
+      if (!made || !need) return;
+      prod.forEach(a => { const o = a.outs.find(o => o[0] === v), part = used * o[1] / made, val = a.outs.reduce((t, [w, q]) => t + q * (price[w] || 0), 0) || 1;
+        const moved = a.cost * part * (price[v] || 0) / val; a.cost -= moved; o[1] -= part;
+        cons.forEach(c => c.cost += moved * c.m.ing.find(([w]) => String(w) === v)[1] * c.n / need); }); });
+    const lot = {};
+    act.forEach(a => { const val = a.outs.reduce((t, [w, q]) => t + q * (price[w] || 0), 0) || 1;
+      a.outs.forEach(([w, q]) => { if (q <= 0.5 || !price[w]) return; const l = (lot[w] ??= { q: 0, c: 0 }); l.q += q; l.c += a.cost * q * price[w] / val; }); });
+    const from = act.map(a => a.m.name).join(" + ");
+    Object.entries(lot).forEach(([v, l], i) => b.lots.push({ t: t0.replace("Z", i + "Z"), vnum: v, name: nm(v), qty: Math.round(l.q), cost: Math.round(l.c), from: "Piano: " + from }));
+    try { localStorage.setItem("bilancio", JSON.stringify(b)); e.target.textContent = "Salvato ✓";
+      document.getElementById("savePlanMsg").innerHTML = ` ${Object.keys(lot).length} lotti, costo totale ${short(x.cost)}. <a href="bilancio.html">Apri il Bilancio</a>`; }
+    catch (err) { e.target.textContent = "Non salvato: memoria del browser non disponibile"; } };
 }
 async function shopping(r, p) {
   await loadBook();
