@@ -64,42 +64,15 @@
   <div class="wrap"><table id="t"></table></div>
   <p class="muted">Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account, ciclo 5 minuti e mezze lune prodotte da te. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. Il grafico invece è solo indicativo: per ogni giro passato fa il conto su un pezzo (con "realistico": compri al prezzo lotto 2%, vendi 1 oro sotto il primo annuncio vero) e non mostra i metodi sempre in perdita.</p>
 </main>
+<script src="ricette.js"></script>
 <script>
-const CRAFT_H = 40 * 60;
 // Commissione bazar 0,5% (minimo 500 per annuncio); con la medaglia del NosBazar attiva non si paga.
 let medal = false; try { medal = localStorage.getItem("medal") === "1"; } catch (e) {}
 let TAX = medal ? 0 : 0.005;
-const NPC = { 1072: 5000, 2029: 500, 2097: 100 };
-// Ogni metodo: ingredienti comprati, prodotti venduti, unità per ora.
-const halfMoonCost = p => 20 * p(1014) + 5 * p(1028) + NPC[1072];
-// unit = un craft (o una run per la PTS): cost = oro speso, gain = ricavo netto, perH = unità all'ora,
-// prod/out = prodotto venduto e pezzi per unità (per il limite di vendita giornaliero).
-const METHODS = [
-  { name: "PTS 50-60", unit: "run", need: [1012, 1092, 1014, 1028, 1013, 1016, 1027], color: "#2e90fa", perH: 12, prod: 1013, out: 90,
-    cost: p => 31 * p(1012) + 5 * halfMoonCost(p) + p(1092) + 3 * p(1012),
-    gain: p => 3 * (30 * p(1013) + 4 * p(1016) + 70 * p(1027)) * (1 - TAX) },
-  { name: "Mezze lune", unit: "craft", need: [1014, 1028, 1029], color: "#7a5af8", perH: CRAFT_H, prod: 1029, out: 1,
-    cost: p => halfMoonCost(p), gain: p => p(1029) * (1 - TAX) },
-  { name: "Luna piena", unit: "craft", need: [1014, 1029, 1030], color: "#f79009", perH: CRAFT_H, prod: 1030, out: 1,
-    cost: p => 50 * p(1014) + 5 * p(1029) + NPC[1072], gain: p => p(1030) * (1 - TAX) },
-  { name: "Pozione HP divina", unit: "craft", need: [1011, 2196, 1242], color: "#12b76a", perH: CRAFT_H, prod: 1242, out: 10,
-    cost: p => 30 * p(1011) + 20 * NPC[2029] + 20 * NPC[2097] + 3 * p(2196), gain: p => 10 * p(1242) * (1 - TAX) },
-  { name: "Pozione dell'esperienza", unit: "craft", need: [1241, 2196, 2206, 2214, 1249], color: "#ee46bc", perH: CRAFT_H, prod: 1249, out: 1,
-    cost: p => p(1241) + 5 * NPC[2029] + 5 * NPC[2097] + 7 * p(2196) + 7 * p(2206) + p(2214), gain: p => p(1249) * (1 - TAX) },
-  { name: "Pozione SP base", unit: "craft", need: [1241, 2196, 2208, 2215, 1245], color: "#0ba5ec", perH: CRAFT_H, prod: 1245, out: 1,
-    cost: p => p(1241) + 5 * NPC[2029] + 5 * NPC[2097] + 5 * p(2196) + 5 * p(2208) + p(2215), gain: p => p(1245) * (1 - TAX) },
-];
+// Ricette in ricette.js (unica fonte, condivisa con la pagina Oggi).
+const METHODS = buildMethods(() => TAX);
 METHODS.forEach(m => m.perHour = (pb, ps) => (m.gain(ps) - m.cost(pb)) * m.perH);
-// Lista della spesa per un craft (o una run): [vnum, quantità]; i numeri NPC sono comprati da NPC a prezzo fisso.
-const NPC_NAME = { 1072: "Attrezzi di produzione per gemme (NPC)", 2029: "Bottiglia vuota (NPC)", 2097: "Pozione magica (NPC)" };
-const ING = {
-  "PTS 50-60": [[1012, 34], [1092, 1], [1014, 100], [1028, 25], [1072, 5]],
-  "Mezze lune": [[1014, 20], [1028, 5], [1072, 1]],
-  "Luna piena": [[1014, 50], [1029, 5], [1072, 1]],
-  "Pozione HP divina": [[1011, 30], [2029, 20], [2097, 20], [2196, 3]],
-  "Pozione dell'esperienza": [[1241, 1], [2029, 5], [2097, 5], [2196, 7], [2206, 7], [2214, 1]],
-  "Pozione SP base": [[1241, 1], [2029, 5], [2097, 5], [2196, 5], [2208, 5], [2215, 1]],
-};
+const ING = Object.fromEntries(METHODS.map(m => [m.name, m.ing]));
 const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
 const short = n => n == null ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
 const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
@@ -144,11 +117,7 @@ function priceAt(ts, metric) { const row = byTs.get(ts) || {}, col = c => v => {
   if (metric !== "real") { const p = col(metric); return { b: p, s: p }; }
   const sell = sellByTs.get(ts) || {}, ref = col("wp10");
   return { b: col("lot_price"), s: v => sell[v] > 0 ? sell[v] : ref(v) }; }
-// Prodotti venduti per un craft (o una run): [vnum, pezzi].
-const OUTS = {
-  "PTS 50-60": [[1013, 90], [1016, 12], [1027, 210]], "Mezze lune": [[1029, 1]], "Luna piena": [[1030, 1]],
-  "Pozione HP divina": [[1242, 10]], "Pozione dell'esperienza": [[1249, 1]], "Pozione SP base": [[1245, 1]],
-};
+const OUTS = Object.fromEntries(METHODS.map(m => [m.name, m.outs]));
 const hours = () => +(document.getElementById("hz")?.value || 3);
 const capital = () => +String(document.getElementById("cap").value).replace(/[^0-9]/g, "") || 0;
 let book = null;   // vnum -> [[prezzo, pezzi], ...] dall'ultimo giro, in ordine di prezzo
@@ -221,7 +190,7 @@ async function capacity(metric) {
     const v = x.profit / n * m.perH; return { m, n, v: isFinite(v) ? v : null }; }).sort((a, b) => (b.v ?? -Infinity) - (a.v ?? -Infinity));
   document.getElementById("t").innerHTML = "<tr><th>Metodo</th><th>Oro/ora</th><th>Su quanti</th><th>Nel grafico</th></tr>" +
     live.map(r => `<tr><td>${r.m.name}</td><td class="${cls(r.v)}">${fmt(r.v)}</td><td>${r.v == null ? "-" : fmt(r.n) + " " + (r.m.unit === "run" ? "run" : "craft")}</td><td>${chartInfo.get(r.m.name) || "-"}</td></tr>`).join("");
-  const t = n => n >= 60 ? Math.floor(n / 60) + "h " + Math.round(n % 60) + "m" : Math.round(n) + " min";
+  const t = n => { n = Math.round(n); return n >= 60 ? Math.floor(n / 60) + "h " + (n % 60) + "m" : n + " min"; };
   document.getElementById("k").innerHTML = "<tr><th>Metodo</th><th>Massimo</th><th>Consigl.</th><th>Guadagno</th><th>Tempo</th></tr>" +
     rows.map((r, i) => `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.top.n)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.top.profit)}</td><td>${t(r.top.n / r.m.perH * 60)}</td></tr>`).join("")
     || '<tr><td class="muted">Nessun metodo in guadagno all\'ultimo giro.</td></tr>';
@@ -269,7 +238,7 @@ function bestPlan(p) {
   return { counts: bestR.c, cur: bestR.r, lastRoi: null, mins: mins(bestR.c), capLeft: cap - total };
 }
 function renderPlan(p) {
-  const { counts, cur, lastRoi } = bestPlan(p), t = n => n >= 60 ? Math.floor(n / 60) + "h " + Math.round(n % 60) + "m" : Math.round(n) + " min";
+  const { counts, cur, lastRoi } = bestPlan(p), t = n => { n = Math.round(n); return n >= 60 ? Math.floor(n / 60) + "h " + (n % 60) + "m" : n + " min"; };
   const rows = METHODS.map((m, i) => ({ m, n: counts[i], solo: plan(m, counts[i], p) })).filter(r => r.n > 0);
   const mins = rows.reduce((a, r) => a + r.n / r.m.perH * 60, 0);
   document.getElementById("pf").innerHTML = rows.length ? "<tr><th>Metodo</th><th>Quanti</th><th>Spesa</th><th>Tempo</th></tr>" +
