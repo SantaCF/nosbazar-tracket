@@ -30,6 +30,7 @@
   <details class="how"><summary>Nota sulle stime</summary><p>La stima dei venduti è per eccesso, perché conta anche chi ritira gli annunci: se i numeri ti sembrano ottimistici, abbassa le ore. Sono considerati solo gli item che il tracker segue (config/items.txt).</p></details>
   <dialog id="dlg"><div id="dlgBody"></div><form method="dialog"><button>Chiudi</button></form></dialog>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="flow.js"></script>
 <script>
 const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
@@ -160,10 +161,60 @@ function detail(r) {
     ${r.kind === "now" ? `<tr><td>Tempo stimato per vendere</td><td>${hrs(hoursToSell(r.it.vnum, Date.now(), r.ahead + r.q, r.it.day))}</td></tr>` : ""}
     <tr><td>Venduti al giorno (stima)</td><td>${fmt(r.it.day)}</td></tr>
     <tr><td>Pezzi in vendita ora</td><td>${fmt(r.it.qty)}</td></tr></table>
+    <h3 style="margin:16px 0 0;font-size:15px">Il prezzo di rivendita è normale o un caso?</h3>
+    <p id="freg" style="margin:6px 0 0">Carico lo storico…</p>
+    <div class="chart" style="height:230px"><canvas id="fc"></canvas></div>
     ${topOwner && topOwner[1] / r.q > 0.6 && lines.length > 1 ? `<p class="warn" style="color:var(--down)">Il ${pct(topOwner[1] / r.q)} dei pezzi è di un solo venditore (${topOwner[0]}): potrebbe rimetterne altri allo stesso prezzo.</p>` : ""}
     <div class="wrap"><table><tr><th>Venditore</th><th>Pezzi</th><th>Prezzo</th></tr>${shown}</table></div>
     <p class="muted">Annunci dell'ultimo giro: nel frattempo qualcuno potrebbe averli già comprati. Controlla in gioco prima di comprare.</p>`;
   document.getElementById("dlg").showModal();
+  history(r).catch(e => { document.getElementById("freg").textContent = "Storico non disponibile: " + e; });
+}
+
+// Storico per il dettaglio: minimo (prices.csv), prezzo di vendita realistico (sell.csv), vendite (sales.csv).
+// Caricato una volta sola, alla prima apertura di un dettaglio.
+let hist = null, fchart;
+async function loadHist() {
+  if (hist) return hist;
+  const [pt, st] = await Promise.all([get("data/prices.csv"), get("data/sales.csv", true)]);
+  hist = { min: {}, sales: {} };
+  csv(pt).forEach(o => (hist.min[o.vnum] ??= []).push([o.ts, +o.min]));
+  if (st) csv(st).forEach(o => { if (+o.units_gone > 0) (hist.sales[o.vnum] ??= []).push({ ts: o.prev_ts, u: +o.units_gone, avg: +o.wavg_price, max: +o.max_price }); });
+  return hist;
+}
+async function history(r) {
+  const h = await loadHist(), v = r.it.vnum, from = Date.now() - 7 * 864e5, inWin = t => +new Date(t) >= from;
+  const mins = (h.min[v] || []).filter(x => inWin(x[0])), sells = Object.fromEntries((sellHist[v] || []).filter(x => inWin(x[0])));
+  // Vendite al prezzo di rivendita o sopra (scarto i valori fuori scala, tipo annunci da milioni ritirati).
+  const sales = (h.sales[v] || []).filter(x => inWin(x.ts) && x.max <= r.sell * 3), hit = sales.filter(x => x.max >= r.sell);
+  // Momenti diversi = vendite separate da almeno 2 ore: dieci giri di fila contano come un momento solo.
+  let moments = 0, lastT = -Infinity; const days = new Set();
+  hit.forEach(x => { const t = +new Date(x.ts); if (t - lastT > 2 * 36e5) moments++; lastT = t; days.add(new Date(t).toLocaleDateString("it-IT")); });
+  const units = hit.reduce((a, x) => a + x.u, 0), runs = Object.values(sells), share = runs.length ? runs.filter(x => x >= r.sell).length / runs.length : null;
+  const span = mins.length ? (Date.now() - new Date(mins[0][0])) / 864e5 : 0, spanTxt = span >= 6.5 ? "Negli ultimi 7 giorni" : `In ${span < 1 ? Math.max(1, Math.round(span * 24)) + " ore" : fmt(span) + (Math.round(span) === 1 ? " giorno" : " giorni")} di dati`;
+  const verdict = moments >= 3 && days.size >= 2 ? ["pos", "Sembra regolare"] : moments >= 2 ? ["warn", "Succede, ma ancora poche volte"] : ["neg", moments ? "Visto una volta sola: potrebbe essere un caso" : "Mai visto: il prezzo di rivendita non è ancora stato toccato"];
+  document.getElementById("freg").innerHTML = `<b class="${verdict[0]}">${verdict[1]}.</b> ${spanTxt} si è venduto a ${fmt(r.sell)} o più in <b>${fmt(moments)}</b> ${moments === 1 ? "momento" : "momenti diversi"}` +
+    (moments ? ` (${fmt(units)} pezzi, ${days.size === 1 ? "tutti nella stessa data" : "in " + days.size + " date diverse"})` : "") +
+    (share != null ? `; il prezzo di vendita realistico è stato a quel livello il ${pct(share)} del tempo.` : ".") +
+    (span < 3 ? ' <span class="muted">Pochi giorni di dati: più ne raccogliamo, più il giudizio è affidabile.</span>' : "");
+  fchart?.destroy();
+  if (typeof Chart === "undefined" || !mins.length) return;
+  const css = getComputedStyle(document.documentElement), col = k => css.getPropertyValue(k).trim();
+  const sAt = {}; sales.forEach(x => sAt[x.ts] = x);
+  // Asse stretto sui prezzi che contano: le vendite fuori scala (ritiri di annunci assurdi) non si disegnano.
+  const ref = mins.map(x => x[1]).concat(Object.values(sells), [r.sell, r.top]).filter(y => y > 0), lo = Math.min(...ref), hi = Math.max(...ref);
+  const pts = mins.map(([t]) => sAt[t] && sAt[t].avg >= lo * 0.8 && sAt[t].avg <= hi * 1.25 ? sAt[t].avg : null), when = t => new Date(t).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const line = (label, data, color, dash) => ({ label, data, borderColor: color, backgroundColor: color, borderDash: dash, pointRadius: 0, borderWidth: 2, tension: .2 });
+  fchart = new Chart(document.getElementById("fc"), { type: "line",
+    data: { labels: mins.map(x => when(x[0])), datasets: [
+      line("Minimo", mins.map(x => x[1]), col("--muted"), [4, 4]),
+      line("Vendita realistica", mins.map(([t]) => sells[t] ?? null), col("--link")),
+      { label: "Venduti a", data: pts, showLine: false, pointRadius: pts.map((y, i) => y == null ? 0 : Math.min(5, 2 + Math.log10(sAt[mins[i][0]].u + 1))), borderColor: col("--up"), backgroundColor: col("--up") },
+      line("Rivendi a", mins.map(() => r.sell), col("--acc"), [2, 3]),
+      line("Compri fino a", mins.map(() => r.top), col("--down"), [2, 3])] },
+    options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, spanGaps: true,
+      plugins: { legend: { labels: { color: col("--fg"), boxWidth: 12, font: { size: 11 } } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sAt[mins[c.dataIndex][0]].u)} pz)` : "") } } },
+      scales: { x: { ticks: { color: col("--muted"), maxTicksLimit: 5 } }, y: { ticks: { color: col("--muted"), callback: fmt } } } } });
 }
 </script>
 <script src="stato.js"></script>
