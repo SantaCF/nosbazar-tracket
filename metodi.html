@@ -28,6 +28,7 @@
   </div>
   <h2>Piano consigliato</h2>
   <div class="wrap"><table id="pf"></table></div>
+  <div id="pfList"></div>
   <details class="how"><summary>Come funziona</summary><p id="pfNote">Cerco la combinazione di metodi (fino ai 3 migliori) che guadagna di più restando nel tuo oro e nelle tue ore, provando tutte le combinazioni di quantità e tenendo conto che i metodi si influenzano: i materiali comuni (per esempio la polvere per mezze lune e luna piena) li compri una volta sola salendo di prezzo, e i prodotti si sommano nella vendita. Se fare di più farebbe guadagnare meno (prezzi di acquisto che salgono, di vendita che scendono), lascio oro libero.</p></details>
   <h2>Quanto puoi fare con ogni metodo</h2>
   <div class="wrap"><table id="k"></table></div>
@@ -188,18 +189,22 @@ async function capacity(metric) {
 }
 // Piano su più metodi insieme: costo e ricavo calcolati sui libri condivisi (domanda di ogni materiale e offerta
 // di ogni prodotto sommate tra i metodi), poi allocazione a pezzetti in base al rendimento marginale.
-function portfolio(counts, p) {
-  const need = {}, out = {}; let cost = 0;
+function portfolio(counts, p, detail) {
+  const need = {}, out = {}, npc = {}; let cost = 0;
   METHODS.forEach((m, i) => { const n = counts[i]; if (!n) return;
-    ING[m.name].forEach(([v, q]) => { if (NPC[v]) cost += NPC[v] * q * n; else need[v] = (need[v] || 0) + q * n; });
+    ING[m.name].forEach(([v, q]) => { if (NPC[v]) { cost += NPC[v] * q * n; npc[v] = (npc[v] || 0) + q * n; } else need[v] = (need[v] || 0) + q * n; });
     OUTS[m.name].forEach(([v, q]) => out[v] = (out[v] || 0) + q * n); });
   // Se un metodo produce quello che un altro consuma (es. mezze lune), usi i tuoi: né compri né vendi quella parte.
-  for (const v of Object.keys(need)) if (out[v]) { const x = Math.min(need[v], out[v]); need[v] -= x; out[v] -= x; if (!need[v]) delete need[v]; if (!out[v]) delete out[v]; }
-  for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q); cost += w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; }
+  const own = {};
+  for (const v of Object.keys(need)) if (out[v]) { const x = Math.min(need[v], out[v]); own[v] = x; need[v] -= x; out[v] -= x; if (!need[v]) delete need[v]; if (!out[v]) delete out[v]; }
+  const buy = [], sell = [];
+  for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q), c = w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; cost += c; if (detail) buy.push({ v, q, cost: c, w }); }
   let gross = 0, fee = 0;
   const win = METHODS.reduce((a, m, i) => a + (counts[i] || 0) / m.perH, 0) + hours();
-  for (const [v, q] of Object.entries(out)) { const g = sellFor(v, q, p.s, win).price * q; gross += g; if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); }
-  return { cost, fee, profit: gross - fee - cost };
+  for (const [v, q] of Object.entries(out)) { const s = sellFor(v, q, p.s, win), g = s.price * q; gross += g; if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); if (detail) sell.push({ v, q, ...s }); }
+  if (!detail) return { cost, fee, profit: gross - fee - cost };
+  Object.entries(npc).forEach(([v, q]) => buy.push({ v, q, cost: NPC[v] * q, npc: true }));
+  return { cost, fee, profit: gross - fee - cost, gross, buy, sell, own, win };
 }
 const playHours = () => Math.max(0.25, +String(document.getElementById("hrs")?.value || "3").replace(",", ".") || 3);
 function bestPlan(p) {
@@ -234,12 +239,34 @@ function renderPlan(p) {
   const { counts, cur, lastRoi } = bestPlan(p), t = n => { n = Math.round(n); return n >= 60 ? Math.floor(n / 60) + "h " + (n % 60) + "m" : n + " min"; };
   const rows = METHODS.map((m, i) => ({ m, n: counts[i], solo: plan(m, counts[i], p) })).filter(r => r.n > 0);
   const mins = rows.reduce((a, r) => a + r.n / r.m.perH * 60, 0);
-  document.getElementById("pf").innerHTML = rows.length ? "<tr><th>Metodo</th><th>Quanti</th><th>Spesa</th><th>Tempo</th></tr>" +
+  document.getElementById("pf").innerHTML = rows.length ? "<tr><th>Metodo</th><th>Quanti</th><th>Spesa da solo</th><th>Tempo</th></tr>" +
     rows.map(r => `<tr><td>${r.m.name}</td><td>${fmt(r.n)} ${r.m.unit === "run" ? "run" : "craft"}</td><td>${short(r.solo.cost)}</td><td>${t(r.n / r.m.perH * 60)}</td></tr>`).join("") +
     `<tr><td><b>Totale</b></td><td></td><td><b>${short(cur.cost + cur.fee)}</b><br><span class="muted">commiss. ${short(cur.fee)}</span></td><td><b>${t(mins)}</b></td></tr>
      <tr><td><b>Guadagno atteso</b></td><td colspan="3" class="pos" style="text-align:right"><b>${short(cur.profit)}</b> (${(cur.profit / (cur.cost + cur.fee) * 100).toFixed(1)}%)</td></tr>
      <tr><td class="muted">Limite</td><td colspan="3" class="muted" style="text-align:right">${mins >= playHours() * 60 * 0.95 ? "le ore" : capital() - cur.cost - cur.fee < capital() * 0.03 ? "l'oro" : "il mercato"}${capital() - cur.cost - cur.fee > capital() * 0.03 ? " · " + short(capital() - cur.cost - cur.fee) + " restano liberi" : ""}</td></tr>`
     : '<tr><td class="muted">Nessun metodo conviene adesso.</td></tr>';
+  planList(counts, p);
+}
+// Lista unica del piano: tutto quello che compri, crafti e vendi, sommato tra i metodi (stessi conti del guadagno atteso).
+function planList(counts, p) {
+  const el = document.getElementById("pfList"); if (!counts.some(n => n)) { el.innerHTML = ""; return; }
+  const x = portfolio(counts, p, true), last = byTs.get(times[times.length - 1]) || {}, nm = v => NPC_NAME[v] || last[v]?.name || v;
+  // Da craftare: prodotti dei metodi "craft" più gli intermedi fatti dentro un metodo (es. mezze lune per la PTS).
+  const craft = {};
+  METHODS.forEach((m, i) => { const n = counts[i]; if (!n) return;
+    if (m.unit === "craft") { const c = (craft[m.prod] ??= { q: 0, use: [] }); c.q += m.out * n; }
+    m.crafts.forEach(([v, q]) => { const c = (craft[v] ??= { q: 0, use: [] }); c.q += q * n; c.use.push(fmt(q * n) + " dentro " + m.name); }); });
+  Object.entries(x.own).forEach(([v, q]) => craft[v]?.use.push(fmt(q) + " le usi tu (non le compri)"));
+  x.sell.forEach(s => craft[s.v]?.use.push(fmt(s.q) + " da vendere"));
+  const buyRows = x.buy.sort((a, b) => b.cost - a.cost).map(b => `<tr><td>${nm(b.v)}</td><td><b>${fmt(b.q)}</b></td><td>${short(b.cost)}${b.w ? (b.w.short > 0 ? ' <span class="warn">non bastano</span>' : `<br><span class="muted">fino a ${fmt(b.w.top)}</span>`) : ""}</td></tr>`).join("");
+  const craftRows = Object.entries(craft).map(([v, c]) => `<tr><td>${nm(v)}${c.use.length ? `<br><span class="muted">${c.use.join(" · ")}</span>` : ""}</td><td><b>${fmt(c.q)}</b></td></tr>`).join("");
+  const sellRows = x.sell.map(s => `<tr><td>${nm(s.v)}</td><td><b>${fmt(s.q)}</b></td><td>${fmt(s.price)}${s.est ? ' <span class="muted">(stima)</span>' : ""}</td><td>${short(s.price * s.q)}</td></tr>`).join("");
+  el.innerHTML = `<h3 style="margin:16px 0 0;font-size:15px">Cosa ti serve per tutto il piano</h3>
+    <div class="wrap"><table><tr><th>Da comprare</th><th>Totale</th><th>Costo</th></tr>${buyRows}
+      <tr><td><b>Totale</b></td><td></td><td><b>${short(x.cost)}</b></td></tr></table></div>
+    ${craftRows ? `<div class="wrap"><table><tr><th>Da craftare</th><th>Totale</th></tr>${craftRows}</table></div>` : ""}
+    <div class="wrap"><table><tr><th>Da vendere</th><th>Pezzi</th><th>A</th><th>Incasso</th></tr>${sellRows}
+      <tr><td colspan="3">Commissione da tenere da parte</td><td>${short(x.fee)}</td></tr></table></div>`;
 }
 async function shopping(r, p) {
   await loadBook();
