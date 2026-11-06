@@ -344,5 +344,113 @@
       "vnum": 5500,
       "name": "Sigillo del raid di Lord Draco"
     }
+  ],
+  "5512": [
+    {
+      "vnum": 5512,
+      "name": "Sigillo del raid di Glacerus"
+    }
+  ],
+  "2307": [
+    {
+      "vnum": 2307,
+      "name": "Cubetti di ghiaccio"
+    }
+  ],
+  "1127": [
+    {
+      "vnum": 1127,
+      "name": "Sigillo del raid di Madre Cuby"
+    }
+  ],
+  "1128": [
+    {
+      "vnum": 1128,
+      "name": "Sigillo del raid di Ginseng"
+    }
+  ],
+  "1129": [
+    {
+      "vnum": 1129,
+      "name": "Sigillo del raid di Castra oscuro"
+    }
+  ],
+  "1130": [
+    {
+      "vnum": 1130,
+      "name": "Sigillo del raid del Ragno nero gigante"
+    }
+  ],
+  "1131": [
+    {
+      "vnum": 1131,
+      "name": "Sigillo del raid dello Slade gigante"
+    }
+  ],
+  "1094": [
+    {
+      "vnum": 1094,
+      "name": "Pezzo spazio-temporale (raid)"
+    }
+  ],
+  "2006": [
+    {
+      "vnum": 2006,
+      "name": "Fagiolo piccolo"
+    }
+  ],
+  "2010": [
+    {
+      "vnum": 2010,
+      "name": "Pezzo di vetro verde"
+    }
+  ],
+  "2011": [
+    {
+      "vnum": 2011,
+      "name": "Pezzo di vetro rosso"
+    }
+  ],
+  "1031": [
+    {
+      "vnum": 1031,
+      "name": "Frammento di cristallo rosso"
+    }
+  ],
+  "1032": [
+    {
+      "vnum": 1032,
+      "name": "Frammento di cristallo blu"
+    }
+  ],
+  "1033": [
+    {
+      "vnum": 1033,
+      "name": "Frammento di cristallo bianco"
+    }
+  ],
+  "1800": [
+    {
+      "vnum": 1800,
+      "name": "Combatti contro i Vampy di fuoco forti."
+    }
+  ],
+  "1806": [
+    {
+      "vnum": 1806,
+      "name": "Morte del Re dei Ragni"
+    }
+  ],
+  "1017": [
+    {
+      "vnum": 1017,
+      "name": "Cellon (liv. 1)"
+    }
+  ],
+  "1018": [
+    {
+      "vnum": 1018,
+      "name": "Cellon (liv. 2)"
+    }
   ]
 }
