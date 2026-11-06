@@ -128,7 +128,9 @@ async function loadBook() {
     try { text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); }
     catch (e) { text = new TextDecoder().decode(buf); }       // già decompresso dal server
     const [h, ...ls] = text.trim().split(/\r?\n/), k = parse(h), b = {};
-    ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]);
+    // I tuoi annunci li tolgo: non compri da te stesso (nome dei personaggi da Impostazioni).
+    let mine = []; try { mine = (JSON.parse(localStorage.getItem("bilancio") || "{}").seller || "").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); } catch (e) {}
+    ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); if (mine.includes((o.owner || "").toLowerCase())) return;
       for (let c = 0; c < (+o.count || 1); c++) (b[o.vnum] ??= []).push([+o.price, +o.amount]); });
     Object.values(b).forEach(a => a.sort((x, y) => x[0] - y[0]));
     book = b;

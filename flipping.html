@@ -78,7 +78,8 @@ const feeFor = (gross, q) => medal() ? 0 : Math.max(gross * 0.005, 500 * Math.ce
   const res = await fetch(`data/listings/${ts.getUTCFullYear()}-${pad(ts.getUTCMonth() + 1)}-${pad(ts.getUTCDate())}/${pad(ts.getUTCHours())}${pad(ts.getUTCMinutes())}.csv.gz`);
   const buf = await res.arrayBuffer(); let text;
   try { text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); } catch (e) { text = new TextDecoder().decode(buf); }
-  csv(text).forEach(o => { for (let c = 0; c < (+o.count || 1); c++) (book[o.vnum] ??= []).push([+o.price, +o.amount, o.owner]); });
+  let mine = []; try { mine = (JSON.parse(localStorage.getItem("bilancio") || "{}").seller || "").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); } catch (e) {}   // i tuoi annunci: non compri da te stesso
+  csv(text).forEach(o => { if (mine.includes((o.owner || "").toLowerCase())) return; for (let c = 0; c < (+o.count || 1); c++) (book[o.vnum] ??= []).push([+o.price, +o.amount, o.owner]); });
   Object.values(book).forEach(a => a.sort((x, y) => x[0] - y[0]));
   document.getElementById("updated").textContent = "Annunci dell'ultimo giro: " + new Date(lastTs).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const cap = document.getElementById("cap"), hz = document.getElementById("hz"), md = document.getElementById("medal");
