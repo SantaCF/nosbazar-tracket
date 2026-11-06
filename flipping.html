@@ -131,18 +131,42 @@ function flipHold(it) {
   return best && best.profit > 0 && best.profit >= best.cost * 0.01 ? best : null;
 }
 let rowsNow = [], rowsHold = [];
+// Ordine delle tabelle: tocchi il titolo di una colonna (di nuovo per invertire). Una scelta per tabella, salvata
+// (chiave "fsort", es. {"now":"profit:-1"}). Di default per guadagno, dal più alto.
+const FCOLS = [["name", "Item", r => r.it.name], ["q", "Compra", r => r.q], ["sell", "Rivendi a", r => r.sell],
+  ["profit", "Guadagno", r => r.profit], ["pct", "Rend.", r => r.profit / r.cost], ["extra", null, r => r.extraV]];
+let fsort = { now: "profit:-1", hold: "profit:-1" };
+try { Object.assign(fsort, JSON.parse(localStorage.getItem("fsort") || "{}")); } catch (e) {}
+function sorted(rows, id) {
+  const [k, d] = fsort[id].split(":"), c = FCOLS.find(x => x[0] === k) || FCOLS[3], dir = +d || -1;
+  return rows.sort((a, b) => { const x = c[2](a), y = c[2](b);
+    if (typeof x === "string") return dir * x.localeCompare(y);
+    const nx = isFinite(x) ? x : null, ny = isFinite(y) ? y : null;
+    if (nx == null || ny == null) return (nx == null) - (ny == null);
+    return dir * (nx - ny) || b.profit - a.profit; });
+}
 function render() {
   const all = Object.values(items);
-  rowsNow = all.map(flipNow).filter(Boolean).sort((x, y) => y.profit - x.profit);
-  rowsHold = all.map(flipHold).filter(Boolean).sort((x, y) => y.profit - x.profit);
-  const head = last => `<tr><th>Item</th><th>Compra</th><th>Rivendi a</th><th>Guadagno</th><th>Rend.</th><th class="hide-s">${last}</th></tr>`;
+  rowsNow = all.map(flipNow).filter(Boolean);
+  rowsNow.forEach(r => r.extraV = hoursToSell(r.it.vnum, Date.now(), r.ahead + r.q, r.it.day));
+  rowsHold = all.map(flipHold).filter(Boolean);
+  rowsHold.forEach(r => r.extraV = r.usual.price);
+  sorted(rowsNow, "now"); sorted(rowsHold, "hold");
+  const head = (id, last) => { const [sk, sd] = fsort[id].split(":");
+    return "<tr>" + FCOLS.map(([k, l]) => `<th data-sort="${k}" style="cursor:pointer;${k === sk ? "color:var(--fg)" : ""}"${k === "extra" ? ' class="hide-s"' : ""}>${l || last}${k === sk ? (+sd > 0 ? " ▲" : " ▼") : ""}</th>`).join("") + "</tr>"; };
   const row = (r, i, extra) => `<tr data-i="${i}"><td>${r.it.name}</td><td>${fmt(r.q)}<br><span class="muted">fino a ${fmt(r.top)}</span></td><td>${fmt(r.sell)}</td><td class="pos">${short(r.profit)}</td><td>${pct(r.profit / r.cost)}</td><td class="hide-s">${extra}</td></tr>`;
-  document.getElementById("now").innerHTML = rowsNow.length ? head("Vendi in") + rowsNow.map((r, i) => row(r, i, hrs(hoursToSell(r.it.vnum, Date.now(), r.ahead + r.q, r.it.day)))).join("")
+  document.getElementById("now").innerHTML = rowsNow.length ? head("now", "Vendi in") + rowsNow.map((r, i) => row(r, i, hrs(r.extraV))).join("")
     : '<tr><td class="muted">Nessuna rivendita in guadagno adesso con questi parametri.</td></tr>';
-  document.getElementById("hold").innerHTML = rowsHold.length ? head("Solito") + rowsHold.map((r, i) => row(r, i, fmt(r.usual.price))).join("")
+  document.getElementById("hold").innerHTML = rowsHold.length ? head("hold", "Solito") + rowsHold.map((r, i) => row(r, i, fmt(r.extraV))).join("")
     : '<tr><td class="muted">Niente sotto il solito, o ancora pochi dati (servono almeno 6 ore per item).</td></tr>';
-  document.getElementById("now").onclick = e => { const tr = e.target.closest("tr[data-i]"); if (tr) detail(rowsNow[+tr.dataset.i]); };
-  document.getElementById("hold").onclick = e => { const tr = e.target.closest("tr[data-i]"); if (tr) detail(rowsHold[+tr.dataset.i]); };
+  const click = (id, rows) => e => {
+    const th = e.target.closest("th[data-sort]");
+    if (th) { const k = th.dataset.sort, [sk, sd] = fsort[id].split(":");
+      fsort[id] = k + ":" + (k === sk ? -(+sd || -1) : k === "name" ? 1 : -1);
+      try { localStorage.setItem("fsort", JSON.stringify(fsort)); } catch (err) {} render(); return; }
+    const tr = e.target.closest("tr[data-i]"); if (tr) detail(rows[+tr.dataset.i]); };
+  document.getElementById("now").onclick = click("now", rowsNow);
+  document.getElementById("hold").onclick = click("hold", rowsHold);
 }
 function detail(r) {
   const a = book[r.it.vnum], lines = [];
