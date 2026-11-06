@@ -47,7 +47,10 @@
     <div class="muted">Il prezzo di vendita nei calcoli è il più alto a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro questo tempo.</div></div>
   <div class="field"><label for="sellh">Ore massime per vendere i tuoi annunci (Oggi)</label>
     <input id="sellh" inputmode="numeric" placeholder="6">
-    <div class="muted">Oltre questo tempo la pagina Oggi segna l'annuncio come lento e propone un prezzo. Le notifiche sul telefono usano invece la variabile ALERT_HOURS su GitHub (Settings → Secrets and variables → Actions → Variables): se cambi qui, cambiala anche lì.</div></div>
+    <div class="muted">Oltre questo tempo la pagina Oggi segna l'annuncio come lento e propone un prezzo. Le notifiche sul telefono usano invece fiducia 70% e la variabile ALERT_HOURS su GitHub (Settings → Secrets and variables → Actions → Variables): se cambi qui, cambiala anche lì.</div></div>
+  <div class="field"><label for="conf">Fiducia sui tempi di vendita</label>
+    <select id="conf"><option value="0.5">50% (metà dei giorni)</option><option value="0.7">70% (consigliata)</option><option value="0.8">80% (4 giorni su 5)</option><option value="0.9">90% (prudente)</option></select>
+    <div class="muted">Quanto si vende nelle prossime ore lo stimo dalle stesse ore dei giorni passati. Con 80% uso una quantità che è stata superata in 4 giorni su 5: prezzi un po' più bassi, ma vendi in tempo quasi sempre.</div></div>
   <div class="field"><label for="metric">Prezzi usati nel grafico dei metodi</label>
     <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select></div>
   <div id="saved"></div>
@@ -57,7 +60,7 @@
   <p class="muted">"Esporta tutto" copia negli appunti impostazioni, preferiti, movimenti e lotti del Bilancio: incollalo in una nota o in una mail. "Importa" accetta anche un backup fatto dalla pagina Bilancio.</p>
 </main>
 <script>
-const KEYS = ["medal", "cap", "hrs", "hz", "sellh", "metric2", "fav", "item", "period"];
+const KEYS = ["medal", "cap", "hrs", "hz", "sellh", "conf", "metric2", "fav", "item", "period"];
 const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const set = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const bil = () => { try { return JSON.parse(get("bilancio") || "{}"); } catch (e) { return {}; } };
@@ -72,6 +75,7 @@ function fill() {
   $("hz").value = get("hz") || "3";
   $("sellh").value = get("sellh") || "6";
   $("metric").value = get("metric2") || "real";
+  $("conf").value = get("conf") || "0.7";
 }
 fill();
 $("seller").onchange = () => { const b = bil(); b.seller = $("seller").value.trim(); b.moves ??= []; b.lots ??= []; set("bilancio", JSON.stringify(b)); ok(); };
@@ -81,6 +85,7 @@ $("hrs").onchange = () => { set("hrs", $("hrs").value.replace(/[^0-9.,]/g, "") |
 $("hz").onchange = () => { set("hz", $("hz").value); ok(); };
 $("sellh").onchange = () => { const h = Math.min(24, Math.max(1, +$("sellh").value.replace(/[^0-9]/g, "") || 6)); $("sellh").value = h; set("sellh", String(h)); ok(); };
 $("metric").onchange = () => { set("metric2", $("metric").value); ok(); };
+$("conf").onchange = () => { set("conf", $("conf").value); ok(); };
 $("exp").onclick = async () => {
   const all = { v: 1, bilancio: bil() }; KEYS.forEach(k => { const x = get(k); if (x != null) all[k] = x; });
   const s = JSON.stringify(all);

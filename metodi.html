@@ -45,7 +45,7 @@
   </label>
   <label class="muted" style="display:block;margin-top:6px"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia del NosBazar attiva (niente commissioni)</label>
   <div class="wrap"><table id="k"></table></div>
-  <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
+  <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Quanto si vende entro il tempo scelto lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
   <h2 style="font-size:16px">Piano consigliato: come dividere il tuo oro</h2>
   <label class="muted">Ore che puoi dedicare <input id="hrs" inputmode="decimal" value="3" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:4em"></label>
   <div class="wrap"><table id="pf"></table></div>
@@ -62,6 +62,7 @@
   <p class="muted">Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account e ciclo 5 minuti, in due versioni: mezze lune prodotte da te o comprate al bazar. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. "Su quanti" = il numero consigliato: l'oro all'ora vale finché fai quei craft, oltre il mercato non regge.</p>
 </main>
 <script src="ricette.js"></script>
+<script src="flow.js"></script>
 <script>
 // Commissione bazar 0,5% (minimo 500 per annuncio); con la medaglia del NosBazar attiva non si paga.
 let medal = false; try { medal = localStorage.getItem("medal") === "1"; } catch (e) {}
@@ -102,7 +103,7 @@ fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t =>
   try { const h = localStorage.getItem("hrs"); if (h) document.getElementById("hrs").value = h; } catch (e) {}
   const hz = document.getElementById("hz");
   try { const h = localStorage.getItem("hz"); if (h) hz.value = h; } catch (e) {}
-  hz.onchange = () => { try { localStorage.setItem("hz", hz.value); } catch (e) {} capacity(sel.value); };
+  hz.onchange = () => { try { localStorage.setItem("hz", hz.value); } catch (e) {} demandCache.clear(); capacity(sel.value); };
   draw(sel.value);
 }).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 
@@ -142,8 +143,11 @@ function walk(v, need) { const a = book?.[v]; if (!a) return null; let got = 0, 
 // più i tuoi si vendano entro il tempo scelto (stima venduti/giorno, che è per eccesso). Annunci isolati contano per quanti pezzi
 // sono, non per quanti annunci: 1 pezzo a 30k pesa poco, 20 annunci da 1 pezzo pesano 20.
 // Non sopra il riferimento 10% (prezzo sotto cui sta il 10% dei pezzi): oltre è fuori mercato.
+// Venduti attesi entro il tempo scelto, da adesso, per fascia oraria (flow.js); in cache perché il piano lo chiede migliaia di volte.
+const demandCache = new Map();
+function demand(v) { const k = v + "|" + hours(); if (!demandCache.has(k)) demandCache.set(k, expectedSold(v, Date.now(), hours(), soldDay[v])); return demandCache.get(k); }
 function sellFor(v, n, fallback) {
-  const a = book?.[v], day = soldDay[v] * hours() / 24;
+  const a = book?.[v], dm = demand(v), day = dm.units;
   if (!a || !a.length || !(day > 0)) return { price: fallback(v), est: true };
   const total = a.reduce((t, x) => t + x[1], 0);
   let below = 0, best = a[0][0] - 1, ahead = 0;
@@ -152,7 +156,7 @@ function sellFor(v, n, fallback) {
     if (i > 0 && pr !== a[i - 1][0]) { if (below + n <= day && below <= total / 10) { best = pr - 1; ahead = below; } else break; }
     below += am;
   }
-  return { price: Math.max(1, best), est: false, hours: (ahead + n) / soldDay[v] * 24 };
+  return { price: Math.max(1, best), est: false, ahead, basis: dm.est };
 }
 function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craft
   let cost = 0, gross = 0, ok = true; const buy = [], sell = [];
@@ -178,7 +182,7 @@ function best(m, p) {
   return { m, max, top, limited: top.n < max };
 }
 async function capacity(metric) {
-  await loadBook();
+  await loadBook(); await loadFlow(); demandCache.clear();
   const p = priceAt(times[times.length - 1], metric);
   const rows = METHODS.map(m => best(m, p)).filter(r => r && r.top.n > 0 && r.top.profit > 0).sort((a, b) => b.top.profit - a.top.profit);
   // Oro all'ora dell'ultimo giro facendo il numero consigliato (o 1 se il metodo è in perdita), con costi e vendite per quantità.
@@ -253,7 +257,7 @@ async function shopping(r, p) {
   const body = document.getElementById("dlgBody");
   const render = n => { const x = plan(r.m, n, p), u = r.m.unit === "run" ? "run" : "craft";
     const lines = x.buy.map(b => `<tr><td>${nm(b.v)}</td><td>${fmt(b.q)}</td><td><b>${fmt(b.q * n)}</b></td><td>${fmt(b.cost)}${b.w ? (b.w.short > 0 ? ' <span class="warn">non bastano</span>' : `<br><span class="muted">fino a ${fmt(b.w.top)}</span>`) : ""}</td></tr>`).join("");
-    const sells = x.sell.map(s => `<tr><td>${nm(s.v)}</td><td><b>${fmt(s.q * n)}</b></td><td>${fmt(s.price)}${s.est ? ' <span class="muted">(stima, mancano vendite)</span>' : `<br><span class="muted">venduti in ~${s.hours < 1 ? "meno di 1 ora" : fmt(s.hours) + " ore"}</span>`}</td><td>${fmt(s.price * s.q * n)}</td></tr>`).join("");
+    const sells = x.sell.map(s => `<tr><td>${nm(s.v)}</td><td><b>${fmt(s.q * n)}</b></td><td>${fmt(s.price)}${s.est ? ' <span class="muted">(stima, mancano vendite)</span>' : (h => `<br><span class="muted">${h == null ? "oltre 7 giorni" : "venduti in ~" + (h <= 1 ? "1 ora" : fmt(h) + " ore")}${s.basis === "media24" ? " (media 24h, pochi giorni di dati)" : ""}</span>`)(hoursToSell(s.v, Date.now(), s.ahead + s.q * n, soldDay[s.v]))}</td><td>${fmt(s.price * s.q * n)}</td></tr>`).join("");
     return `<h3 style="margin:0 0 4px;font-size:17px">${r.m.name}</h3>
       <label class="muted">Quanti ${u} <input id="dlgN" inputmode="numeric" value="${n}"></label>
       <div class="wrap"><table><tr><th>Da comprare</th><th>Per ${u}</th><th>Totale</th><th>Costo</th></tr>${lines}</table></div>
