@@ -53,11 +53,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898732+github-actions[bot]@users.noreply.github.com"
           mkdir -p /tmp/run
+          git ls-files --others --exclude-standard data/listings > /tmp/run/new_files
           git diff --no-color -U0 data/prices.csv | grep '^+[^+]' | cut -c2- > /tmp/run/prices.csv || true
           git diff --no-color -U0 data/summary.csv | grep '^+[^+]' | cut -c2- > /tmp/run/summary.csv || true
-          git diff --no-color -U0 data/sales.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sales.csv || true
+          # sales.csv ricostruito da capo (formato nuovo): si salva intero, non si accoda.
+          if [ "$(git show HEAD:data/sales.csv | head -1)" != "$(head -1 data/sales.csv)" ]; then
+            cp data/sales.csv /tmp/run/sales_full.csv; : > /tmp/run/sales.csv
+          else
+            git diff --no-color -U0 data/sales.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sales.csv || true
+          fi
+          # Vendite per venditore, un file al giorno: i file nuovi si copiano, quelli esistenti si accodano.
+          mkdir -p /tmp/run/owners
+          for f in data/owners/*.csv; do
+            [ -e "$f" ] || continue
+            if [ -e /tmp/run/sales_full.csv ] || ! git cat-file -e HEAD:"$f" 2>/dev/null; then
+              echo "$f" >> /tmp/run/new_files
+            else
+              git diff --no-color -U0 "$f" | grep '^+[^+]' | cut -c2- > /tmp/run/owners/$(basename "$f") || true
+            fi
+          done
           git diff --no-color -U0 data/sell.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sell.csv || true
-          git ls-files --others --exclude-standard data/listings > /tmp/run/new_files
           tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $(cat /tmp/run/new_files)
           [ -s /tmp/run/new_files ] || { echo "Nessun dato nuovo"; exit 0; }
           for i in 1 2 3 4 5; do
@@ -65,7 +80,8 @@ jobs:
             tar -xf /tmp/run/files.tar
             cat /tmp/run/prices.csv >> data/prices.csv
             cat /tmp/run/summary.csv >> data/summary.csv
-            cat /tmp/run/sales.csv >> data/sales.csv
+            if [ -e /tmp/run/sales_full.csv ]; then cp /tmp/run/sales_full.csv data/sales.csv; else cat /tmp/run/sales.csv >> data/sales.csv; fi
+            for f in /tmp/run/owners/*.csv; do [ -e "$f" ] && cat "$f" >> data/owners/$(basename "$f"); done
             cat /tmp/run/sell.csv >> data/sell.csv
             git add data
             git commit -q -m "Prezzi $(date -u +%Y-%m-%dT%H:%MZ)"
