@@ -24,6 +24,9 @@ from datetime import datetime, timedelta
 MAX_GAP_MIN = 40       # larger gaps: too much can happen in between, skip
 TOL_MIN = 3            # expiry-time tolerance when matching a listing
 OUT = "data/sales.csv"
+# Versione delle regole di conteggio: se cambia, sales.csv e data/owners si ricalcolano da capo.
+RULES = "2"   # 2 = ribasso anche con quantità diversa (06/11)
+RULES_FILE = "data/sales_rules.txt"
 HEADER = ["ts", "prev_ts", "minutes", "vnum", "name", "units_gone", "listings_gone", "value_gone", "wavg_price", "max_price", "units_raw", "units_under"]
 OWN_DIR = "data/owners"
 OWN_HEADER = ["ts", "vnum", "owner", "units", "value"]
@@ -51,7 +54,7 @@ def compare(prev, cur, names):
         return [], []
     now = cts.timestamp() / 60
     seen = {k[0] for k in c}               # items searched successfully in the current run
-    # Listings that appeared in this run, per seller and size: (vnum, owner, amount) -> [prices].
+    # Listings that appeared in this run, per seller: (vnum, owner) -> [[price, units not yet matched]].
     new = collections.defaultdict(list)
     # Units listed in this run at or below the previous run's minimum (+1%): they jump the queue ahead of
     # everyone already listed, so they eat the demand left for those listings ("units_under").
@@ -64,7 +67,7 @@ def compare(prev, cur, names):
         old = [x[0] for x in p.get(key, [])]
         for exp, amt in lst:
             if not any(abs(exp - e) <= TOL_MIN for e in old):
-                new[(key[0], key[1], amt)].append(key[2])
+                new[(key[0], key[1])].append([key[2], amt])
                 if key[0] in pmin and key[2] <= pmin[key[0]] * 1.01:
                     under[key[0]] += amt
     gone = collections.defaultdict(lambda: [0, 0, 0, 0, 0])   # vnum -> units, listings, value, max price, raw units
@@ -88,15 +91,20 @@ def compare(prev, cur, names):
             if units <= 0:
                 continue
             g = gone[vnum]; g[4] += units
-            # A whole listing that vanished while the same seller put up the same quantity at a
-            # LOWER price in the same run is a price cut to sell faster, not a sale. The same
-            # quantity at the same or a higher price is new stock (a producer relisting, maybe
+            # A whole listing that vanished while the same seller put up new listings at a LOWER price
+            # in the same run is a price cut to sell faster, not a sale: the relisted pieces (up to the
+            # vanished amount, even split over several listings or fewer pieces, e.g. 24 at 35.990 ->
+            # 22 at 35.800) are not sold; only the difference counts as sold (sold in between, or kept).
+            # New listings at the same or a higher price are new stock (a producer relisting, maybe
             # following the market up), so the vanished one still counts as sold.
             if left == 0:
-                prices = new.get((vnum, owner, amt), [])
-                other = next((q for q in prices if q < price), None)
-                if other is not None:
-                    prices.remove(other)
+                cut = 0
+                for nl in sorted(new.get((vnum, owner), []), key=lambda x: -x[0]):
+                    if nl[0] >= price or nl[1] <= 0 or cut >= units:
+                        continue
+                    t = min(nl[1], units - cut); nl[1] -= t; cut += t
+                units -= cut
+                if units <= 0:
                     continue
             g[0] += units; g[1] += 1 if left == 0 else 0; g[2] += units * price; g[3] = max(g[3], price)
             o = owners[(vnum, owner)]; o[0] += units; o[1] += units * price
@@ -138,6 +146,8 @@ def main():
     if not rebuild:
         with open(OUT, encoding="utf-8") as f:
             rebuild = f.readline().strip().split(",") != HEADER   # old format: rebuild everything
+        old_rules = open(RULES_FILE).read().strip() if os.path.exists(RULES_FILE) else "1"
+        rebuild = rebuild or old_rules != RULES                     # new counting rules: rebuild everything
     pairs = list(zip(files, files[1:]))
     if not rebuild:   # only pairs newer than the last row already saved
         last = ""
@@ -159,6 +169,8 @@ def main():
             w.writerow(HEADER)
         w.writerows(rows)
     owners_write(own, rebuild)
+    with open(RULES_FILE, "w") as f:
+        f.write(RULES + "\n")
     print(f"sales: {len(rows)} righe ({len(own)} per venditore) da {len(pairs)} coppie di giri" + (" (ricostruito)" if rebuild else ""))
     add_daily_to_latest(files)
 
