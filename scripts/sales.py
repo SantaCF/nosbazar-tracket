@@ -3,9 +3,9 @@
 A listing is identified by item, seller, unit price, package flag and expiry time
 (snapshot time + minutes_left, stable within a couple of minutes). Units that vanish
 before the listing's expiry were sold or withdrawn by the seller. A whole listing that
-vanishes while the same seller lists the same quantity at another price in the same run is a
-price change and is not counted; the same quantity at the same price is new stock (someone
-who produces and relists continuously) and the vanished one counts as sold. Partial
+vanishes while the same seller lists the same quantity at a lower price in the same run is a
+price cut and is not counted; the same quantity at the same or a higher price is new stock
+(someone who produces and relists continuously) and the vanished one counts as sold. Partial
 decreases of a listing are always sales.
 
     python3 scripts/sales.py          # add the snapshot pairs newer than the last saved row
@@ -78,12 +78,13 @@ def compare(prev, cur, names):
             if units <= 0:
                 continue
             g = gone[vnum]; g[4] += units
-            # A whole listing that vanished while the same seller put up the same quantity at
-            # another price in the same run is a price change, not a sale. The same quantity at
-            # the same price is new stock (a producer relisting), so it still counts as sold.
+            # A whole listing that vanished while the same seller put up the same quantity at a
+            # LOWER price in the same run is a price cut to sell faster, not a sale. The same
+            # quantity at the same or a higher price is new stock (a producer relisting, maybe
+            # following the market up), so the vanished one still counts as sold.
             if left == 0:
                 prices = new.get((vnum, owner, amt), [])
-                other = next((q for q in prices if q != price), None)
+                other = next((q for q in prices if q < price), None)
                 if other is not None:
                     prices.remove(other)
                     continue
