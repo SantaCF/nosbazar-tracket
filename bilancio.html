@@ -58,9 +58,10 @@
     <select id="lotItem" style="max-width:14em"></select>
     <input id="lotQty" inputmode="numeric" placeholder="pezzi" style="width:6em">
     <input id="lotCost" inputmode="numeric" placeholder="costo totale" style="width:9em">
+    <label class="muted">prodotto il <input id="lotWhen" type="datetime-local" style="width:13em"></label>
     <button class="main" id="addLot">Aggiungi lotto</button>
   </div>
-  <p class="muted">Puoi salvarli anche dalla lista della spesa della pagina Metodi ("Salva lotto"). Il costo salvato da Metodi è una stima: tocca ✎ per scrivere quello vero. Pareggio = prezzo minimo di vendita per non perderci, commissione compresa. "Venduti" = le tue vendite di quell'item dopo la data del lotto, assegnate prima ai lotti più vecchi; "Realizzato" = incasso netto meno il costo dei pezzi venduti.</p>
+  <p class="muted">Puoi salvarli anche dalla lista della spesa della pagina Metodi ("Salva lotto"). Il costo salvato da Metodi è una stima: tocca ✎ per scrivere quello vero e l'ora in cui l'hai prodotto (le vendite contano da lì). Se non scrivi "prodotto il", vale adesso. Pareggio = prezzo minimo di vendita per non perderci, commissione compresa. "Venduti" = le tue vendite di quell'item dopo la data del lotto, assegnate prima ai lotti più vecchi; "Realizzato" = incasso netto meno il costo dei pezzi venduti.</p>
   <div class="wrap"><table id="lots"></table></div>
 
   <h2>Le tue vendite</h2>
@@ -208,14 +209,19 @@ document.getElementById("add").onclick = () => {
 document.getElementById("addLot").onclick = () => {
   const v = document.getElementById("lotItem").value, qty = num(document.getElementById("lotQty").value), cost = num(document.getElementById("lotCost").value);
   if (!qty || !cost) return;
-  db.lots.push({ t: new Date().toISOString(), vnum: v, name: items[v]?.name || v, qty, cost });
-  document.getElementById("lotQty").value = ""; document.getElementById("lotCost").value = ""; save(); render();
+  const w = document.getElementById("lotWhen").value, t = w && !isNaN(new Date(w)) ? new Date(w).toISOString() : new Date().toISOString();
+  db.lots.push({ t, vnum: v, name: items[v]?.name || v, qty, cost });
+  document.getElementById("lotQty").value = ""; document.getElementById("lotCost").value = ""; document.getElementById("lotWhen").value = ""; save(); render(); loadOwners().then(render);
 };
 document.body.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.del && confirm("Cancellare questa voce?")) { db.moves = db.moves.filter(m => m.t !== b.dataset.del); save(); render(); }
   if (b.dataset.dellot && confirm("Cancellare questo lotto?")) { db.lots = db.lots.filter(l => l.t !== b.dataset.dellot); save(); render(); }
-  if (b.dataset.cost) { const l = db.lots.find(l => l.t === b.dataset.cost), v = num(prompt(`Costo totale vero del lotto (${fmt(l.qty)} pz):`, l.cost) || ""); if (v) { l.cost = v; save(); render(); } }
+  if (b.dataset.cost) { const l = db.lots.find(l => l.t === b.dataset.cost), v = num(prompt(`Costo totale vero del lotto (${fmt(l.qty)} pz):`, l.cost) || ""); if (v) l.cost = v;
+    const pad = n => String(n).padStart(2, "0"), d = new Date(l.t), cur = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const w = prompt("Quando l'hai prodotto (gg/mm/aaaa hh:mm, ora italiana)? Le vendite contano da questo momento.", cur), m = w && w.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+    if (m) { const nt = new Date(+m[3], m[2] - 1, +m[1], +m[4], +m[5]).toISOString(); if (!db.lots.some(x => x.t === nt)) l.t = nt; }
+    save(); render(); loadOwners().then(render); }
   if (b.dataset.close) { const l = db.lots.find(l => l.t === b.dataset.close); l.closed = !l.closed; save(); render(); }
 });
 document.getElementById("exp").onclick = async () => {
