@@ -65,7 +65,7 @@
   <div class="wrap"><table id="lots"></table></div>
 
   <h2>Le tue vendite</h2>
-  <p class="muted">Lette dal bazar a ogni giro: pezzi spariti dai tuoi annunci prima della scadenza. Se ritiri un annuncio senza rimetterlo a un altro prezzo, qui risulta venduto. Incasso al netto della commissione (0 con la medaglia).</p>
+  <p class="muted">Lette dal bazar a ogni giro: pezzi spariti dai tuoi annunci prima della scadenza. Se ritiri un annuncio senza rimetterlo a un altro prezzo, qui risulta venduto. "Incasso" = ricavo al netto della commissione (0 con la medaglia), senza togliere quanto ti è costato produrre: il guadagno lo trovi nei lotti ("realizzato").</p>
   <div class="wrap"><table id="sales"></table></div>
 
   <h2>Backup</h2>
@@ -166,7 +166,7 @@ function render() {
     <div class="tile"><span class="muted">Patrimonio${lastG ? " al " + day(lastG.t) : ""}</span><b>${short(nowWorth)}</b><span class="muted">oro ${short(lastG?.amount)} + annunci ${short(lastG?.listed)}</span></div>
     <div class="tile"><span class="muted">Guadagno dal ${first ? day(first.t).slice(0, 5) : "-"}</span><b class="${cls(gain)}">${gain == null ? "-" : sign(gain)}</b><span class="muted">${days >= 1 ? sign(gain / days) + " al giorno" : "senza spese e aggiunte"}</span></div>
     <div class="tile"><span class="muted">In vendita ora</span><b>${short(listed)}</b><span class="muted">${db.seller ? Object.values(mine).reduce((a, b) => a + b, 0).toLocaleString("it-IT") + " pezzi" : "scrivi il nome del personaggio"}</span></div>
-    <div class="tile"><span class="muted">Vendite ultimi 7 giorni</span><b>${db.seller ? short(week * (1 - tax())) : "-"}</b><span class="muted">${db.seller ? "incasso netto, " + fmt(weekU) + " pezzi" : "scrivi il nome del personaggio"}</span></div>
+    <div class="tile"><span class="muted">Ricavi ultimi 7 giorni</span><b>${db.seller ? short(week * (1 - tax())) : "-"}</b><span class="muted">${db.seller ? fmt(weekU) + " pezzi venduti, costi non tolti (il guadagno è nei lotti)" : "scrivi il nome del personaggio"}</span></div>
     <div class="tile"><span class="muted">Spese fuori dal giro</span><b>${short(spent)}</b><span class="muted">totale</span></div>`;
   // Grafico: guadagno cumulato a ogni aggiornamento dell'oro.
   const pts = golds.map(g => ({ t: g.t, v: g.amount + g.listed - (first.amount + first.listed) + adj(first.t) - adj(g.t) }));

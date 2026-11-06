@@ -8,7 +8,6 @@
 <link rel="manifest" href="icons/manifest.webmanifest">
 <meta name="theme-color" content="#0f1115">
 <title>Metodi NosTale</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#067647; --down:#b42318; --link:#1f6feb; }
   @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#47cd89; --down:#f97066; --link:#58a6ff; } }
@@ -19,7 +18,6 @@
   .muted { color:var(--muted); font-size:13px; }
   .nav { margin:4px 0 12px; font-size:14px; }
   select { font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
-  .chart { position:relative; height:340px; background:var(--card); border-radius:12px; padding:8px; margin-top:12px; }
   table { width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
   th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
   th:first-child, td:first-child { text-align:left; }
@@ -38,13 +36,6 @@
   <h1>Oro all'ora per metodo · EU-Dragonveil</h1>
   <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
-  <label class="muted">Prezzi usati
-    <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select>
-  </label>
-  <div class="chart"><canvas id="c"></canvas></div>
-  <h2 style="font-size:16px">Stabilità: ultimo giro e medie</h2>
-  <div class="wrap"><table id="st"></table></div>
-  <p class="muted">Oro all'ora stimato su un pezzo, come il grafico: serve per confrontare l'ultimo giro con il solito. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. Un metodo con ultimo giro molto sopra la media sta vivendo un picco: può durare poco.</p>
   <h2 style="font-size:16px">Quanto puoi fare con i tuoi soldi</h2>
   <label class="muted">Oro disponibile adesso
     <input id="cap" inputmode="numeric" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:12em" value="25.000.000">
@@ -54,24 +45,30 @@
   </label>
   <label class="muted" style="display:block;margin-top:6px"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia del NosBazar attiva (niente commissioni)</label>
   <div class="wrap"><table id="k"></table></div>
-  <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
+  <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Quanto si vende entro il tempo scelto lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
   <h2 style="font-size:16px">Piano consigliato: come dividere il tuo oro</h2>
   <label class="muted">Ore che puoi dedicare <input id="hrs" inputmode="decimal" value="3" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:4em"></label>
   <div class="wrap"><table id="pf"></table></div>
   <p class="muted" id="pfNote">Cerco la combinazione di metodi (fino ai 3 migliori) che guadagna di più restando nel tuo oro e nelle tue ore, provando tutte le combinazioni di quantità e tenendo conto che i metodi si influenzano: i materiali comuni (per esempio la polvere per mezze lune e luna piena) li compri una volta sola salendo di prezzo, e i prodotti si sommano nella vendita. Se fare di più farebbe guadagnare meno (prezzi di acquisto che salgono, di vendita che scendono), lascio oro libero.</p>
   <dialog id="dlg"><div id="dlgBody"></div><form method="dialog" style="text-align:right;margin-top:12px"><button style="font-size:16px;padding:8px 16px">Chiudi</button></form></dialog>
+  <h2 style="font-size:16px">Stabilità del margine: ultimo giro e medie</h2>
+  <label class="muted">Prezzi usati
+    <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select>
+  </label>
+  <div class="wrap"><table id="st"></table></div>
+  <p class="muted">Guadagno su un solo craft (o run) a ogni giro, senza contare la quantità: serve a capire se il margine di adesso è quello solito o un picco. Con "realistico" compri al prezzo lotto 2% e vendi al prezzo realistico. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. ▲/▼ = ultimo giro molto sopra/sotto la media 24h.</p>
   <h2 style="font-size:16px">Ultimo giro: oro all'ora</h2>
   <div class="wrap"><table id="t"></table></div>
-  <p class="muted">Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account, ciclo 5 minuti e mezze lune prodotte da te. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. Il grafico invece è solo indicativo: per ogni giro passato fa il conto su un pezzo (con "realistico": compri al prezzo lotto 2%, vendi 1 oro sotto il primo annuncio vero) e non mostra i metodi sempre in perdita.</p>
+  <p class="muted">Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account e ciclo 5 minuti, in due versioni: mezze lune prodotte da te o comprate al bazar. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. "Su quanti" = il numero consigliato: l'oro all'ora vale finché fai quei craft, oltre il mercato non regge.</p>
 </main>
 <script src="ricette.js"></script>
+<script src="flow.js"></script>
 <script>
 // Commissione bazar 0,5% (minimo 500 per annuncio); con la medaglia del NosBazar attiva non si paga.
 let medal = false; try { medal = localStorage.getItem("medal") === "1"; } catch (e) {}
 let TAX = medal ? 0 : 0.005;
 // Ricette in ricette.js (unica fonte, condivisa con la pagina Oggi).
 const METHODS = buildMethods(() => TAX);
-METHODS.forEach(m => m.perHour = (pb, ps) => (m.gain(ps) - m.cost(pb)) * m.perH);
 const ING = Object.fromEntries(METHODS.map(m => [m.name, m.ing]));
 const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
 const short = n => n == null ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
@@ -79,7 +76,7 @@ const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-
 const parse = l => { const out = []; let cur = "", q = false;
   for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
   out.push(cur); return out; };
-let chart, byTs, times;
+let byTs, times;
 let soldDay = {}, sellByTs = new Map();
 fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t => { if (!t) return;
   const [h, ...ls] = t.trim().split(/\r?\n/); const k = parse(h), iv = k.indexOf("vnum"), is = k.indexOf("sold_day");
@@ -106,7 +103,7 @@ fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t =>
   try { const h = localStorage.getItem("hrs"); if (h) document.getElementById("hrs").value = h; } catch (e) {}
   const hz = document.getElementById("hz");
   try { const h = localStorage.getItem("hz"); if (h) hz.value = h; } catch (e) {}
-  hz.onchange = () => { try { localStorage.setItem("hz", hz.value); } catch (e) {} capacity(sel.value); };
+  hz.onchange = () => { try { localStorage.setItem("hz", hz.value); } catch (e) {} demandCache.clear(); capacity(sel.value); };
   draw(sel.value);
 }).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 
@@ -146,8 +143,11 @@ function walk(v, need) { const a = book?.[v]; if (!a) return null; let got = 0, 
 // più i tuoi si vendano entro il tempo scelto (stima venduti/giorno, che è per eccesso). Annunci isolati contano per quanti pezzi
 // sono, non per quanti annunci: 1 pezzo a 30k pesa poco, 20 annunci da 1 pezzo pesano 20.
 // Non sopra il riferimento 10% (prezzo sotto cui sta il 10% dei pezzi): oltre è fuori mercato.
+// Venduti attesi entro il tempo scelto, da adesso, per fascia oraria (flow.js); in cache perché il piano lo chiede migliaia di volte.
+const demandCache = new Map();
+function demand(v) { const k = v + "|" + hours(); if (!demandCache.has(k)) demandCache.set(k, expectedSold(v, Date.now(), hours(), soldDay[v])); return demandCache.get(k); }
 function sellFor(v, n, fallback) {
-  const a = book?.[v], day = soldDay[v] * hours() / 24;
+  const a = book?.[v], dm = demand(v), day = dm.units;
   if (!a || !a.length || !(day > 0)) return { price: fallback(v), est: true };
   const total = a.reduce((t, x) => t + x[1], 0);
   let below = 0, best = a[0][0] - 1, ahead = 0;
@@ -156,7 +156,7 @@ function sellFor(v, n, fallback) {
     if (i > 0 && pr !== a[i - 1][0]) { if (below + n <= day && below <= total / 10) { best = pr - 1; ahead = below; } else break; }
     below += am;
   }
-  return { price: Math.max(1, best), est: false, hours: (ahead + n) / soldDay[v] * 24 };
+  return { price: Math.max(1, best), est: false, ahead, basis: dm.est };
 }
 function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craft
   let cost = 0, gross = 0, ok = true; const buy = [], sell = [];
@@ -165,9 +165,10 @@ function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craf
     const w = book && walk(v, q * n), c = w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q * n;
     if (!w) ok = false; cost += c; buy.push({ v, q, price: p.b(v), cost: c, w });
   }
-  for (const [v, q] of OUTS[m.name]) { const s = sellFor(v, q * n, p.s); gross += s.price * q * n; sell.push({ v, q, ...s }); }
-  const fee = n && !medal ? Math.max(gross * TAX, 500 * Math.ceil(n * m.out / 999)) : 0;
-  return { n, cost, gross, fee, net: gross * (1 - TAX), profit: gross * (1 - TAX) - cost, buy, sell, ok };
+  let fee = 0;   // commissione per prodotto: 0,5% dell'incasso, minimo 500 per annuncio (stack da 999)
+  for (const [v, q] of OUTS[m.name]) { const s = sellFor(v, q * n, p.s), g = s.price * q * n; gross += g; sell.push({ v, q, ...s });
+    if (n && !medal) fee += Math.max(g * TAX, 500 * Math.ceil(q * n / 999)); }
+  return { n, cost, gross, fee, net: gross - fee, profit: gross - fee - cost, buy, sell, ok };
 }
 // Quanti craft ci stanno nel tuo oro (costo + commissione) e quanti conviene farne (guadagno totale massimo).
 function best(m, p) {
@@ -181,15 +182,15 @@ function best(m, p) {
   return { m, max, top, limited: top.n < max };
 }
 async function capacity(metric) {
-  await loadBook();
+  await loadBook(); await loadFlow(); demandCache.clear();
   const p = priceAt(times[times.length - 1], metric);
   const rows = METHODS.map(m => best(m, p)).filter(r => r && r.top.n > 0 && r.top.profit > 0).sort((a, b) => b.top.profit - a.top.profit);
   // Oro all'ora dell'ultimo giro facendo il numero consigliato (o 1 se il metodo è in perdita), con costi e vendite per quantità.
   const cls = n => n == null ? "" : n > 0 ? "pos" : "neg";
   const live = METHODS.map(m => { const r = best(m, p), n = r && r.top.n > 0 ? r.top.n : 1, x = plan(m, n, p);
     const v = x.profit / n * m.perH; return { m, n, v: isFinite(v) ? v : null }; }).sort((a, b) => (b.v ?? -Infinity) - (a.v ?? -Infinity));
-  document.getElementById("t").innerHTML = "<tr><th>Metodo</th><th>Oro/ora</th><th>Su quanti</th><th>Nel grafico</th></tr>" +
-    live.map(r => `<tr><td>${r.m.name}</td><td class="${cls(r.v)}">${fmt(r.v)}</td><td>${r.v == null ? "-" : fmt(r.n) + " " + (r.m.unit === "run" ? "run" : "craft")}</td><td>${chartInfo.get(r.m.name) || "-"}</td></tr>`).join("");
+  document.getElementById("t").innerHTML = "<tr><th>Metodo</th><th>Oro/ora</th><th>Su quanti</th></tr>" +
+    live.map(r => `<tr><td>${r.m.name}</td><td class="${cls(r.v)}">${fmt(r.v)}</td><td>${r.v == null ? "mancano prezzi" : fmt(r.n) + " " + (r.m.unit === "run" ? "run" : "craft")}</td></tr>`).join("");
   const t = n => { n = Math.round(n); return n >= 60 ? Math.floor(n / 60) + "h " + (n % 60) + "m" : n + " min"; };
   document.getElementById("k").innerHTML = "<tr><th>Metodo</th><th>Massimo</th><th>Consigl.</th><th>Guadagno</th><th>Tempo</th></tr>" +
     rows.map((r, i) => `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.top.n)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.top.profit)}</td><td>${t(r.top.n / r.m.perH * 60)}</td></tr>`).join("")
@@ -206,10 +207,12 @@ function portfolio(counts, p) {
   METHODS.forEach((m, i) => { const n = counts[i]; if (!n) return;
     ING[m.name].forEach(([v, q]) => { if (NPC[v]) cost += NPC[v] * q * n; else need[v] = (need[v] || 0) + q * n; });
     OUTS[m.name].forEach(([v, q]) => out[v] = (out[v] || 0) + q * n); });
+  // Se un metodo produce quello che un altro consuma (es. mezze lune), usi i tuoi: né compri né vendi quella parte.
+  for (const v of Object.keys(need)) if (out[v]) { const x = Math.min(need[v], out[v]); need[v] -= x; out[v] -= x; if (!need[v]) delete need[v]; if (!out[v]) delete out[v]; }
   for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q); cost += w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; }
   let gross = 0, fee = 0;
   for (const [v, q] of Object.entries(out)) { const g = sellFor(v, q, p.s).price * q; gross += g; if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); }
-  return { cost, fee, profit: gross * (1 - TAX) - cost };
+  return { cost, fee, profit: gross - fee - cost };
 }
 const playHours = () => Math.max(0.25, +String(document.getElementById("hrs")?.value || "3").replace(",", ".") || 3);
 function bestPlan(p) {
@@ -254,7 +257,7 @@ async function shopping(r, p) {
   const body = document.getElementById("dlgBody");
   const render = n => { const x = plan(r.m, n, p), u = r.m.unit === "run" ? "run" : "craft";
     const lines = x.buy.map(b => `<tr><td>${nm(b.v)}</td><td>${fmt(b.q)}</td><td><b>${fmt(b.q * n)}</b></td><td>${fmt(b.cost)}${b.w ? (b.w.short > 0 ? ' <span class="warn">non bastano</span>' : `<br><span class="muted">fino a ${fmt(b.w.top)}</span>`) : ""}</td></tr>`).join("");
-    const sells = x.sell.map(s => `<tr><td>${nm(s.v)}</td><td><b>${fmt(s.q * n)}</b></td><td>${fmt(s.price)}${s.est ? ' <span class="muted">(stima, mancano vendite)</span>' : `<br><span class="muted">venduti in ~${s.hours < 1 ? "meno di 1 ora" : fmt(s.hours) + " ore"}</span>`}</td><td>${fmt(s.price * s.q * n)}</td></tr>`).join("");
+    const sells = x.sell.map(s => `<tr><td>${nm(s.v)}</td><td><b>${fmt(s.q * n)}</b></td><td>${fmt(s.price)}${s.est ? ' <span class="muted">(stima, mancano vendite)</span>' : (h => `<br><span class="muted">${h == null ? "oltre 7 giorni" : "venduti in ~" + (h <= 1 ? "1 ora" : fmt(h) + " ore")}${s.basis === "media24" ? " (media 24h, pochi giorni di dati)" : ""}</span>`)(hoursToSell(s.v, Date.now(), s.ahead + s.q * n, soldDay[s.v]))}</td><td>${fmt(s.price * s.q * n)}</td></tr>`).join("");
     return `<h3 style="margin:0 0 4px;font-size:17px">${r.m.name}</h3>
       <label class="muted">Quanti ${u} <input id="dlgN" inputmode="numeric" value="${n}"></label>
       <div class="wrap"><table><tr><th>Da comprare</th><th>Per ${u}</th><th>Totale</th><th>Costo</th></tr>${lines}</table></div>
@@ -263,7 +266,7 @@ async function shopping(r, p) {
       <tr><td><b>Totale da avere</b></td><td><b>${fmt(x.cost + x.fee)}</b></td></tr><tr><td>Incasso netto (commissione tolta)</td><td>${fmt(x.net)}</td></tr>
       <tr><td><b>Guadagno</b></td><td class="${x.profit >= 0 ? "pos" : "neg"}"><b>${fmt(x.profit)}</b></td></tr></table>
       <button id="saveLot" style="font-size:16px;padding:8px 14px;margin-top:8px">Salva lotto nel Bilancio</button>
-      <p class="muted">Acquisto: compri dagli annunci più economici in su fino alla quantità che ti serve (ultimo giro), "fino a" è il prezzo più alto che paghi. Vendita: il prezzo più alto a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto secondo la stima venduti/giorno (che è per eccesso: conta anche chi ritira), mai sopra il riferimento 10%. Più pezzi metti, più devi scendere.${r.m.name === "PTS 50-60" ? " PTS: 31 semi di produzione + 1 di ingresso per ognuno dei 3 account; mezze lune prodotte da te (5 per run)." : ""}</p>`; };
+      <p class="muted">Acquisto: compri dagli annunci più economici in su fino alla quantità che ti serve (ultimo giro), "fino a" è il prezzo più alto che paghi. Vendita: il prezzo più alto a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto secondo la stima venduti/giorno (che è per eccesso: conta anche chi ritira), mai sopra il riferimento 10%. Più pezzi metti, più devi scendere.${r.m.name.startsWith("PTS") ? " PTS: 31 semi di produzione + 1 di ingresso per ognuno dei 3 account; 5 mezze lune per run" + (r.m.name.includes("comprate") ? ", comprate al bazar." : ", prodotte da te (polvere, cristalli e attrezzi nella lista).") : ""}</p>`; };
   body.innerHTML = render(r.top.n);
   // "Salva lotto": registra nel Bilancio i pezzi prodotti con il costo reale dei materiali (per più prodotti, diviso in base al valore).
   body.onclick = e => { if (e.target.id !== "saveLot") return;
@@ -277,34 +280,26 @@ async function shopping(r, p) {
     const pos = e.target.selectionStart; body.innerHTML = render(n); const inp = document.getElementById("dlgN"); inp.focus(); try { inp.setSelectionRange(pos, pos); } catch (x) {} };
   document.getElementById("dlg").showModal();
 }
-let chartInfo = new Map();
 function stability(series) {
   const t = times.map(ts => +new Date(ts)), end = t[t.length - 1], h24 = end - 864e5, d7 = end - 7 * 864e5;
   const pick = (d, from) => d.filter((x, i) => t[i] >= from && x != null);
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
-  const rows = series.map(s => { const last = [...s.data].reverse().find(x => x != null), a24 = pick(s.data, h24), a7 = pick(s.data, d7);
-    return { m: s.m, last, a24: avg(a24), a7: avg(a7), worst: a24.length ? Math.min(...a24) : null, pos: a7.length ? a7.filter(x => x > 0).length / a7.length : null }; })
-    .filter(r => r.last != null && (r.a7 > 0 || r.last > 0)).sort((a, b) => (b.a24 ?? -Infinity) - (a.a24 ?? -Infinity));
+  const rows = series.map(s => { const lastI = s.data.map(x => x != null).lastIndexOf(true), last = lastI >= 0 ? s.data[lastI] : null, a24 = pick(s.data, h24), a7 = pick(s.data, d7);
+    return { m: s.m, last, pct: lastI >= 0 ? s.pct[lastI] : null, a24: avg(a24), a7: avg(a7), worst: a24.length ? Math.min(...a24) : null, pos: a7.length ? a7.filter(x => x > 0).length / a7.length : null }; })
+    .filter(r => r.last != null && (r.a7 > 0 || r.last > 0)).sort((a, b) => (b.pct ?? -Infinity) - (a.pct ?? -Infinity));
   const c = x => x == null ? "" : x > 0 ? "pos" : "neg", days = (end - t[0]) / 864e5;
-  document.getElementById("st").innerHTML = rows.length ? `<tr><th>Metodo</th><th>Ultimo</th><th>Media 24h</th><th>Media ${days < 7 ? "da sempre" : "7g"}</th><th>Peggiore 24h</th><th>In guadagno</th></tr>` +
-    rows.map(r => `<tr><td>${r.m.name}</td><td class="${c(r.last)}"><b>${short(r.last)}</b>${r.a24 > 0 && r.last > 1.3 * r.a24 ? " ▲" : r.a24 > 0 && r.last < .7 * r.a24 ? " ▼" : ""}</td><td class="${c(r.a24)}">${short(r.a24)}</td><td class="${c(r.a7)}">${short(r.a7)}</td><td class="${c(r.worst)}">${short(r.worst)}</td><td>${r.pos == null ? "-" : Math.round(r.pos * 100) + "%"}</td></tr>`).join("")
+  document.getElementById("st").innerHTML = rows.length ? `<tr><th>Metodo (per craft o run)</th><th>Ultimo</th><th>Media 24h</th><th>Media ${days < 7 ? "da sempre" : "7g"}</th><th>Peggiore 24h</th><th>In guadagno</th></tr>` +
+    rows.map(r => `<tr><td>${r.m.name}</td><td class="${c(r.last)}"><b>${short(r.last)}</b>${r.a24 > 0 && r.last > 1.3 * r.a24 ? " ▲" : r.a24 > 0 && r.last < .7 * r.a24 ? " ▼" : ""}<br><span class="muted">${r.pct == null ? "" : (r.pct * 100).toFixed(1) + "%"}</span></td><td class="${c(r.a24)}">${short(r.a24)}</td><td class="${c(r.a7)}">${short(r.a7)}</td><td class="${c(r.worst)}">${short(r.worst)}</td><td>${r.pos == null ? "-" : Math.round(r.pos * 100) + "%"}</td></tr>`).join("")
     : '<tr><td class="muted">Nessun metodo in guadagno.</td></tr>';
 }
+// Margine su un solo craft (o run) a ogni giro, per la tabella di stabilità.
 function draw(metric) {
-  const series = METHODS.map(m => ({ m, data: times.map(ts => {
-    const p = priceAt(ts, metric);
-    if (m.need.some(v => !(p.b(v) > 0) || !(p.s(v) > 0))) return null;
-    const val = m.perHour(p.b, p.s); return isFinite(val) ? Math.round(val) : null; }) }));
-  const shown = series.filter(s => s.data.some(x => x != null && x > 0));
-  const css = getComputedStyle(document.documentElement);
-  chart?.destroy();
-  if (typeof Chart !== "undefined") chart = new Chart(document.getElementById("c"), { type: "line",
-    data: { labels: times.map(when), datasets: shown.map(s => ({ label: s.m.name, data: s.data, borderColor: s.m.color, backgroundColor: s.m.color, pointRadius: 0, borderWidth: 2, tension: .2, spanGaps: true })) },
-    options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-      plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + " /h" } } },
-      scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { ticks: { color: css.getPropertyValue("--muted"), callback: short } } } } });
+  const series = METHODS.map(m => { const pct = [];
+    const data = times.map(ts => { const p = priceAt(ts, metric);
+      if (m.need.some(v => !(p.b(v) > 0) || !(p.s(v) > 0))) { pct.push(null); return null; }
+      const c = m.cost(p.b), val = m.gain(p.s) - c; pct.push(c > 0 ? val / c : null); return isFinite(val) ? Math.round(val) : null; });
+    return { m, data, pct }; });
   stability(series);
-  chartInfo = new Map(series.map(s => [s.m.name, shown.includes(s) ? "sì" : s.data.every(x => x == null) ? "mancano prezzi" : "no, sempre in perdita"]));
   capacity(metric);
 }
 </script>

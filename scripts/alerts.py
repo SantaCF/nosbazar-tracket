@@ -3,8 +3,9 @@
 Each run looks for the listings of your characters in the latest snapshot and sends a notification when:
   - you sold most of an item (SOLD_SHARE, default 80%) and when it is all gone;
   - selling would take too long at your price (more than ALERT_HOURS, default 6): the units cheaper
-    than yours plus yours exceed what the bazaar sells in that time (sold_day estimate). It suggests the
-    price that sells everything within ALERT_HOURS.
+    than yours plus yours exceed what the bazaar is expected to sell in the next ALERT_HOURS, estimated
+    from the same hours of the previous days (scripts/flow.py, 70% confidence; with fewer than 3 days of
+    data the 24h average sold_day). It suggests the price that sells everything within ALERT_HOURS.
 
 Configuration comes from repository settings (Settings > Secrets and variables > Actions), not from this public repo:
   NOS_SELLERS   variable (or secret): character names, comma separated, not case sensitive
@@ -13,8 +14,11 @@ Configuration comes from repository settings (Settings > Secrets and variables >
 State (what was already notified) lives in .alerts/state.json, kept between runs by the Actions cache.
 Units that vanish before expiry count as sold: if you withdraw a listing yourself it counts as sold too.
 """
-import csv, glob, gzip, json, os, urllib.request
+import csv, glob, gzip, json, os, sys, urllib.request
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import flow   # venduti attesi per fascia oraria (stessa logica delle pagine)
 
 SELLERS = {s.strip().lower() for s in os.environ.get("NOS_SELLERS", "").split(",") if s.strip()}
 TOPIC = os.environ.get("NTFY_TOPIC", "").strip()
@@ -36,6 +40,20 @@ def notify(title, body, tags="moneybag"):
         print("notifica inviata:", title)
     except Exception as e:
         print("notifica non inviata:", e)
+
+
+CONF = 0.7
+
+
+def hours_to_sell(fl, v, start, qty, d):
+    """First hour at which the expected sales from start reach qty (max 7 days); 24h average with little data."""
+    if flow.expected(fl, v, start, 24, CONF)[0] is None:
+        return qty / d * 24 if d else None
+    for h in range(1, 169):
+        e, _ = flow.expected(fl, v, start, h, CONF)
+        if e is not None and e >= qty:
+            return h
+    return None
 
 
 def fmt(n):
@@ -62,6 +80,7 @@ def main():
             n = int(r["count"] or 1)
             row = (int(r["price"]), int(r["amount"] or 0) * n)
             (mine if r["owner"].lower() in SELLERS else others).setdefault(r["vnum"], []).append(row)
+    fl = flow.load()
     first = not os.path.exists(STATE)
     state = {} if first else json.load(open(STATE, encoding="utf-8"))
     d_, f_ = files[-1].split("/")[-2:]
@@ -86,14 +105,17 @@ def main():
             st["sold80"] = True
             notify(f"Venduto {round(sold * 100)}%: {name}", f"Restano {fmt(units)} pezzi su {fmt(st['peak'])}.", "moneybag")
         d = day.get(v)
-        if d and d > 0:
+        start = datetime.fromtimestamp(now * 60, timezone.utc)
+        exp, _ = flow.expected(fl, v, start, HOURS, CONF)
+        limit = exp if exp is not None else (d * HOURS / 24 if d else None)
+        if limit and limit > 0:
             top = max(p for p, _ in mine[v])
             book = sorted(others.get(v, []))
             ahead = sum(a for p, a in book if p < top)
-            hours = (ahead + units) / d * 24
-            if hours > HOURS:
+            if ahead + units > limit:
+                hours = hours_to_sell(fl, v, start, ahead + units, d)
                 # Highest price that sells all your units within HOURS: units cheaper than you + yours <= demand.
-                limit, below, price = d * HOURS / 24, 0, None
+                below, price = 0, None
                 for i, (p, a) in enumerate(book):
                     if i == 0 or p != book[i - 1][0]:
                         if below + units <= limit:
@@ -106,7 +128,7 @@ def main():
                 if price < top and (st["slow_price"] != price or now - st["slow_at"] >= REPEAT_MIN):
                     st["slow_at"], st["slow_price"] = now, price
                     cheaper = sum(a for p, a in book if p < min(p2 for p2, _ in mine[v]))
-                    notify(f"Vendita lenta: {name}", f"Al tuo prezzo ({fmt(top)}) ci vorrebbero circa {fmt(hours)} {'ora' if hours < 1.5 else 'ore'}: davanti a te ci sono {fmt(ahead)} pezzi più economici{f' ({fmt(cheaper)} sotto il tuo annuncio più basso)' if cheaper != ahead else ''}. Per vendere i tuoi {fmt(units)} pezzi entro {fmt(HOURS)} ore: {fmt(price)}.", "warning")
+                    notify(f"Vendita lenta: {name}", f"Al tuo prezzo ({fmt(top)}) ci vorrebbero {'più di 7 giorni' if hours is None else f"circa {fmt(hours)} {'ora' if hours < 1.5 else 'ore'}"}: davanti a te ci sono {fmt(ahead)} pezzi più economici{f' ({fmt(cheaper)} sotto il tuo annuncio più basso)' if cheaper != ahead else ''}. Per vendere i tuoi {fmt(units)} pezzi entro {fmt(HOURS)} ore: {fmt(price)}.", "warning")
         state[v] = st
     os.makedirs(".alerts", exist_ok=True)
     json.dump(state, open(STATE, "w", encoding="utf-8"))

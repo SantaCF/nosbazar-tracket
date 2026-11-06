@@ -50,11 +50,12 @@
   <p class="muted">La stima dei venduti è per eccesso, perché conta anche chi ritira gli annunci: se i numeri ti sembrano ottimistici, abbassa le ore. Sono considerati solo gli item che il tracker segue (config/items.txt).</p>
   <dialog id="dlg"><div id="dlgBody"></div><form method="dialog" style="text-align:right;margin-top:12px"><button style="font-size:16px;padding:8px 16px">Chiudi</button></form></dialog>
 </main>
+<script src="flow.js"></script>
 <script>
 const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
 const short = n => n == null ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
 const pct = x => (x * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
-const hrs = h => h < 1 ? "<1 h" : fmt(h) + " h";
+const hrs = h => h == null ? "oltre 7 g" : h < 1 ? "<1 h" : fmt(h) + " h";
 const parse = l => { const out = []; let cur = "", q = false;
   for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
   out.push(cur); return out; };
@@ -85,6 +86,7 @@ const feeFor = (gross, q) => medal() ? 0 : Math.max(gross * 0.005, 500 * Math.ce
   cap.oninput = () => { store("cap", cap.value); render(); };
   hz.onchange = () => { store("hz", hz.value); render(); };
   md.onchange = () => { store("medal", md.checked ? "1" : "0"); render(); };
+  await loadFlow();
   render();
 })().catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 
@@ -102,7 +104,7 @@ function resell(rest, q, d, cap) {
 }
 function flipNow(it) {
   const a = book[it.vnum]; if (!a || !(it.day > 0)) return null;
-  const d = it.day * hours() / 24, money = capital(), hi = floorHigh(it.vnum);
+  const d = expectedSold(it.vnum, Date.now(), hours(), it.day).units, money = capital(), hi = floorHigh(it.vnum);
   // Tetto al prezzo di rivendita: il 25% dei pezzi in vendita e il livello più alto (75° percentile) a cui è stato
   // il prezzo di vendita realistico nelle ultime 24 ore: oltre quello qualcuno di solito rimette annunci più bassi.
   const cap = Math.min(it.wp25 || it.wp10, hi || it.wp10);
@@ -114,7 +116,7 @@ function flipNow(it) {
     const rest = (take < am ? [[p, am - take]] : []).concat(a.slice(i + 1).map(x => [x[0], x[1]]));
     const s = resell(rest, q, d, cap); if (!s || s.price <= p) { if (take < am) break; continue; }
     const gross = q * s.price, profit = gross - feeFor(gross, q) - cost;
-    if (!best || profit > best.profit) best = { it, kind: "now", q, cost, top: p, sell: s.price, profit, hours: (s.ahead + q) / it.day * 24, fee: feeFor(gross, q), lots: i + 1 };
+    if (!best || profit > best.profit) best = { it, kind: "now", q, cost, top: p, sell: s.price, profit, ahead: s.ahead, fee: feeFor(gross, q), lots: i + 1 };
     if (take < am) break;
   }
   return best && best.profit > 0 && best.profit >= best.cost * 0.01 ? best : null;
@@ -153,7 +155,7 @@ function render() {
   rowsHold = all.map(flipHold).filter(Boolean).sort((x, y) => y.profit - x.profit);
   const head = last => `<tr><th>Item</th><th>Compra</th><th>Rivendi a</th><th>Guadagno</th><th>Rend.</th><th class="hide-s">${last}</th></tr>`;
   const row = (r, i, extra) => `<tr data-i="${i}"><td>${r.it.name}</td><td>${fmt(r.q)}<br><span class="muted">fino a ${fmt(r.top)}</span></td><td>${fmt(r.sell)}</td><td class="pos">${short(r.profit)}</td><td>${pct(r.profit / r.cost)}</td><td class="hide-s">${extra}</td></tr>`;
-  document.getElementById("now").innerHTML = rowsNow.length ? head("Vendi in") + rowsNow.map((r, i) => row(r, i, hrs(r.hours))).join("")
+  document.getElementById("now").innerHTML = rowsNow.length ? head("Vendi in") + rowsNow.map((r, i) => row(r, i, hrs(hoursToSell(r.it.vnum, Date.now(), r.ahead + r.q, r.it.day)))).join("")
     : '<tr><td class="muted">Nessuna rivendita in guadagno adesso con questi parametri.</td></tr>';
   document.getElementById("hold").innerHTML = rowsHold.length ? head("Solito") + rowsHold.map((r, i) => row(r, i, fmt(r.usual.price))).join("")
     : '<tr><td class="muted">Niente sotto il solito, o ancora pochi dati (servono almeno 6 ore per item).</td></tr>';
@@ -174,7 +176,7 @@ function detail(r) {
     <tr><td>Rimetti in vendita a</td><td><b>${fmt(r.sell)}</b></td></tr>
     <tr><td>Commissione</td><td>${fmt(r.fee)}</td></tr>
     <tr><td><b>Guadagno</b></td><td class="pos"><b>${fmt(r.profit)}</b> (${pct(r.profit / r.cost)})</td></tr>
-    ${r.kind === "now" ? `<tr><td>Tempo stimato per vendere</td><td>${hrs(r.hours)}</td></tr>` : ""}
+    ${r.kind === "now" ? `<tr><td>Tempo stimato per vendere</td><td>${hrs(hoursToSell(r.it.vnum, Date.now(), r.ahead + r.q, r.it.day))}</td></tr>` : ""}
     <tr><td>Venduti al giorno (stima)</td><td>${fmt(r.it.day)}</td></tr>
     <tr><td>Pezzi in vendita ora</td><td>${fmt(r.it.qty)}</td></tr></table>
     ${topOwner && topOwner[1] / r.q > 0.6 && lines.length > 1 ? `<p class="warn" style="color:var(--down)">Il ${pct(topOwner[1] / r.q)} dei pezzi è di un solo venditore (${topOwner[0]}): potrebbe rimetterne altri allo stesso prezzo.</p>` : ""}

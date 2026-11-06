@@ -26,6 +26,8 @@ jobs:
           NOS_SERVER: '1'   # 1 = EU-Dragonveil
       - name: Stima vendite tra questo giro e il precedente
         run: python3 scripts/sales.py || echo "stima vendite non riuscita"
+      - name: Venduti per fascia oraria
+        run: python3 scripts/flow.py || echo "fasce orarie non riuscite"
       - name: Prezzo di vendita realistico
         run: python3 scripts/sell.py || echo "prezzo di vendita non riuscito"
       - name: Recupera lo stato delle notifiche
@@ -77,7 +79,7 @@ jobs:
             fi
           done
           git diff --no-color -U0 data/sell.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sell.csv || true
-          tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $(cat /tmp/run/new_files)
+          tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $( [ -e data/flow.csv ] && echo data/flow.csv ) $(cat /tmp/run/new_files)
           [ -s /tmp/run/new_files ] || { echo "Nessun dato nuovo"; exit 0; }
           for i in 1 2 3 4 5; do
             git fetch -q origin main && git reset -q --hard origin/main

@@ -33,6 +33,10 @@
   .star { background:none; border:none; font-size:18px; padding:0 6px 0 0; cursor:pointer; color:#f79009; line-height:1; }
   .seg { display:flex; gap:6px; margin:0 0 8px; } .seg button { font-size:14px; padding:6px 12px; border-radius:16px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
   .seg button.on { background:#2e90fa; border-color:#2e90fa; color:#fff; }
+  .calc { background:var(--card); border-radius:12px; padding:10px 12px; margin:0 0 12px; }
+  .crow { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; } .crow label { font-size:13px; color:var(--muted); }
+  .crow input, .crow select { font-size:16px; padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); width:auto; margin:0; }
+  .crow input { width:6em; } #cout b { color:var(--fg); font-size:18px; }
   #q { width:100%; box-sizing:border-box; font-size:16px; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); margin-top:8px; }
 </style>
 </head>
@@ -43,14 +47,22 @@
   <div class="muted" id="updated">Caricamento…</div>
   <select id="item" aria-label="Item"></select>
   <div class="tiles" id="tiles"></div>
+  <div class="calc" id="calc">
+    <b>A che prezzo mettere in vendita</b>
+    <div class="crow"><label>Pezzi <input id="cq" inputmode="numeric" value="100"></label>
+      <label>Entro <select id="ch"><option value="1">1 ora</option><option value="3">3 ore</option><option value="6" selected>6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select></label>
+      <label>Fiducia <select id="cc"><option value="0.5">50%</option><option value="0.7">70%</option><option value="0.8">80%</option><option value="0.9">90%</option></select></label></div>
+    <div id="cout" class="muted">…</div>
+  </div>
   <div class="seg" id="period"><button data-p="1">24 ore</button><button data-p="7">7 giorni</button><button data-p="0">Tutto</button></div>
   <div class="chart"><canvas id="c"></canvas></div>
-  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza (venduti o ritirati dal venditore, senza contare chi li rimette subito in vendita), riportati a 24 ore: è un massimo, le vendite vere possono essere meno. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
+  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza, riportati a 24 ore. Non conta chi nello stesso giro rimette la stessa quantità a un prezzo più basso (è un ribasso, non una vendita); chi la rimette allo stesso prezzo o più alto conta come venduto (merce nuova di chi produce). Chi ritira senza rimettere conta come venduto: è un massimo. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
   <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
   <input id="q" type="search" placeholder="Cerca un item…" aria-label="Cerca un item">
   <p class="muted" style="margin:6px 0 0">Tocca ☆ per mettere un item tra i preferiti: va in cima alla tabella e al menu.</p>
   <div class="wrap"><table id="t"></table></div>
 </main>
+<script src="flow.js"></script>
 <script>
 const fmt = n => n === "" || n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
 const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
@@ -142,8 +154,45 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
         plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") } } },
         scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } } } } });
     try { localStorage.setItem("item", v); } catch (e) {}
+    if (typeof calc === "function") calc();
   }
   sel.onchange = () => show(sel.value);
+  // Calcolatore: prezzo più alto a cui i pezzi più economici dei tuoi + i tuoi stanno nei venduti attesi della fascia.
+  let calcBook = null, soldDayLatest = {};
+  const loadCalc = async () => {
+    if (calcBook) return;
+    calcBook = {};
+    try {
+      const lt = await (await fetch("data/latest.csv?" + Date.now())).text(), [lh, ...ll] = lt.trim().split(/\r?\n/), lk = parse(lh);
+      ll.forEach(l => { const v = parse(l), o = {}; lk.forEach((k, i) => o[k] = v[i]); soldDayLatest[o.vnum] = +o.sold_day || 0; });
+      const ts = new Date(last), pad = n => String(n).padStart(2, "0");
+      const buf = await (await fetch(`data/listings/${ts.getUTCFullYear()}-${pad(ts.getUTCMonth() + 1)}-${pad(ts.getUTCDate())}/${pad(ts.getUTCHours())}${pad(ts.getUTCMinutes())}.csv.gz`)).arrayBuffer();
+      let text; try { text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); } catch (e) { text = new TextDecoder().decode(buf); }
+      const [h, ...ls] = text.trim().split(/\r?\n/), k = parse(h);
+      ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); for (let c = 0; c < (+o.count || 1); c++) (calcBook[o.vnum] ??= []).push([+o.price, +o.amount]); });
+      Object.values(calcBook).forEach(a => a.sort((x, y) => x[0] - y[0]));
+    } catch (e) {}
+    await loadFlow();
+  };
+  const cq = document.getElementById("cq"), ch = document.getElementById("ch"), cc = document.getElementById("cc");
+  cc.value = String(flowConf()); try { const x = localStorage.getItem("sellh"); if (x && [...ch.options].some(o => o.value === x)) ch.value = x; } catch (e) {}
+  const calc = async () => {
+    await loadCalc();
+    const v = sel.value, q = +String(cq.value).replace(/[^0-9]/g, "") || 0, H = +ch.value, conf = +cc.value, a = calcBook[v] || [], out = document.getElementById("cout");
+    const dm = expectedSold(v, Date.now(), H, soldDayLatest[v], conf);
+    if (!a.length || !q) { out.innerHTML = "Scrivi quanti pezzi vuoi vendere."; return; }
+    if (!dm.est) { out.innerHTML = "Ancora nessuna vendita registrata per questo item."; return; }
+    const total = a.reduce((t, x) => t + x[1], 0); let below = 0, price = a[0][0] - 1, ahead = 0, capped = false;
+    for (let i = 0; i < a.length; i++) { const [pr, am] = a[i];
+      if (i > 0 && pr !== a[i - 1][0]) { if (below + q <= dm.units) { if (below > total / 10) { capped = true; break; } price = pr - 1; ahead = below; } else break; }
+      below += am; }
+    const range = dm.all && dm.all.length ? ` (nei ${dm.all.length} giorni passati, in queste ore: da ${fmt(Math.min(...dm.all))} a ${fmt(Math.max(...dm.all))})` : "";
+    out.innerHTML = `Prezzo consigliato <b>${fmt(Math.max(1, price))}</b><br>` +
+      `Venduti attesi entro ${H === 1 ? "1 ora" : H + " ore"}: ${fmt(dm.units)} pezzi` + (dm.est === "fascia" ? `, superati con fiducia ${Math.round(conf * 100)}%${range}` : ` (media delle ultime 24 ore: per questa fascia oraria ci sono ancora ${dm.days} giorni di dati, ne servono 3)`) +
+      `<br>Davanti a te: ${fmt(ahead)} pezzi più economici.` + (q > dm.units ? ` <span style="color:var(--up)">Anche al minimo (${fmt(a[0][0] - 1)}) ${fmt(q)} pezzi sono più di quanto si vende in queste ore.</span>` : "") +
+      (capped ? " Non salgo sopra il riferimento 10%: oltre è fuori mercato." : "");
+  };
+  [cq, ch, cc].forEach(x => x.oninput = x.onchange = calc);
   const latest = rows.filter(r => r.ts === last);
   const t = document.getElementById("t");
   const table = () => { const q = document.getElementById("q").value.trim().toLowerCase();
