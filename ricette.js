@@ -1,14 +1,15 @@
 // Ricette dei metodi: unica fonte per le pagine Metodi e Oggi.
 // Modifica solo qui. Tra "RICETTE =" e il ";" finale c'è JSON puro, così lo può leggere anche uno script Python.
 // Per ogni metodo: ing = ingredienti per un craft (o una run), [vnum, quantità]; out = prodotti venduti [vnum, pezzi]
-// (il primo è il prodotto principale); per_h = craft (o run) all'ora. npc = prezzi fissi degli ingredienti comprati da NPC.
+// (il primo è il prodotto principale); per_h = craft (o run) all'ora; crafts = prodotti intermedi che craftai dentro il metodo
+// (es. le 5 mezze lune per run della PTS, già contate negli ingredienti: servono solo per la lista di cosa craftare). npc = prezzi fissi degli ingredienti comprati da NPC.
 const RICETTE = {
   "npc": { "1072": 5000, "2029": 500, "2097": 100 },
   "npc_names": { "1072": "Attrezzi di produzione per gemme (NPC)", "2029": "Bottiglia vuota (NPC)", "2097": "Pozione magica (NPC)" },
   "methods": [
     { "name": "PTS 50-60 (mezze lune craftate)", "unit": "run", "per_h": 12, "color": "#2e90fa",
       "note": "3 account, ciclo 5 minuti, mezze lune prodotte da te",
-      "ing": [[1012, 34], [1092, 1], [1014, 100], [1028, 25], [1072, 5]],
+      "ing": [[1012, 34], [1092, 1], [1014, 100], [1028, 25], [1072, 5]], "crafts": [[1029, 5]],
       "out": [[1013, 90], [1016, 12], [1027, 210]] },
     { "name": "PTS 50-60 (mezze lune comprate)", "unit": "run", "per_h": 12, "color": "#155eef",
       "note": "3 account, ciclo 5 minuti, mezze lune comprate al bazar",
@@ -33,7 +34,7 @@ const NPC = Object.fromEntries(Object.entries(RICETTE.npc).map(([k, v]) => [+k, 
 const NPC_NAME = Object.fromEntries(Object.entries(RICETTE.npc_names).map(([k, v]) => [+k, v]));
 function buildMethods(tax) {
   return RICETTE.methods.map(r => ({
-    name: r.name, unit: r.unit, perH: r.per_h, color: r.color, note: r.note || "", ing: r.ing, outs: r.out,
+    name: r.name, unit: r.unit, perH: r.per_h, color: r.color, note: r.note || "", ing: r.ing, outs: r.out, crafts: r.crafts || [],
     need: [...r.ing.map(x => x[0]).filter(v => !NPC[v]), ...r.out.map(x => x[0])],
     prod: r.out[0][0], out: r.out[0][1],
     cost: p => r.ing.reduce((t, [v, q]) => t + q * (NPC[v] ?? p(v)), 0),
