@@ -75,3 +75,6 @@ Piuma d'angelo
 4264
 4340
 4341
+# Arbitraggi con i prodotti della PTS (06/11, ricette nosapki):
+5500
+# 5500 = Sigillo raid di Lord Draco (20 Gillion + 20 Sabbia + 20 Semi della potenza, da Grande mago Kan)
