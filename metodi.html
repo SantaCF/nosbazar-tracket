@@ -214,9 +214,26 @@ function bestPlan(p) {
   // nell'oro e nelle ore; poi provo tutte le combinazioni su una griglia e affino attorno alla migliore.
   const cand = METHODS.map((m, i) => ({ i, r: best(m, p) })).filter(x => x.r && x.r.top.profit > 0)
     .sort((a, b) => b.r.top.profit - a.r.top.profit).slice(0, 3)
-    .map(x => ({ i: x.i, max: Math.min(x.r.max, Math.floor(H / 60 * METHODS[x.i].perH)) })).filter(x => x.max > 0);
+    // Con le conversioni spendi meno di materiali, quindi il massimo per l'oro può salire: lascio un 30% di margine.
+    .map(x => ({ i: x.i, max: Math.min(Math.ceil(x.r.max * (METHODS.some(m => m.support) ? 1.3 : 1)), Math.floor(H / 60 * METHODS[x.i].perH)) })).filter(x => x.max > 0);
+  // Conversioni (support, es. Gillion -> polvere): da sole non convengono, ma in un piano possono trasformare un tuo
+  // prodotto in un materiale che altrimenti compreresti, evitando di vendere a prezzo calante e comprare a prezzo
+  // crescente. Per ogni combinazione provo a convertire quanto serve (fin dove bastano i tuoi pezzi) e tengo il meglio.
+  const SUP = METHODS.map((m, i) => i).filter(i => METHODS[i].support);
+  const withSupport = (c, r) => {
+    for (const i of SUP) { const m = METHODS[i], [[iv, iq]] = m.ing, x = portfolio(c, p, true);
+      const have = x.sell.find(s => String(s.v) === String(iv))?.q || 0, need = x.buy.find(b => String(b.v) === String(m.prod))?.q || 0;
+      const n = Math.min(Math.floor(have / iq), Math.floor(need / m.out)); if (n <= 0) continue;
+      const c2 = c.slice(); c2[i] += n; if (mins(c2) > H) continue; const r2 = portfolio(c2, p);
+      // Meglio se guadagna di più, oppure se fa rientrare nel tuo oro una combinazione che non ci stava.
+      const fits = x => x.cost + x.fee <= cap;
+      if ((fits(r2) && !fits(r)) || (fits(r2) === fits(r) && r2.profit > r.profit)) { c = c2; r = r2; } }
+    return { c, r }; };
   const evalC = ns => { const c = METHODS.map(() => 0); cand.forEach((x, k) => c[x.i] = ns[k]);
-    if (mins(c) > H) return null; const r = portfolio(c, p); return r.cost + r.fee > cap ? null : { c, r }; };
+    if (mins(c) > H) return null; const r0 = portfolio(c, p);
+    // Oro: la conversione fa spendere meno, quindi una combinazione oltre il tuo oro può rientrarci.
+    if (r0.cost + r0.fee > cap * 1.5) return null;
+    const e = SUP.length ? withSupport(c, r0) : { c, r: r0 }; return e.r.cost + e.r.fee > cap ? null : e; };
   let bestR = { c: METHODS.map(() => 0), r: portfolio(METHODS.map(() => 0), p) };
   const search = ranges => {   // ranges[k] = lista di valori da provare per il candidato k
     const rec = (k, ns) => { if (k === cand.length) { const e = evalC(ns); if (e && e.r.profit > bestR.r.profit) bestR = e; return; }
@@ -244,7 +261,9 @@ function bestPlan(p) {
     ma.crafts.forEach(([v, q]) => { const pi = METHODS.findIndex(m => m.unit === "craft" && String(m.prod) === String(v));
       if (pi >= 0 && base[pi]) { const c = base.slice(); c[pi] = Math.max(0, c[pi] - q * k); tries.push(c); } });
     for (const c of tries) { if (mins(c) > H) continue; const r = portfolio(c, p);
-      if (r.cost + r.fee <= cap && r.profit >= bestR.r.profit * 0.995) { bestR = { c, r }; break; } }
+      // Soglia 1,5%: la versione mista sembra rendere un po' di più solo perché i craft in più allungano di qualche
+      // minuto la finestra di vendita, non perché guadagni davvero di più.
+      if (r.cost + r.fee <= cap && r.profit >= bestR.r.profit * 0.985) { bestR = { c, r }; break; } }
   }));
   const total = bestR.r.cost + bestR.r.fee;
   return { counts: bestR.c, cur: bestR.r, lastRoi: null, mins: mins(bestR.c), capLeft: cap - total };
@@ -254,7 +273,7 @@ function renderPlan(p) {
   const rows = METHODS.map((m, i) => ({ m, n: counts[i], solo: plan(m, counts[i], p) })).filter(r => r.n > 0);
   const mins = rows.reduce((a, r) => a + r.n / r.m.perH * 60, 0);
   document.getElementById("pf").innerHTML = rows.length ? "<tr><th>Metodo</th><th>Quanti</th><th>Spesa da solo</th><th>Tempo</th></tr>" +
-    rows.map(r => `<tr><td>${r.m.name}</td><td>${fmt(r.n)} ${r.m.unit === "run" ? "run" : "craft"}</td><td>${short(r.solo.cost)}</td><td>${t(r.n / r.m.perH * 60)}</td></tr>`).join("") +
+    rows.map(r => `<tr><td>${r.m.name}</td><td>${fmt(r.n)} ${r.m.unit === "run" ? "run" : "craft"}</td><td>${r.m.support ? `<span class="muted">usi ${fmt(r.m.ing[0][1] * r.n)} ${(byTs.get(times[times.length - 1]) || {})[r.m.ing[0][0]]?.name || ""} tue</span>` : short(r.solo.cost)}</td><td>${t(r.n / r.m.perH * 60)}</td></tr>`).join("") +
     `<tr><td><b>Totale</b></td><td></td><td><b>${short(cur.cost + cur.fee)}</b><br><span class="muted">commiss. ${short(cur.fee)}</span></td><td><b>${t(mins)}</b></td></tr>
      <tr><td><b>Guadagno atteso</b></td><td colspan="3" class="pos" style="text-align:right"><b>${short(cur.profit)}</b> (${(cur.profit / (cur.cost + cur.fee) * 100).toFixed(1)}%)</td></tr>
      <tr><td class="muted">Limite</td><td colspan="3" class="muted" style="text-align:right">${mins >= playHours() * 60 * 0.95 ? "le ore" : capital() - cur.cost - cur.fee < capital() * 0.03 ? "l'oro" : "il mercato"}${capital() - cur.cost - cur.fee > capital() * 0.03 ? " · " + short(capital() - cur.cost - cur.fee) + " restano liberi" : ""}</td></tr>`
