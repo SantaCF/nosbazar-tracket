@@ -40,8 +40,19 @@
   <div class="chart"><canvas id="c"></canvas></div>
   <details class="how"><summary>Come funziona</summary><p>Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza, riportati a 24 ore. Non conta chi nello stesso giro rimette la stessa quantità a un prezzo più basso (è un ribasso, non una vendita); chi la rimette allo stesso prezzo o più alto conta come venduto (merce nuova di chi produce). Chi ritira senza rimettere conta come venduto: è un massimo. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p></details>
   <h2>Tutti gli item (ultimo giro)</h2>
-  <input id="q" type="search" placeholder="Cerca un item…" aria-label="Cerca un item">
-  <p class="muted" style="margin:6px 0 0">Tocca ☆ per mettere un item tra i preferiti: va in cima alla tabella e al menu.</p>
+  <div class="row" style="margin-top:8px"><input id="q" type="search" placeholder="Cerca un item…" aria-label="Cerca un item" style="flex:1 1 12em;margin:0">
+    <label class="muted">Ordina per <select id="sort">
+      <option value="name">nome (preferiti in cima)</option>
+      <option value="sold">venduti al giorno</option>
+      <option value="value">oro venduto al giorno</option>
+      <option value="up">rif. 10% 24h: più saliti</option>
+      <option value="down">rif. 10% 24h: più scesi</option>
+      <option value="minup">minimo 24h: più saliti</option>
+      <option value="mindown">minimo 24h: più scesi</option>
+      <option value="qty">pezzi in vendita</option>
+      <option value="price">prezzo (rif. 10%)</option>
+    </select></label></div>
+  <p class="muted" style="margin:6px 0 0">Tocca ☆ per mettere un item tra i preferiti: va in cima alla tabella (ordinata per nome) e al menu.</p>
   <div class="wrap"><table id="t"></table></div>
 </main>
 <script src="flow.js"></script>
@@ -180,9 +191,22 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
   [cq, ch, cc].forEach(x => x.oninput = x.onchange = calc);
   const latest = rows.filter(r => r.ts === last);
   const t = document.getElementById("t");
+  // Ordine della tabella: per nome (preferiti in cima) o per un valore, dal più alto; chi non ha il dato va in fondo.
+  const sortSel = document.getElementById("sort");
+  try { const k = localStorage.getItem("sort"); if (k && [...sortSel.options].some(o => o.value === k)) sortSel.value = k; } catch (e) {}
+  const key = {
+    sold: r => perDay(r.vnum), value: r => perDay(r.vnum) == null ? null : perDay(r.vnum) * (soldPrice(r.vnum) || r.wp10),
+    up: r => d24(byItem[r.vnum], "wp10")?.d, down: r => { const x = d24(byItem[r.vnum], "wp10")?.d; return x == null ? null : -x; },
+    minup: r => d24(byItem[r.vnum], "min")?.d, mindown: r => { const x = d24(byItem[r.vnum], "min")?.d; return x == null ? null : -x; },
+    qty: r => r.quantity, price: r => r.wp10 };
+  const order = () => { const k = key[sortSel.value];
+    if (!k) return (a, b) => (fav.has(String(b.vnum)) - fav.has(String(a.vnum))) || a.name.localeCompare(b.name);
+    const val = r => { const x = k(r); return typeof x === "number" && isFinite(x) ? x : -Infinity; };
+    return (a, b) => val(b) - val(a) || a.name.localeCompare(b.name); };
+  sortSel.onchange = () => { try { localStorage.setItem("sort", sortSel.value); } catch (e) {} table(); };
   const table = () => { const q = document.getElementById("q").value.trim().toLowerCase();
   t.innerHTML = "<tr><th>Item</th><th>Rif. 10%</th><th>24h</th><th>Minimo</th><th>24h</th><th>Venduti/g</th><th>Pezzi</th></tr>" +
-    latest.filter(r => !q || r.name.toLowerCase().includes(q)).sort((a, b) => (fav.has(String(b.vnum)) - fav.has(String(a.vnum))) || a.name.localeCompare(b.name)).map(r => { const it = byItem[r.vnum];
+    latest.filter(r => !q || r.name.toLowerCase().includes(q)).sort(order()).map(r => { const it = byItem[r.vnum];
       return `<tr data-v="${r.vnum}"${String(r.vnum) === sel.value ? ' class="sel"' : ""}><td><button class="star" data-fav="${r.vnum}" aria-label="preferito">${fav.has(String(r.vnum)) ? "★" : "☆"}</button>${r.name}</td><td>${fmt(r.wp10)}</td><td>${pct(d24(it, "wp10"))}</td><td>${fmt(r.min)}</td><td>${pct(d24(it, "min"))}</td><td>${fmt(perDay(r.vnum))}</td><td>${fmt(r.quantity)}</td></tr>`; }).join(""); };
   table();
   document.getElementById("q").oninput = table;
