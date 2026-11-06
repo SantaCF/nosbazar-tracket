@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="icons/manifest.webmanifest">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
+<title>Upgrade SP NosTale</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .ctl input { width:9em; } .ctl select { min-width:6em; }
+  #mats input { width:7.5em; text-align:right; padding:5px 7px; font-size:14px; }
+  .verdict { font-size:16px; } .verdict b { font-size:inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Upgrade SP</h1>
+  <div id="nav"></div><script src="nav.js"></script>
+  <div class="muted" id="updated">Caricamento…</div>
+  <div class="card ctl">
+    <label class="muted">Tipo di SP <select id="type">
+      <option value="0">SP 1-4 e speciali</option><option value="1">SP 5-8</option><option value="2">SP 9+</option><option value="3">Leggendarie</option></select></label>
+    <label class="muted">Da <select id="from"></select></label>
+    <label class="muted">a <select id="to"></select></label>
+  </div>
+  <div class="card ctl">
+    <label class="muted"><span>Prezzo SP a +0</span> <input id="p0" inputmode="numeric" placeholder="es. 2.000.000"></label>
+    <label class="muted"><span>Prezzo SP già a +<span class="lvTo"></span></span> <input id="pTo" inputmode="numeric" placeholder="bazar"></label>
+    <label class="muted"><span>Valore della tua a +<span class="lvFrom"></span></span> <input id="pFrom" inputmode="numeric" placeholder="facoltativo"></label>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="card verdict" id="verdict"></div>
+
+  <h2>Quando usare la pergamena</h2>
+  <div class="wrap"><table id="steps"></table></div>
+  <details class="how"><summary>Come funziona</summary><p>Per ogni livello confronto due scelte: tentare con la pergamena (la carta non si distrugge, ma paghi la pergamena a ogni tentativo) o senza (se la carta si distrugge ricompri una SP a +0 al prezzo che hai scritto e riparti da capo). Scelgo per ogni livello quella che costa meno in media, tenendo conto di tutto quello che si perde con una distruzione. Senza il prezzo della SP a +0 uso sempre la pergamena.</p></details>
+
+  <h2>Cosa ti serve in media</h2>
+  <div class="wrap"><table id="mats"></table></div>
+  <details class="how"><summary>Come funziona</summary><p>Quantità medie su 20.000 simulazioni seguendo le scelte qui sopra. I prezzi sono quelli per comprare un lotto normale sul bazar all'ultimo giro: puoi cambiarli (es. 0 se il materiale ce l'hai già e non vuoi contarlo). "Nel 90% dei casi" è la spesa che non superi 9 volte su 10: la sfortuna conta molto, soprattutto ai livelli alti.</p></details>
+  <p class="muted">Probabilità e materiali: simulatore di nosapki.com (dati del gioco, fino a +15).</p>
+</main>
+<script src="stato.js"></script>
+<script>
+// Probabilità [successo, distrutta, fallita] % e materiali per salire a +lv (nosapki simulatore SP, 05/11/2026).
+// anime: [vnum, pezzi] per tipo di SP (1-4, 5-8, 9+, leggendarie).
+const SP = [
+  [1, 80, 0, 20, 200000, 1, 3, [[2283, 2], [2511, 2], [2622, 2], [2622, 2]]],
+  [2, 75, 0, 25, 200000, 3, 5, [[2283, 4], [2511, 4], [2622, 4], [2622, 4]]],
+  [3, 70, 5, 25, 200000, 5, 8, [[2283, 6], [2511, 6], [2622, 6], [2622, 6]]],
+  [4, 60, 10, 30, 200000, 7, 10, [[2283, 8], [2511, 8], [2622, 8], [2622, 8]]],
+  [5, 50, 15, 35, 200000, 10, 15, [[2283, 10], [2511, 10], [2622, 10], [2622, 10]]],
+  [6, 40, 20, 40, 500000, 12, 20, [[2284, 1], [2512, 1], [2620, 1], [2620, 1]]],
+  [7, 35, 25, 40, 500000, 14, 25, [[2284, 2], [2512, 2], [2620, 2], [2620, 2]]],
+  [8, 30, 30, 40, 500000, 16, 30, [[2284, 3], [2512, 3], [2620, 3], [2620, 3]]],
+  [9, 25, 35, 40, 500000, 18, 35, [[2284, 4], [2512, 4], [2620, 4], [2620, 4]]],
+  [10, 20, 40, 40, 500000, 20, 40, [[2284, 5], [2512, 5], [2620, 5], [2620, 5]]],
+  [11, 10, 45, 45, 1000000, 22, 45, [[2285, 1], [2513, 1], [2621, 1], [2621, 1]]],
+  [12, 7, 50, 43, 1000000, 24, 50, [[2285, 2], [2513, 2], [2621, 2], [2621, 2]]],
+  [13, 5, 55, 40, 1000000, 26, 55, [[2285, 3], [2513, 3], [2621, 3], [2621, 3]]],
+  [14, 3, 60, 37, 1000000, 28, 60, [[2285, 4], [2513, 4], [2621, 4], [2621, 4]]],
+  [15, 1.5, 70, 28.5, 1000000, 30, 70, [[2285, 5], [2513, 5], [2621, 5], [2621, 5]]],
+];
+const SCROLL = lv => lv <= 10 ? 1363 : 1364;   // pergamena (basso) fino a +10, (alto) da +11 a +15
+const fmt = n => n == null || !isFinite(n) ? "-" : Math.round(n).toLocaleString("it-IT");
+const short = n => !isFinite(n) ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
+const num = s => { const n = +String(s || "").replace(/[.\s]/g, "").replace(",", "."); return n > 0 ? n : null; };
+const parse = l => { const out = []; let cur = "", q = false;
+  for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
+  out.push(cur); return out; };
+let medal = false; try { medal = localStorage.getItem("medal") === "1"; } catch (e) {}
+const TAX = medal ? 0 : 0.005;
+
+const $ = id => document.getElementById(id);
+let st = { type: "0", from: "0", to: "10", p0: "", pTo: "", pFrom: "", price: {} };
+try { Object.assign(st, JSON.parse(localStorage.getItem("upg") || "{}")); } catch (e) {}
+const save = () => { try { localStorage.setItem("upg", JSON.stringify(st)); } catch (e) {} };
+const names = { 1030: "Cristallo di luna piena", 2282: "Piuma d'angelo" }, market = {};
+
+$("from").innerHTML = SP.map(r => `<option value="${r[0] - 1}">+${r[0] - 1}</option>`).join("");
+$("to").innerHTML = SP.map(r => `<option value="${r[0]}">+${r[0]}</option>`).join("");
+for (const k of ["type", "from", "to", "p0", "pTo", "pFrom"]) {
+  $(k).value = st[k];
+  $(k).addEventListener(k.startsWith("p") ? "input" : "change", () => {
+    st[k] = $(k).value;
+    if (k === "from" && +st.to <= +st.from) st.to = $("to").value = String(+st.from + 1);
+    if (k === "to" && +st.to <= +st.from) st.from = $("from").value = String(+st.to - 1);
+    save(); draw(); });
+}
+
+const price = v => st.price[v] != null && st.price[v] !== "" ? +st.price[v] : market[v] ?? null;
+
+// Materiali e costo di un tentativo per salire a +lv (con o senza pergamena).
+function attempt(lv, scroll) {
+  const r = SP[lv - 1], t = +st.type, [sv, sq] = r[7][t];
+  const m = { 1030: r[5], 2282: r[6], [sv]: sq }; if (scroll) m[SCROLL(lv)] = 1;
+  let c = r[4]; for (const [v, q] of Object.entries(m)) c += q * (price(v) ?? NaN);
+  // con la pergamena una distruzione diventa un tentativo fallito
+  return { gold: r[4], m, c, s: r[1] / 100, d: scroll ? 0 : r[2] / 100, f: (r[3] + (scroll ? r[2] : 0)) / 100 };
+}
+
+// Scelta ottima per livello. Senza pergamena una distruzione costa: ricomprare la SP a +0 (p0) e rifare tutto da +0.
+// R = costo di ripartire = p0 + V(0) dipende dalla soluzione stessa: lo trovo per iterazione (punto fisso, converge).
+function solve(from, to, p0) {
+  const A = [], V = Array(to + 1).fill(0), pol = [];
+  for (let lv = 1; lv <= to; lv++) A[lv] = { y: attempt(lv, true), n: attempt(lv, false) };
+  let R = Infinity;
+  for (let it = 0; it < 500; it++) {
+    for (let k = to - 1; k >= 0; k--) {
+      const a = A[k + 1], ys = a.y.c / a.y.s + V[k + 1];
+      // senza rischio di distruzione la pergamena non serve; senza prezzo della SP a +0 non so quanto costa perderla
+      const nn = a.n.d === 0 ? a.n.c / a.n.s + V[k + 1] : p0 == null ? Infinity : (a.n.c + a.n.s * V[k + 1] + a.n.d * R) / (a.n.s + a.n.d);
+      if (nn <= ys) { V[k] = nn; pol[k + 1] = false; } else { V[k] = ys; pol[k + 1] = true; }
+    }
+    const nr = p0 == null ? Infinity : p0 + V[0];
+    if (Math.abs(nr - R) < 1) break; R = nr;
+  }
+  return { V, pol, A, exp: V[from] };
+}
+
+// Simulazione con la stessa politica: distribuzione della spesa e materiali medi.
+function simulate(from, to, p0, S, runs = 20000) {
+  const tot = [], mats = {}; let gold = 0, cards = 0;
+  for (let i = 0; i < runs; i++) {
+    let lv = from, c = 0, guard = 0;
+    while (lv < to && guard++ < 1e5) {
+      const a = S.pol[lv + 1] ? S.A[lv + 1].y : S.A[lv + 1].n;
+      c += a.c; gold += a.gold; for (const [v, q] of Object.entries(a.m)) mats[v] = (mats[v] || 0) + q;
+      const x = Math.random();
+      if (x < a.s) lv++; else if (x < a.s + a.d) { lv = 0; c += p0; cards++; }
+    }
+    tot.push(c);
+  }
+  tot.sort((a, b) => a - b);
+  for (const v in mats) mats[v] /= runs;
+  return { mean: tot.reduce((a, b) => a + b, 0) / runs, p50: tot[runs >> 1], p90: tot[Math.floor(runs * 0.9)], mats, gold: gold / runs, cards: cards / runs };
+}
+
+function draw() {
+  const from = +st.from, to = +st.to, p0 = num(st.p0), pTo = num(st.pTo), pFrom = num(st.pFrom);
+  document.querySelectorAll(".lvTo").forEach(e => e.textContent = to);
+  document.querySelectorAll(".lvFrom").forEach(e => e.textContent = from);
+  const S = solve(from, to, p0);
+  if (!isFinite(S.exp)) { $("tiles").innerHTML = ""; $("verdict").innerHTML = "Mancano prezzi di qualche materiale: scrivili nella tabella qui sotto."; }
+  const sim = isFinite(S.exp) ? simulate(from, to, p0 ?? 0, S) : null;
+  if (sim) {
+    $("tiles").innerHTML = `<div class="tile"><div class="muted">Spesa attesa</div><b>${short(S.exp)}</b><div class="muted">media, da +${from} a +${to}</div></div>` +
+      `<div class="tile"><div class="muted">Nel 90% dei casi</div><b>${short(sim.p90)}</b><div class="muted">al massimo · metà delle volte ${short(sim.p50)}</div></div>` +
+      `<div class="tile"><div class="muted">Carte distrutte</div><b>${sim.cards.toLocaleString("it-IT", { maximumFractionDigits: 2 })}</b><div class="muted">in media${p0 ? "" : " (pergamena sempre)"}</div></div>`;
+    const net = pTo ? pTo - (pFrom ? pFrom * (1 - TAX) : 0) : null;
+    let v = "";
+    if (net == null) v = `Scrivi il prezzo di una SP già a +${to} per sapere se conviene comprarla.`;
+    else {
+      const buyTxt = pFrom ? `comprarla a +${to} e vendere la tua a +${from} ti costa <b>${fmt(net)}</b>` : `comprarla a +${to} ti costa <b>${fmt(net)}</b>`;
+      v = S.exp < net ? `<b class="pos">Conviene alzarla da solo</b>: in media spendi ${fmt(S.exp)}, mentre ${buyTxt}. Risparmio atteso ${fmt(net - S.exp)}.`
+        : `<b class="neg">Conviene comprarla</b>: ${buyTxt}, mentre alzarla da solo costa in media ${fmt(S.exp)}.`;
+      if (S.exp < net && sim.p90 > net) v += ` Attenzione: 1 volta su 10 spendi più di ${fmt(sim.p90)}, cioè più che comprarla.`;
+    }
+    $("verdict").innerHTML = v;
+  }
+  // Livelli.
+  let h = `<tr><th>Livello</th><th>Successo</th><th class="hide-s">Distrutta</th><th>Pergamena</th><th>Tentativo</th><th>Spesa attesa</th></tr>`;
+  for (let lv = from + 1; lv <= to; lv++) {
+    const a = S.A[lv], y = S.pol[lv], at = y ? a.y : a.n;
+    const step = S.V[lv - 1] - S.V[lv];
+    h += `<tr><td>+${lv - 1} → +${lv}</td><td>${SP[lv - 1][1].toLocaleString("it-IT")}%</td><td class="hide-s">${SP[lv - 1][2]}%</td>` +
+      `<td>${a.n.d === 0 ? '<span class="muted">non serve</span>' : y ? "sì" : '<span class="warn">no</span>'}</td><td>${short(at.c)}</td><td>${short(step)}</td></tr>`;
+  }
+  $("steps").innerHTML = h;
+  // Materiali.
+  const used = new Set([1030, 2282]);
+  for (let lv = from + 1; lv <= to; lv++) { used.add(SP[lv - 1][7][+st.type][0]); if (S.pol[lv]) used.add(SCROLL(lv)); }
+  let m = `<tr><th>Materiale</th><th>Pezzi</th><th>Prezzo</th><th>Totale</th></tr>`;
+  for (const v of used) {
+    const q = sim ? sim.mats[v] || 0 : 0, p = price(v);
+    m += `<tr><td>${names[v] || v}</td><td>${q.toLocaleString("it-IT", { maximumFractionDigits: 1 })}</td>` +
+      `<td><input data-v="${v}" inputmode="numeric" value="${p == null ? "" : fmt(p)}"${st.price[v] != null && st.price[v] !== "" ? ' style="border-color:var(--acc)"' : ""}></td><td>${p == null ? "-" : short(q * p)}</td></tr>`;
+  }
+  if (sim) m += `<tr><td>Oro NPC</td><td></td><td></td><td>${short(sim.gold)}</td></tr>` + (sim.cards ? `<tr><td>SP a +0 ricomprate</td><td>${sim.cards.toLocaleString("it-IT", { maximumFractionDigits: 2 })}</td><td>${fmt(p0)}</td><td>${short(sim.cards * p0)}</td></tr>` : "");
+  $("mats").innerHTML = m;
+  $("mats").querySelectorAll("input").forEach(i => i.addEventListener("change", () => {
+    const n = String(i.value).trim() === "" ? "" : +String(i.value).replace(/[.\s]/g, "").replace(",", ".");
+    st.price[i.dataset.v] = n === "" || isNaN(n) ? "" : n; if (st.price[i.dataset.v] === "") delete st.price[i.dataset.v];
+    save(); draw(); }));
+}
+
+fetch("data/latest.csv?" + Date.now()).then(r => r.text()).then(t => {
+  const [h, ...ls] = t.trim().split(/\r?\n/); const k = parse(h), iv = k.indexOf("vnum"), ina = k.indexOf("name"), ilp = k.indexOf("lot_price"), its = k.indexOf("ts");
+  let ts = "";
+  for (const l of ls) { const v = parse(l); if (+v[ilp] > 0) market[v[iv]] = +v[ilp]; names[v[iv]] = v[ina]; ts = v[its]; }
+  $("updated").textContent = "Prezzi dei materiali all'ultimo giro: " + new Date(ts).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  draw();
+}).catch(e => { $("updated").textContent = "Dati non disponibili: " + e; draw(); });
+</script>
+</body>
+</html>
