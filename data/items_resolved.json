@@ -338,5 +338,11 @@
       "vnum": 4341,
       "name": "Speedbooster magico (3 giorni)"
     }
+  ],
+  "5500": [
+    {
+      "vnum": 5500,
+      "name": "Sigillo del raid di Lord Draco"
+    }
   ]
 }
