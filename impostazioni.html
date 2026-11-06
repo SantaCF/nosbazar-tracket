@@ -6,22 +6,12 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="icons/manifest.webmanifest">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
 <title>Impostazioni NosBazar</title>
+<link rel="stylesheet" href="style.css">
 <style>
-  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --link:#1f6feb; --acc:#2e90fa; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --link:#58a6ff; --acc:#58a6ff; } }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  main { max-width:700px; margin:0 auto; padding:16px; }
-  h1 { font-size:20px; margin:0 0 4px; } h2 { font-size:16px; margin:22px 0 6px; }
-  a { color:var(--link); } .muted { color:var(--muted); font-size:13px; }
-  .field { background:var(--card); border-radius:10px; padding:10px 12px; margin-top:8px; }
-  .field label { display:block; font-weight:600; margin-bottom:6px; }
-  input, select, button { font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); box-sizing:border-box; }
-  input[type=text], input[inputmode] { width:100%; } input[type=checkbox] { width:22px; height:22px; vertical-align:middle; }
-  button { cursor:pointer; } button.main { background:var(--acc); color:#fff; border-color:var(--acc); }
-  .row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-  #saved { color:#12b76a; font-size:13px; min-height:1.2em; }
+  main { max-width:720px; } input[type=text], input[inputmode], .field select { width:100%; } #saved { color:var(--up); font-size:13px; min-height:1.2em; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -51,13 +41,13 @@
   <div class="field"><label for="conf">Fiducia sui tempi di vendita</label>
     <select id="conf"><option value="0.5">50% (metà dei giorni)</option><option value="0.7">70% (consigliata)</option><option value="0.8">80% (4 giorni su 5)</option><option value="0.9">90% (prudente)</option></select>
     <div class="muted">Quanto si vende nelle prossime ore lo stimo dalle stesse ore dei giorni passati. Con 80% uso una quantità che è stata superata in 4 giorni su 5: prezzi un po' più bassi, ma vendi in tempo quasi sempre.</div></div>
-  <div class="field"><label for="metric">Prezzi usati nel grafico dei metodi</label>
+  <div class="field"><label for="metric">Prezzi nella tabella Stabilità (Metodi)</label>
     <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select></div>
   <div id="saved"></div>
 
   <h2>Backup</h2>
   <div class="row"><button class="main" id="exp">Esporta tutto</button><button id="imp">Importa</button></div>
-  <p class="muted">"Esporta tutto" copia negli appunti impostazioni, preferiti, movimenti e lotti del Bilancio: incollalo in una nota o in una mail. "Importa" accetta anche un backup fatto dalla pagina Bilancio.</p>
+  <details class="how"><summary>Come funziona</summary><p>"Esporta tutto" copia negli appunti impostazioni, preferiti, movimenti e lotti del Bilancio: incollalo in una nota o in una mail. "Importa" accetta anche un backup fatto dalla pagina Bilancio.</p></details>
 </main>
 <script>
 const KEYS = ["medal", "cap", "hrs", "hz", "sellh", "conf", "metric2", "fav", "item", "period"];

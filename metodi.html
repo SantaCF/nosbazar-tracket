@@ -6,60 +6,42 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="icons/manifest.webmanifest">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
 <title>Metodi NosTale</title>
+<link rel="stylesheet" href="style.css">
 <style>
-  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#067647; --down:#b42318; --link:#1f6feb; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#47cd89; --down:#f97066; --link:#58a6ff; } }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  main { max-width:900px; margin:0 auto; padding:16px; }
-  h1 { font-size:20px; margin:0 0 4px; }
-  a { color:var(--link); }
-  .muted { color:var(--muted); font-size:13px; }
-  .nav { margin:4px 0 12px; font-size:14px; }
-  select { font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
-  table { width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
-  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
-  th:first-child, td:first-child { text-align:left; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
-  .wrap { overflow-x:auto; }
-  #k tr[data-i] { cursor:pointer; } #k tr[data-i] td:first-child { color:var(--link); text-decoration:underline; }
-  dialog { border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--fg); width:min(560px, calc(100vw - 32px)); padding:16px; }
-  dialog::backdrop { background:rgba(0,0,0,.4); }
-  dialog table { margin-top:8px; } dialog input { font-size:16px; padding:6px; width:7em; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
-  .warn { color:var(--down); }
-  @media (max-width:480px) { #t th:nth-child(5), #t td:nth-child(5) { display:none; } #t, #k { font-size:12px; } #k th, #k td { padding:6px 2px; } }
+  @media (max-width:480px) { #t th:nth-child(5), #t td:nth-child(5) { display:none; } } dialog input { width:7em; padding:6px 8px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Oro all'ora per metodo · EU-Dragonveil</h1>
+  <h1>Metodi</h1>
   <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
-  <h2 style="font-size:16px">Quanto puoi fare con i tuoi soldi</h2>
-  <label class="muted">Oro disponibile adesso
-    <input id="cap" inputmode="numeric" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:12em" value="25.000.000">
-  </label>
-  <label class="muted">Vendere entro
-    <select id="hz"><option value="1">1 ora</option><option value="3" selected>3 ore</option><option value="6">6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select>
-  </label>
-  <label class="muted" style="display:block;margin-top:6px"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia del NosBazar attiva (niente commissioni)</label>
-  <div class="wrap"><table id="k"></table></div>
-  <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Il tempo per vendere parte da adesso e dura quanto la produzione più il tempo scelto (i pezzi escono man mano mentre produci). Quanto si vende in quel tempo lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
-  <h2 style="font-size:16px">Piano consigliato: come dividere il tuo oro</h2>
-  <label class="muted">Ore che puoi dedicare <input id="hrs" inputmode="decimal" value="3" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:4em"></label>
+  <div class="card row" style="margin-top:12px">
+    <label class="muted">Oro <input id="cap" inputmode="numeric" style="width:9em" value="25.000.000"></label>
+    <label class="muted">Ore <input id="hrs" inputmode="decimal" value="3" style="width:4em"></label>
+    <label class="muted">Vendere entro
+      <select id="hz"><option value="1">1 ora</option><option value="3" selected>3 ore</option><option value="6">6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select></label>
+    <label class="muted"><input type="checkbox" id="medal"> Medaglia NosBazar</label>
+  </div>
+  <h2>Piano consigliato</h2>
   <div class="wrap"><table id="pf"></table></div>
-  <p class="muted" id="pfNote">Cerco la combinazione di metodi (fino ai 3 migliori) che guadagna di più restando nel tuo oro e nelle tue ore, provando tutte le combinazioni di quantità e tenendo conto che i metodi si influenzano: i materiali comuni (per esempio la polvere per mezze lune e luna piena) li compri una volta sola salendo di prezzo, e i prodotti si sommano nella vendita. Se fare di più farebbe guadagnare meno (prezzi di acquisto che salgono, di vendita che scendono), lascio oro libero.</p>
-  <dialog id="dlg"><div id="dlgBody"></div><form method="dialog" style="text-align:right;margin-top:12px"><button style="font-size:16px;padding:8px 16px">Chiudi</button></form></dialog>
-  <h2 style="font-size:16px">Stabilità del margine: ultimo giro e medie</h2>
+  <details class="how"><summary>Come funziona</summary><p id="pfNote">Cerco la combinazione di metodi (fino ai 3 migliori) che guadagna di più restando nel tuo oro e nelle tue ore, provando tutte le combinazioni di quantità e tenendo conto che i metodi si influenzano: i materiali comuni (per esempio la polvere per mezze lune e luna piena) li compri una volta sola salendo di prezzo, e i prodotti si sommano nella vendita. Se fare di più farebbe guadagnare meno (prezzi di acquisto che salgono, di vendita che scendono), lascio oro libero.</p></details>
+  <h2>Quanto puoi fare con ogni metodo</h2>
+  <div class="wrap"><table id="k"></table></div>
+  <details class="how"><summary>Come funziona</summary><p>Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Il tempo per vendere parte da adesso e dura quanto la produzione più il tempo scelto (i pezzi escono man mano mentre produci). Quanto si vende in quel tempo lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p></details>
+  <dialog id="dlg"><div id="dlgBody"></div><form method="dialog"><button>Chiudi</button></form></dialog>
+  <h2>Stabilità del margine: ultimo giro e medie</h2>
   <label class="muted">Prezzi usati
     <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select>
   </label>
   <div class="wrap"><table id="st"></table></div>
-  <p class="muted">Guadagno su un solo craft (o run) a ogni giro, senza contare la quantità: serve a capire se il margine di adesso è quello solito o un picco. Con "realistico" compri al prezzo lotto 2% e vendi al prezzo realistico. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. ▲/▼ = ultimo giro molto sopra/sotto la media 24h.</p>
-  <h2 style="font-size:16px">Ultimo giro: oro all'ora</h2>
+  <details class="how"><summary>Come funziona</summary><p>Guadagno su un solo craft (o run) a ogni giro, senza contare la quantità: serve a capire se il margine di adesso è quello solito o un picco. Con "realistico" compri al prezzo lotto 2% e vendi al prezzo realistico. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. ▲/▼ = ultimo giro molto sopra/sotto la media 24h.</p></details>
+  <h2>Ultimo giro: oro all'ora</h2>
   <div class="wrap"><table id="t"></table></div>
-  <p class="muted">Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account e ciclo 5 minuti, in due versioni: mezze lune prodotte da te o comprate al bazar. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. "Su quanti" = il numero consigliato: l'oro all'ora vale finché fai quei craft, oltre il mercato non regge.</p>
+  <details class="how"><summary>Come funziona</summary><p>Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account e ciclo 5 minuti, in due versioni: mezze lune prodotte da te o comprate al bazar. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. "Su quanti" = il numero consigliato: l'oro all'ora vale finché fai quei craft, oltre il mercato non regge.</p></details>
 </main>
 <script src="ricette.js"></script>
 <script src="flow.js"></script>
@@ -274,7 +256,7 @@ async function shopping(r, p) {
       <tr><td><b>Totale da avere</b></td><td><b>${fmt(x.cost + x.fee)}</b></td></tr><tr><td>Incasso netto (commissione tolta)</td><td>${fmt(x.net)}</td></tr>
       <tr><td><b>Guadagno</b></td><td class="${x.profit >= 0 ? "pos" : "neg"}"><b>${fmt(x.profit)}</b></td></tr></table>
       <button id="saveLot" style="font-size:16px;padding:8px 14px;margin-top:8px">Salva lotto nel Bilancio</button>
-      <p class="muted">Acquisto: compri dagli annunci più economici in su fino alla quantità che ti serve (ultimo giro), "fino a" è il prezzo più alto che paghi. Vendita: il prezzo più alto a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto secondo la stima venduti/giorno (che è per eccesso: conta anche chi ritira), mai sopra il riferimento 10%. Più pezzi metti, più devi scendere.${r.m.name.startsWith("PTS") ? " PTS: 31 semi di produzione + 1 di ingresso per ognuno dei 3 account; 5 mezze lune per run" + (r.m.name.includes("comprate") ? ", comprate al bazar." : ", prodotte da te (polvere, cristalli e attrezzi nella lista).") : ""}</p>`; };
+      <details class="how"><summary>Come funziona</summary><p>Acquisto: compri dagli annunci più economici in su fino alla quantità che ti serve (ultimo giro), "fino a" è il prezzo più alto che paghi. Vendita: il prezzo più alto a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto secondo la stima venduti/giorno (che è per eccesso: conta anche chi ritira), mai sopra il riferimento 10%. Più pezzi metti, più devi scendere.${r.m.name.startsWith("PTS") ? " PTS: 31 semi di produzione + 1 di ingresso per ognuno dei 3 account; 5 mezze lune per run" + (r.m.name.includes("comprate") ? ", comprate al bazar." : ", prodotte da te (polvere, cristalli e attrezzi nella lista).") : ""}</p></details>`; };
   body.innerHTML = render(r.top.n);
   // "Salva lotto": registra nel Bilancio i pezzi prodotti con il costo reale dei materiali (per più prodotti, diviso in base al valore).
   body.onclick = e => { if (e.target.id !== "saveLot") return;
