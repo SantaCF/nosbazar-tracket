@@ -52,6 +52,10 @@
   <label class="muted" style="display:block;margin-top:6px"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia del NosBazar attiva (niente commissioni)</label>
   <div class="wrap"><table id="k"></table></div>
   <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
+  <h2 style="font-size:16px">Piano consigliato: come dividere il tuo oro</h2>
+  <label class="muted">Ore che puoi dedicare <input id="hrs" inputmode="decimal" value="3" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:4em"></label>
+  <div class="wrap"><table id="pf"></table></div>
+  <p class="muted" id="pfNote">Cerco la combinazione di metodi (fino ai 3 migliori) che guadagna di più restando nel tuo oro e nelle tue ore, provando tutte le combinazioni di quantità e tenendo conto che i metodi si influenzano: i materiali comuni (per esempio la polvere per mezze lune e luna piena) li compri una volta sola salendo di prezzo, e i prodotti si sommano nella vendita. Se fare di più farebbe guadagnare meno (prezzi di acquisto che salgono, di vendita che scendono), lascio oro libero.</p>
   <dialog id="dlg"><div id="dlgBody"></div><form method="dialog" style="text-align:right;margin-top:12px"><button style="font-size:16px;padding:8px 16px">Chiudi</button></form></dialog>
   <h2 style="font-size:16px">Ultimo giro: oro all'ora</h2>
   <div class="wrap"><table id="t"></table></div>
@@ -123,6 +127,7 @@ fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t =>
   cap.oninput = () => { try { localStorage.setItem("cap", cap.value); } catch (e) {} capacity(sel.value); };
   const md = document.getElementById("medal"); md.checked = medal;
   md.onchange = () => { medal = md.checked; TAX = medal ? 0 : 0.005; try { localStorage.setItem("medal", medal ? "1" : "0"); } catch (e) {} draw(sel.value); };
+  try { const h = localStorage.getItem("hrs"); if (h) document.getElementById("hrs").value = h; } catch (e) {}
   const hz = document.getElementById("hz");
   try { const h = localStorage.getItem("hz"); if (h) hz.value = h; } catch (e) {}
   hz.onchange = () => { try { localStorage.setItem("hz", hz.value); } catch (e) {} capacity(sel.value); };
@@ -218,6 +223,58 @@ async function capacity(metric) {
     rows.map((r, i) => `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.top.n)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.top.profit)}</td><td>${t(r.top.n / r.m.perH * 60)}</td></tr>`).join("")
     || '<tr><td class="muted">Nessun metodo in guadagno all\'ultimo giro.</td></tr>';
   document.getElementById("k").onclick = e => { const tr = e.target.closest("tr[data-i]"); if (tr) shopping(rows[+tr.dataset.i], p); };
+  renderPlan(p);
+  const hrs = document.getElementById("hrs");
+  hrs.oninput = () => { try { localStorage.setItem("hrs", hrs.value); } catch (e) {} renderPlan(p); };
+}
+// Piano su più metodi insieme: costo e ricavo calcolati sui libri condivisi (domanda di ogni materiale e offerta
+// di ogni prodotto sommate tra i metodi), poi allocazione a pezzetti in base al rendimento marginale.
+function portfolio(counts, p) {
+  const need = {}, out = {}; let cost = 0;
+  METHODS.forEach((m, i) => { const n = counts[i]; if (!n) return;
+    ING[m.name].forEach(([v, q]) => { if (NPC[v]) cost += NPC[v] * q * n; else need[v] = (need[v] || 0) + q * n; });
+    OUTS[m.name].forEach(([v, q]) => out[v] = (out[v] || 0) + q * n); });
+  for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q); cost += w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; }
+  let gross = 0, fee = 0;
+  for (const [v, q] of Object.entries(out)) { const g = sellFor(v, q, p.s).price * q; gross += g; if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); }
+  return { cost, fee, profit: gross * (1 - TAX) - cost };
+}
+const playHours = () => Math.max(0.25, +String(document.getElementById("hrs")?.value || "3").replace(",", ".") || 3);
+function bestPlan(p) {
+  const cap = capital(), H = playHours() * 60;
+  const mins = c => c.reduce((a, n, i) => a + n / METHODS[i].perH * 60, 0);
+  // Metodi candidati: quelli in guadagno da soli (al massimo i 3 migliori). Per ognuno il massimo che stai
+  // nell'oro e nelle ore; poi provo tutte le combinazioni su una griglia e affino attorno alla migliore.
+  const cand = METHODS.map((m, i) => ({ i, r: best(m, p) })).filter(x => x.r && x.r.top.profit > 0)
+    .sort((a, b) => b.r.top.profit - a.r.top.profit).slice(0, 3)
+    .map(x => ({ i: x.i, max: Math.min(x.r.max, Math.floor(H / 60 * METHODS[x.i].perH)) })).filter(x => x.max > 0);
+  const evalC = ns => { const c = METHODS.map(() => 0); cand.forEach((x, k) => c[x.i] = ns[k]);
+    if (mins(c) > H) return null; const r = portfolio(c, p); return r.cost + r.fee > cap ? null : { c, r }; };
+  let bestR = { c: METHODS.map(() => 0), r: portfolio(METHODS.map(() => 0), p) };
+  const search = ranges => {   // ranges[k] = lista di valori da provare per il candidato k
+    const rec = (k, ns) => { if (k === cand.length) { const e = evalC(ns); if (e && e.r.profit > bestR.r.profit) bestR = e; return; }
+      for (const v of ranges[k]) rec(k + 1, ns.concat(v)); };
+    rec(0, []); };
+  const steps = cand.length <= 2 ? 24 : 12;
+  search(cand.map(x => [...new Set(Array.from({ length: steps + 1 }, (_, s) => Math.round(x.max * s / steps)))]));
+  for (let round = 0; round < 2; round++) {   // affinamento attorno alla combinazione migliore
+    const cur = cand.map(x => bestR.c[x.i]);
+    search(cand.map((x, k) => { const w = Math.max(1, Math.round(x.max / steps / (round ? 8 : 2))), out = [];
+      for (let d = -4; d <= 4; d++) { const v = cur[k] + d * w; if (v >= 0 && v <= x.max) out.push(v); } return out; }));
+  }
+  const total = bestR.r.cost + bestR.r.fee;
+  return { counts: bestR.c, cur: bestR.r, lastRoi: null, mins: mins(bestR.c), capLeft: cap - total };
+}
+function renderPlan(p) {
+  const { counts, cur, lastRoi } = bestPlan(p), t = n => n >= 60 ? Math.floor(n / 60) + "h " + Math.round(n % 60) + "m" : Math.round(n) + " min";
+  const rows = METHODS.map((m, i) => ({ m, n: counts[i], solo: plan(m, counts[i], p) })).filter(r => r.n > 0);
+  const mins = rows.reduce((a, r) => a + r.n / r.m.perH * 60, 0);
+  document.getElementById("pf").innerHTML = rows.length ? "<tr><th>Metodo</th><th>Quanti</th><th>Spesa</th><th>Tempo</th></tr>" +
+    rows.map(r => `<tr><td>${r.m.name}</td><td>${fmt(r.n)} ${r.m.unit === "run" ? "run" : "craft"}</td><td>${short(r.solo.cost)}</td><td>${t(r.n / r.m.perH * 60)}</td></tr>`).join("") +
+    `<tr><td><b>Totale</b></td><td></td><td><b>${short(cur.cost + cur.fee)}</b><br><span class="muted">commiss. ${short(cur.fee)}</span></td><td><b>${t(mins)}</b></td></tr>
+     <tr><td><b>Guadagno atteso</b></td><td colspan="3" class="pos" style="text-align:right"><b>${short(cur.profit)}</b> (${(cur.profit / (cur.cost + cur.fee) * 100).toFixed(1)}%)</td></tr>
+     <tr><td class="muted">Limite</td><td colspan="3" class="muted" style="text-align:right">${mins >= playHours() * 60 * 0.95 ? "le ore" : capital() - cur.cost - cur.fee < capital() * 0.03 ? "l'oro" : "il mercato"}${capital() - cur.cost - cur.fee > capital() * 0.03 ? " · " + short(capital() - cur.cost - cur.fee) + " restano liberi" : ""}</td></tr>`
+    : '<tr><td class="muted">Nessun metodo conviene adesso.</td></tr>';
 }
 async function shopping(r, p) {
   await loadBook();
