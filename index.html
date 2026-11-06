@@ -64,7 +64,7 @@ async function gz(url) {
   const mine = {}, others = {};
   book.forEach(r => { const row = [+r.price, (+r.amount || 0) * (+r.count || 1)];
     ((names.includes(r.owner.toLowerCase()) ? mine : others)[r.vnum] ??= []).push(row); });
-  const since = new Date(ts - 864e5).toISOString();
+  const since = [new Date(ts - 864e5).toISOString(), bil.start || ""].sort().pop();   // non prima dell'inizio del Bilancio
   const sales = ownTexts.filter(Boolean).flatMap(csv).filter(r => names.includes((r.owner || "").toLowerCase()) && r.ts >= since);
   const sold = sales.reduce((t, r) => t + +r.value, 0), soldU = sales.reduce((t, r) => t + +r.units, 0);
   // Guadagno sulle vendite: solo per gli item con un lotto aperto nel Bilancio (costo medio per pezzo dei lotti).
