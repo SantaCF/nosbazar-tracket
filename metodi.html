@@ -42,6 +42,9 @@
     <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select>
   </label>
   <div class="chart"><canvas id="c"></canvas></div>
+  <h2 style="font-size:16px">Stabilità: ultimo giro e medie</h2>
+  <div class="wrap"><table id="st"></table></div>
+  <p class="muted">Oro all'ora stimato su un pezzo, come il grafico: serve per confrontare l'ultimo giro con il solito. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. Un metodo con ultimo giro molto sopra la media sta vivendo un picco: può durare poco.</p>
   <h2 style="font-size:16px">Quanto puoi fare con i tuoi soldi</h2>
   <label class="muted">Oro disponibile adesso
     <input id="cap" inputmode="numeric" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:12em" value="25.000.000">
@@ -306,6 +309,18 @@ async function shopping(r, p) {
   document.getElementById("dlg").showModal();
 }
 let chartInfo = new Map();
+function stability(series) {
+  const t = times.map(ts => +new Date(ts)), end = t[t.length - 1], h24 = end - 864e5, d7 = end - 7 * 864e5;
+  const pick = (d, from) => d.filter((x, i) => t[i] >= from && x != null);
+  const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  const rows = series.map(s => { const last = [...s.data].reverse().find(x => x != null), a24 = pick(s.data, h24), a7 = pick(s.data, d7);
+    return { m: s.m, last, a24: avg(a24), a7: avg(a7), worst: a24.length ? Math.min(...a24) : null, pos: a7.length ? a7.filter(x => x > 0).length / a7.length : null }; })
+    .filter(r => r.last != null && (r.a7 > 0 || r.last > 0)).sort((a, b) => (b.a24 ?? -Infinity) - (a.a24 ?? -Infinity));
+  const c = x => x == null ? "" : x > 0 ? "pos" : "neg", days = (end - t[0]) / 864e5;
+  document.getElementById("st").innerHTML = rows.length ? `<tr><th>Metodo</th><th>Ultimo</th><th>Media 24h</th><th>Media ${days < 7 ? "da sempre" : "7g"}</th><th>Peggiore 24h</th><th>In guadagno</th></tr>` +
+    rows.map(r => `<tr><td>${r.m.name}</td><td class="${c(r.last)}"><b>${short(r.last)}</b>${r.a24 > 0 && r.last > 1.3 * r.a24 ? " ▲" : r.a24 > 0 && r.last < .7 * r.a24 ? " ▼" : ""}</td><td class="${c(r.a24)}">${short(r.a24)}</td><td class="${c(r.a7)}">${short(r.a7)}</td><td class="${c(r.worst)}">${short(r.worst)}</td><td>${r.pos == null ? "-" : Math.round(r.pos * 100) + "%"}</td></tr>`).join("")
+    : '<tr><td class="muted">Nessun metodo in guadagno.</td></tr>';
+}
 function draw(metric) {
   const series = METHODS.map(m => ({ m, data: times.map(ts => {
     const p = priceAt(ts, metric);
@@ -319,9 +334,11 @@ function draw(metric) {
     options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
       plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + " /h" } } },
       scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { ticks: { color: css.getPropertyValue("--muted"), callback: short } } } } });
+  stability(series);
   chartInfo = new Map(series.map(s => [s.m.name, shown.includes(s) ? "sì" : s.data.every(x => x == null) ? "mancano prezzi" : "no, sempre in perdita"]));
   capacity(metric);
 }
 </script>
+<script src="stato.js"></script>
 </body>
 </html>

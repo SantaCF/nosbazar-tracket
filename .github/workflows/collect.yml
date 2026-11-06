@@ -46,6 +46,10 @@ jobs:
         with:
           path: .alerts
           key: alerts-${{ github.run_id }}
+      - name: Avviso se la raccolta è rimasta ferma
+        run: python3 scripts/watchdog.py --gap || true
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
       - name: Salva i dati nel repo
         # Se nel frattempo main è cambiato, riparte dall'ultima versione e riaggiunge solo i dati di
         # questo giro, così nessun giro va perso. Se non ci riesce, il job fallisce (e si vede).
@@ -89,3 +93,8 @@ jobs:
             sleep $((i * 5))
           done
           echo "Impossibile salvare i dati dopo 5 tentativi"; exit 1
+      - name: Avviso se il giro non è riuscito
+        if: failure()
+        run: python3 scripts/watchdog.py --failed || true
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
