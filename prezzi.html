@@ -6,43 +6,25 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="icons/manifest.webmanifest">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
 <title>Prezzi bazar NosTale</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
 <style>
-  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#b42318; --down:#067647; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#f97066; --down:#47cd89; } }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  main { max-width:900px; margin:0 auto; padding:16px; }
-  h1 { font-size:20px; margin:0 0 4px; }
-  .muted { color:var(--muted); font-size:13px; }
-  select { width:100%; font-size:16px; padding:10px; margin:12px 0; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
-  .chart { position:relative; height:300px; background:var(--card); border-radius:12px; padding:8px; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:8px; margin:12px 0; }
-  .tile { background:var(--card); border-radius:10px; padding:10px; }
-  .tile b { display:block; font-size:18px; }
-  table { width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
-  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
-  th:first-child, td:first-child { text-align:left; }
-  .up { color:var(--up); } .down { color:var(--down); }
-  .wrap { overflow-x:auto; }
-  #t tr[data-v] { cursor:pointer; }
-  @media (max-width:480px) { #t th:nth-child(7), #t td:nth-child(7) { display:none; } #t { font-size:13px; } }
-  #t tr[data-v]:hover td, #t tr.sel td { background:var(--card); }
-  #t tr.sel td:first-child { font-weight:600; }
-  .star { background:none; border:none; font-size:18px; padding:0 6px 0 0; cursor:pointer; color:#f79009; line-height:1; }
-  .seg { display:flex; gap:6px; margin:0 0 8px; } .seg button { font-size:14px; padding:6px 12px; border-radius:16px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
-  .seg button.on { background:#2e90fa; border-color:#2e90fa; color:#fff; }
-  .calc { background:var(--card); border-radius:12px; padding:10px 12px; margin:0 0 12px; }
-  .crow { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; } .crow label { font-size:13px; color:var(--muted); }
-  .crow input, .crow select { font-size:16px; padding:6px 8px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); width:auto; margin:0; }
-  .crow input { width:6em; } #cout b { color:var(--fg); font-size:18px; }
-  #q { width:100%; box-sizing:border-box; font-size:16px; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); margin-top:8px; }
+  select#item { width:100%; font-size:17px; padding:11px 12px; margin:12px 0 0; font-weight:600; }
+  .up { color:var(--down); } .down { color:var(--up); }
+  @media (max-width:480px) { #t th:nth-child(7), #t td:nth-child(7) { display:none; } }
+  #t tr.sel td { background:var(--card); } #t tr.sel td:first-child { font-weight:650; }
+  .star { background:none; border:none; font-size:19px; padding:0 6px 0 0; cursor:pointer; color:var(--acc); line-height:1; }
+  .calc > b { font-size:15px; } .crow label { font-size:13px; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
+  .crow input { width:6.5em; } #cout b { color:var(--fg); font-size:18px; }
+  #q { width:100%; margin-top:8px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Prezzi bazar NosTale · EU-Dragonveil</h1>
+  <h1>Prezzi</h1>
   <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
   <select id="item" aria-label="Item"></select>
@@ -56,8 +38,8 @@
   </div>
   <div class="seg" id="period"><button data-p="1">24 ore</button><button data-p="7">7 giorni</button><button data-p="0">Tutto</button></div>
   <div class="chart"><canvas id="c"></canvas></div>
-  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza, riportati a 24 ore. Non conta chi nello stesso giro rimette la stessa quantità a un prezzo più basso (è un ribasso, non una vendita); chi la rimette allo stesso prezzo o più alto conta come venduto (merce nuova di chi produce). Chi ritira senza rimettere conta come venduto: è un massimo. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
-  <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
+  <details class="how"><summary>Come funziona</summary><p>Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza, riportati a 24 ore. Non conta chi nello stesso giro rimette la stessa quantità a un prezzo più basso (è un ribasso, non una vendita); chi la rimette allo stesso prezzo o più alto conta come venduto (merce nuova di chi produce). Chi ritira senza rimettere conta come venduto: è un massimo. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p></details>
+  <h2>Tutti gli item (ultimo giro)</h2>
   <input id="q" type="search" placeholder="Cerca un item…" aria-label="Cerca un item">
   <p class="muted" style="margin:6px 0 0">Tocca ☆ per mettere un item tra i preferiti: va in cima alla tabella e al menu.</p>
   <div class="wrap"><table id="t"></table></div>
@@ -192,7 +174,7 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     const range = dm.all && dm.all.length ? ` (nei ${dm.all.length} giorni passati, in queste ore: da ${fmt(Math.min(...dm.all))} a ${fmt(Math.max(...dm.all))})` : "";
     out.innerHTML = `Prezzo consigliato <b>${fmt(Math.max(1, price))}</b><br>` +
       `Pezzi che si liberano davanti a te entro ${H === 1 ? "1 ora" : H + " ore"}: ${fmt(dm.units)} (venduti meno i nuovi annunci messi al minimo o sotto)` + (dm.est === "fascia" ? `, superati con fiducia ${Math.round(conf * 100)}%${range}` : dm.est === "finestre" ? `, superati con fiducia ${Math.round(conf * 100)}% nelle finestre da ${H === 1 ? "1 ora" : H + " ore"} delle ultime 72 ore (${dm.windows} finestre, da ${fmt(dm.all[0])} a ${fmt(dm.all[dm.all.length - 1])}). Per la stessa fascia oraria dei giorni passati servono almeno 3 giorni di dati.` : ` (media delle ultime 24 ore: ancora pochi dati)`) +
-      `<br>A questo prezzo hai davanti ${fmt(ahead)} pezzi più economici (i tuoi annunci non contano).` + (q > dm.units ? ` <span style="color:var(--up)">Anche al minimo (${fmt(a[0][0] - 1)}) ${fmt(q)} pezzi sono più di quanto si vende in queste ore.</span>` : "") +
+      `<br>A questo prezzo hai davanti ${fmt(ahead)} pezzi più economici (i tuoi annunci non contano).` + (q > dm.units ? ` <span class="neg">Anche al minimo (${fmt(a[0][0] - 1)}) ${fmt(q)} pezzi sono più di quanto si vende in queste ore.</span>` : "") +
       (capped ? " Non salgo sopra il riferimento 10%: oltre è fuori mercato." : "");
   };
   [cq, ch, cc].forEach(x => x.oninput = x.onchange = calc);

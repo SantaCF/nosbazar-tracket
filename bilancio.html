@@ -6,30 +6,13 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="icons/manifest.webmanifest">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
 <title>Bilancio NosTale</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
 <style>
-  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#067647; --down:#b42318; --link:#1f6feb; --acc:#2e90fa; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#47cd89; --down:#f97066; --link:#58a6ff; --acc:#58a6ff; } }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-  main { max-width:900px; margin:0 auto; padding:16px; }
-  h1 { font-size:20px; margin:0 0 4px; } h2 { font-size:16px; margin:22px 0 4px; }
-  a { color:var(--link); }
-  .muted { color:var(--muted); font-size:13px; }
-  .nav { margin:4px 0 12px; font-size:14px; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin-top:10px; }
-  .tile { background:var(--card); border-radius:10px; padding:10px; } .tile b { display:block; font-size:19px; margin-top:2px; }
-  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
-  input, select, button { font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
-  input { min-width:0; } button { cursor:pointer; } button.main { background:var(--acc); color:#fff; border-color:var(--acc); }
-  table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
-  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th:first-child, td:first-child { text-align:left; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
-  .chart { position:relative; height:260px; background:var(--card); border-radius:12px; padding:8px; margin-top:10px; }
-  .x { background:none; border:none; color:var(--muted); padding:0 4px; font-size:16px; }
-  @media (max-width:480px) { table { font-size:12px; } th, td { padding:6px 2px; } .hide-s { display:none; } }
+  #sales th:nth-child(2), #sales td:nth-child(2) { text-align:left; }
 </style>
 </head>
 <body>
@@ -38,7 +21,7 @@
   <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
   <div class="row"><label class="muted">Personaggi che vendono (separati da virgola) <input id="seller" style="width:14em" placeholder="NomePersonaggio"></label>
-    <label class="muted"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia NosBazar</label></div>
+    <label class="muted"><input type="checkbox" id="medal"> Medaglia NosBazar</label></div>
 
   <div class="tiles" id="tiles"></div>
   <div class="chart"><canvas id="c"></canvas></div>
@@ -50,7 +33,7 @@
     <input id="note" placeholder="nota (facoltativa)" style="width:10em">
     <button class="main" id="add">Salva</button>
   </div>
-  <p class="muted">"Oro che ho adesso" = l'oro del personaggio (e del magazzino, se lo usi). Il valore dei tuoi annunci lo aggiungo io, letto dal bazar, e lo salvo insieme all'oro: aggiorna l'oro ogni tanto (per esempio la sera) e il guadagno resta preciso. Le spese fuori dal giro e l'oro aggiunto da fuori non contano come guadagno o perdita.</p>
+  <details class="how"><summary>Come funziona</summary><p>"Oro che ho adesso" = l'oro del personaggio (e del magazzino, se lo usi). Il valore dei tuoi annunci lo aggiungo io, letto dal bazar, e lo salvo insieme all'oro: aggiorna l'oro ogni tanto (per esempio la sera) e il guadagno resta preciso. Le spese fuori dal giro e l'oro aggiunto da fuori non contano come guadagno o perdita.</p></details>
   <div class="wrap"><table id="moves"></table></div>
 
   <h2>Lotti prodotti</h2>
@@ -61,16 +44,16 @@
     <label class="muted">prodotto il <input id="lotWhen" type="datetime-local" style="width:13em"></label>
     <button class="main" id="addLot">Aggiungi lotto</button>
   </div>
-  <p class="muted">Puoi salvarli anche dalla lista della spesa della pagina Metodi ("Salva lotto"). Il costo salvato da Metodi è una stima: tocca ✎ per scrivere quello vero e l'ora in cui l'hai prodotto (le vendite contano da lì). Se non scrivi "prodotto il", vale adesso. Pareggio = prezzo minimo di vendita per non perderci, commissione compresa. "Venduti" = le tue vendite di quell'item dopo la data del lotto, assegnate prima ai lotti più vecchi; "Realizzato" = incasso netto meno il costo dei pezzi venduti.</p>
+  <details class="how"><summary>Come funziona</summary><p>Puoi salvarli anche dalla lista della spesa della pagina Metodi ("Salva lotto"). Il costo salvato da Metodi è una stima: tocca ✎ per scrivere quello vero e l'ora in cui l'hai prodotto (le vendite contano da lì). Se non scrivi "prodotto il", vale adesso. Pareggio = prezzo minimo di vendita per non perderci, commissione compresa. "Venduti" = le tue vendite di quell'item dopo la data del lotto, assegnate prima ai lotti più vecchi; "Realizzato" = incasso netto meno il costo dei pezzi venduti.</p></details>
   <div class="wrap"><table id="lots"></table></div>
 
   <h2>Le tue vendite</h2>
-  <p class="muted">Lette dal bazar a ogni giro: pezzi spariti dai tuoi annunci prima della scadenza. Se ritiri un annuncio senza rimetterlo a un altro prezzo, qui risulta venduto. "Incasso" = ricavo al netto della commissione (0 con la medaglia), senza togliere quanto ti è costato produrre: il guadagno lo trovi nei lotti ("realizzato").</p>
+  <details class="how"><summary>Come funziona</summary><p>Lette dal bazar a ogni giro: pezzi spariti dai tuoi annunci prima della scadenza. Se ritiri un annuncio senza rimetterlo a un altro prezzo, qui risulta venduto. "Incasso" = ricavo al netto della commissione (0 con la medaglia), senza togliere quanto ti è costato produrre: il guadagno lo trovi nei lotti ("realizzato").</p></details>
   <div class="wrap"><table id="sales"></table></div>
 
   <h2>Backup</h2>
   <div class="row"><button id="exp">Esporta</button><button id="imp">Importa</button></div>
-  <p class="muted">Per un backup anche delle impostazioni usa "Esporta tutto" in <a href="impostazioni.html">Impostazioni</a>. I dati restano salvati solo in questo browser. "Esporta" copia il Bilancio negli appunti: incollalo da qualche parte (note, mail) per non perderlo. "Importa" lo ripristina, anche su un altro telefono.</p>
+  <details class="how"><summary>Come funziona</summary><p>Per un backup anche delle impostazioni usa "Esporta tutto" in <a href="impostazioni.html">Impostazioni</a>. I dati restano salvati solo in questo browser. "Esporta" copia il Bilancio negli appunti: incollalo da qualche parte (note, mail) per non perderlo. "Importa" lo ripristina, anche su un altro telefono.</p></details>
 </main>
 <script>
 const KEY = "bilancio";

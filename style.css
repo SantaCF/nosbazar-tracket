@@ -1,0 +1,134 @@
+/* Stile comune a tutte le pagine. Colori in variabili: chiaro di default, scuro se il telefono è in modalità scura. */
+:root {
+  --bg:#f4f5f7; --surface:#ffffff; --card:#f1f3f6; --line:#e3e6eb; --fg:#15181d; --muted:#5d6672;
+  --acc:#c27c0e; --acc-bg:#f5b544; --acc-fg:#1a1205; --link:#1f6feb;
+  --up:#0b7a43; --down:#c0262d; --warn:#b25e00; --warn-bg:#fff4e0; --ok-bg:#e8f6ee; --bad-bg:#fdecec;
+  --shadow:0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#0c0e12; --surface:#151920; --card:#1c212a; --line:#272d37; --fg:#e8eaee; --muted:#98a1ad;
+    --acc:#f5b544; --acc-bg:#f5b544; --acc-fg:#1a1205; --link:#7cb4ff;
+    --up:#4ade80; --down:#f87171; --warn:#fbbf24; --warn-bg:#2a2112; --ok-bg:#122419; --bad-bg:#2a1416;
+    --shadow:none; color-scheme:dark;
+  }
+}
+* { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width:960px; margin:0 auto; padding:16px 16px 40px; }
+a { color:var(--link); text-decoration:none; } a:hover { text-decoration:underline; }
+h1 { font-size:22px; margin:6px 0 2px; letter-spacing:-.01em; }
+h2 { font-size:17px; margin:28px 0 8px; letter-spacing:-.01em; }
+h3 { font-size:17px; margin:0 0 4px; }
+.muted { color:var(--muted); font-size:13px; }
+.pos { color:var(--up); } .neg { color:var(--down); } .warn { color:var(--warn); }
+b, strong { font-weight:650; }
+
+/* Barra in alto e menu. Sul telefono il menu va in basso, a portata di pollice. */
+.top { position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+.top-in { max-width:960px; margin:0 auto; padding:8px 16px; display:flex; align-items:center; gap:12px; }
+.brand { font-weight:750; color:var(--fg); font-size:16px; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.brand:hover { text-decoration:none; }
+.brand i { width:22px; height:22px; border-radius:6px; background:var(--acc-bg); display:inline-grid; place-items:center; font-style:normal; color:var(--acc-fg); font-size:13px; font-weight:800; }
+.brand small { color:var(--muted); font-weight:500; font-size:12px; }
+.tabs { display:flex; gap:2px; margin-left:auto; }
+.tabs a { display:flex; align-items:center; gap:6px; padding:7px 11px; border-radius:9px; color:var(--muted); font-size:14px; font-weight:550; }
+.tabs a:hover { background:var(--card); color:var(--fg); text-decoration:none; }
+.tabs a.on { background:var(--card); color:var(--fg); }
+.tabs a.on svg { color:var(--acc); }
+.tabs svg { width:18px; height:18px; flex:none; }
+.gear { display:none; color:var(--muted); padding:6px; border-radius:9px; }
+.gear svg { width:22px; height:22px; display:block; }
+.gear.on { color:var(--acc); }
+@media (max-width:760px) {
+  main { padding-bottom:92px; }
+  .top { backdrop-filter:none; -webkit-backdrop-filter:none; background:var(--bg); }
+  .gear { display:block; margin-left:auto; }
+  .tabs { position:fixed; left:0; right:0; bottom:0; margin:0; z-index:30; justify-content:space-around; gap:0;
+    background:var(--surface); border-top:1px solid var(--line); padding:6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  .tabs a { flex-direction:column; gap:2px; font-size:11px; padding:4px 6px; min-width:56px; background:none !important; }
+  .tabs a.on { color:var(--acc); }
+  .tabs svg { width:22px; height:22px; }
+  .tabs a.set { display:none; }
+}
+
+/* Riga "ultimo giro". */
+#updated { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+#updated::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--up); flex:none; }
+
+/* Riquadri con i numeri chiave. */
+.tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin:12px 0; }
+.tile { background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:14px; padding:12px 14px; display:block; color:inherit; }
+a.tile:hover { text-decoration:none; border-color:var(--acc); }
+.tile > .muted:first-child { text-transform:uppercase; letter-spacing:.04em; font-size:11px; font-weight:600; }
+.tile b { display:block; font-size:22px; margin:2px 0; letter-spacing:-.01em; }
+
+/* Riquadri generici. */
+.card, .calc, .field { background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:14px; padding:12px 14px; margin-top:10px; }
+.field label { display:block; font-weight:600; margin-bottom:6px; }
+.field .muted { margin-top:6px; }
+
+/* Tabelle: dentro un riquadro, scorrono di lato se troppo larghe. */
+.wrap { overflow-x:auto; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:14px; margin-top:10px; }
+.wrap:has(table:empty) { display:none; }
+table { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+.wrap table { margin:0; }
+th, td { text-align:right; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child > td { border-bottom:none; }
+th { color:var(--muted); font-size:12px; font-weight:600; white-space:nowrap; background:var(--card); }
+th:first-child, td:first-child { text-align:left; }
+tr[data-i], tr[data-v] { cursor:pointer; }
+tr[data-i]:hover td, tr[data-v]:hover td { background:var(--card); }
+tr[data-i] td:first-child { color:var(--link); font-weight:550; }
+@media (max-width:480px) { table { font-size:13px; } th, td { padding:8px 5px; } .hide-s { display:none; } }
+
+/* Comandi. */
+input, select, button { font:inherit; font-size:16px; padding:9px 10px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--fg); max-width:100%; }
+input:focus, select:focus { outline:2px solid var(--acc); outline-offset:-1px; border-color:transparent; }
+input[type=checkbox] { width:20px; height:20px; padding:0; vertical-align:middle; accent-color:var(--acc); }
+button { cursor:pointer; font-weight:550; background:var(--card); }
+button:hover { border-color:var(--muted); }
+button.main { background:var(--acc-bg); color:var(--acc-fg); border-color:var(--acc-bg); }
+.row, .ctl, .crow { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin-top:10px; }
+label.muted { display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.x { background:none; border:none; color:var(--muted); padding:0 4px; font-size:16px; }
+.tag { display:inline-block; font-size:11px; padding:1px 7px; border-radius:99px; background:var(--card); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+
+/* Pulsanti a pillola (periodo, ecc.). */
+.seg { display:flex; gap:6px; margin:12px 0 8px; flex-wrap:wrap; }
+.seg button { font-size:14px; padding:6px 14px; border-radius:99px; }
+.seg button.on { background:var(--acc-bg); border-color:var(--acc-bg); color:var(--acc-fg); }
+
+/* Spiegazioni: chiuse, si aprono toccando "Come funziona". */
+details.how { margin-top:8px; color:var(--muted); font-size:13px; }
+details.how summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px; padding:4px 0; font-weight:550; }
+details.how summary::-webkit-details-marker { display:none; }
+details.how summary::before { content:"i"; width:16px; height:16px; border-radius:50%; border:1.5px solid currentColor; display:inline-grid; place-items:center; font:700 10px/1 Georgia, serif; }
+details.how[open] summary { color:var(--fg); }
+details.how p { margin:4px 0 0; }
+
+/* Grafici. */
+.chart { position:relative; height:280px; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:14px; padding:10px; margin-top:10px; }
+
+/* Finestre (liste della spesa, dettagli). */
+dialog { border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--fg); width:min(580px, calc(100vw - 24px)); max-height:85vh; padding:18px; }
+dialog::backdrop { background:rgba(0,0,0,.5); }
+dialog table { margin-top:8px; }
+dialog form { text-align:right; margin-top:12px; }
+
+/* "Da fare adesso" nella pagina Oggi. */
+.todo { display:grid; gap:8px; margin-top:12px; }
+.todo > a, .todo > div { display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:var(--surface); color:inherit; box-shadow:var(--shadow); }
+.todo > a:hover { text-decoration:none; border-color:var(--acc); }
+.todo .ic { flex:none; width:30px; height:30px; border-radius:9px; display:grid; place-items:center; font-size:16px; }
+.todo .w .ic { background:var(--warn-bg); color:var(--warn); }
+.todo .g .ic { background:var(--ok-bg); color:var(--up); }
+.todo .n .ic { background:var(--card); color:var(--muted); }
+.todo b { display:block; }
+.todo .muted { display:block; }
+
+/* Avviso raccolta ferma. */
+.alert { background:var(--bad-bg); color:var(--down); border:1px solid color-mix(in srgb, var(--down) 40%, transparent); padding:10px 12px; border-radius:12px; margin:0 0 10px; font-size:14px; }
+.alert a { color:inherit; text-decoration:underline; }
