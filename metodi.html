@@ -45,7 +45,7 @@
   </label>
   <label class="muted" style="display:block;margin-top:6px"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia del NosBazar attiva (niente commissioni)</label>
   <div class="wrap"><table id="k"></table></div>
-  <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Quanto si vende entro il tempo scelto lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
+  <p class="muted">Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Il tempo per vendere parte da adesso e dura quanto la produzione più il tempo scelto (i pezzi escono man mano mentre produci). Quanto si vende in quel tempo lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p>
   <h2 style="font-size:16px">Piano consigliato: come dividere il tuo oro</h2>
   <label class="muted">Ore che puoi dedicare <input id="hrs" inputmode="decimal" value="3" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);width:4em"></label>
   <div class="wrap"><table id="pf"></table></div>
@@ -147,9 +147,10 @@ function walk(v, need) { const a = book?.[v]; if (!a) return null; let got = 0, 
 // Non sopra il riferimento 10% (prezzo sotto cui sta il 10% dei pezzi): oltre è fuori mercato.
 // Venduti attesi entro il tempo scelto, da adesso, per fascia oraria (flow.js); in cache perché il piano lo chiede migliaia di volte.
 const demandCache = new Map();
-function demand(v) { const k = v + "|" + hours(); if (!demandCache.has(k)) demandCache.set(k, expectedSold(v, Date.now(), hours(), soldDay[v])); return demandCache.get(k); }
-function sellFor(v, n, fallback) {
-  const a = book?.[v], dm = demand(v), day = dm.units;
+// win = ore in cui puoi vendere: il tempo per produrre (i pezzi escono man mano) + "vendere entro" dopo l'ultimo.
+function demand(v, win) { const w = Math.round(win * 4) / 4, k = v + "|" + w; if (!demandCache.has(k)) demandCache.set(k, expectedSold(v, Date.now(), w, soldDay[v])); return demandCache.get(k); }
+function sellFor(v, n, fallback, win = hours()) {
+  const a = book?.[v], dm = demand(v, win), day = dm.units;
   if (!a || !a.length || !(day > 0)) return { price: fallback(v), est: true };
   const total = a.reduce((t, x) => t + x[1], 0);
   let below = 0, best = a[0][0] - 1, ahead = 0;
@@ -168,7 +169,8 @@ function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craf
     if (!w) ok = false; cost += c; buy.push({ v, q, price: p.b(v), cost: c, w });
   }
   let fee = 0;   // commissione per prodotto: 0,5% dell'incasso, minimo 500 per annuncio (stack da 999)
-  for (const [v, q] of OUTS[m.name]) { const s = sellFor(v, q * n, p.s), g = s.price * q * n; gross += g; sell.push({ v, q, ...s });
+  const win = n / m.perH + hours();
+  for (const [v, q] of OUTS[m.name]) { const s = sellFor(v, q * n, p.s, win), g = s.price * q * n; gross += g; sell.push({ v, q, ...s });
     if (n && !medal) fee += Math.max(g * TAX, 500 * Math.ceil(q * n / 999)); }
   return { n, cost, gross, fee, net: gross - fee, profit: gross - fee - cost, buy, sell, ok };
 }
@@ -213,7 +215,8 @@ function portfolio(counts, p) {
   for (const v of Object.keys(need)) if (out[v]) { const x = Math.min(need[v], out[v]); need[v] -= x; out[v] -= x; if (!need[v]) delete need[v]; if (!out[v]) delete out[v]; }
   for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q); cost += w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; }
   let gross = 0, fee = 0;
-  for (const [v, q] of Object.entries(out)) { const g = sellFor(v, q, p.s).price * q; gross += g; if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); }
+  const win = METHODS.reduce((a, m, i) => a + (counts[i] || 0) / m.perH, 0) + hours();
+  for (const [v, q] of Object.entries(out)) { const g = sellFor(v, q, p.s, win).price * q; gross += g; if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); }
   return { cost, fee, profit: gross - fee - cost };
 }
 const playHours = () => Math.max(0.25, +String(document.getElementById("hrs")?.value || "3").replace(",", ".") || 3);
@@ -239,6 +242,9 @@ function bestPlan(p) {
     search(cand.map((x, k) => { const w = Math.max(1, Math.round(x.max / steps / (round ? 8 : 2))), out = [];
       for (let d = -4; d <= 4; d++) { const v = cur[k] + d * w; if (v >= 0 && v <= x.max) out.push(v); } return out; }));
   }
+  // Pulizia: un metodo con un contributo minimo (meno dello 0,5% del guadagno) lo tolgo, il piano resta più semplice.
+  for (const x of cand) { if (!bestR.c[x.i]) continue; const c = bestR.c.slice(); c[x.i] = 0;
+    const r = portfolio(c, p); if (r.cost + r.fee <= cap && r.profit >= bestR.r.profit * 0.995) bestR = { c, r }; }
   const total = bestR.r.cost + bestR.r.fee;
   return { counts: bestR.c, cur: bestR.r, lastRoi: null, mins: mins(bestR.c), capLeft: cap - total };
 }
