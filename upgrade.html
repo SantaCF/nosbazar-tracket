@@ -21,6 +21,8 @@
   <h1>Upgrade SP</h1>
   <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
+  <div class="seg" id="tab"><button data-t="up">Upgrade +0/+15</button><button data-t="pf">Perfezionamento</button></div>
+  <section id="sec-up">
   <div class="card ctl">
     <label class="muted">Tipo di SP <select id="type">
       <option value="0">SP 1-4 e speciali</option><option value="1">SP 5-8</option><option value="2">SP 9+</option><option value="3">Leggendarie</option></select></label>
@@ -44,6 +46,20 @@
   <div class="wrap"><table id="mats"></table></div>
   <details class="how"><summary>Come funziona</summary><p>Quantità medie su 20.000 simulazioni seguendo le scelte qui sopra. I prezzi sono quelli per comprare un lotto normale sul bazar all'ultimo giro: puoi cambiarli (es. 0 se il materiale ce l'hai già e non vuoi contarlo). "Nel 90% dei casi" è la spesa che non superi 9 volte su 10: la sfortuna conta molto, soprattutto ai livelli alti.</p></details>
   <p class="muted">Probabilità e materiali: simulatore di nosapki.com (dati del gioco, fino a +15).</p>
+  </section>
+
+  <section id="sec-pf" hidden>
+  <div class="card ctl">
+    <label class="muted">Gemma della tua SP <select id="pgem"></select></label>
+    <label class="muted">Da <input id="pfrom" inputmode="numeric" style="width:5em"></label>
+    <label class="muted">a <input id="pto" inputmode="numeric" style="width:5em"></label>
+    <label class="muted"><span>Costo di una gemma</span> <input id="pgp" inputmode="numeric" placeholder="oro"></label>
+  </div>
+  <div class="tiles" id="ptiles"></div>
+  <div class="wrap"><table id="psteps"></table></div>
+  <details class="how"><summary>Come funziona</summary><p>Ogni tentativo consuma gemme e oro; se fallisce perdi solo quelli, la carta e i punti fatti restano. Quindi per ogni punto i tentativi attesi sono 1 ÷ probabilità di successo, e la spesa attesa è la somma punto per punto. Le gemme non si scambiano: il loro costo è quello di crearle (scrivilo qui, o lascialo vuoto per vedere solo quante gemme servono). "Nel 90% dei casi" viene da 20.000 simulazioni.</p></details>
+  <p class="muted">Probabilità e materiali: simulatore di perfezionamento di nosapki.com.</p>
+  </section>
 </main>
 <script src="stato.js"></script>
 <script>
@@ -188,6 +204,57 @@ function draw() {
     st.price[i.dataset.v] = n === "" || isNaN(n) ? "" : n; if (st.price[i.dataset.v] === "") delete st.price[i.dataset.v];
     save(); draw(); }));
 }
+
+// ---------- Perfezionamento SP (nosapki, simulatore SP Perfection).
+// Per blocco di punti: [fino a, successo %, gemme per tentativo, oro per tentativo]. Se fallisce la carta e i punti restano.
+const PF = [[10, 65, 1, 5000], [20, 55, 1, 5000], [30, 35, 2, 10000], [40, 30, 2, 10000], [50, 18, 3, 20000], [60, 17, 3, 20000],
+  [80, 15, 4, 50000], [100, 11, 5, 100000]];
+const pfAt = n => PF.find(b => n <= b[0]);   // dati per fare il punto n
+const GEMS = [[2514, "Rubino piccolo della completezza"], [2515, "Zaffiro piccolo della completezza"], [2517, "Topazio piccolo della completezza"],
+  [2516, "Ossidiana piccola della completezza"], [2518, "Rubino della completezza"], [2519, "Zaffiro della completezza"], [2521, "Topazio della completezza"],
+  [2520, "Ossidiana della completezza"], [2624, "Gioiello dell'Eroe Orco"], [2662, "Cristallo antico del drago magico"], [13258, "Fonte di energia ricca"],
+  [13793, "Dimensiolite levigata"]];
+const pf = Object.assign({ gem: "2514", from: "0", to: "50", gp: {} }, st.pf || {});
+$("pgem").innerHTML = GEMS.map(([v, n]) => `<option value="${v}">${n}</option>`).join("");
+$("pgem").value = pf.gem; $("pfrom").value = pf.from; $("pto").value = pf.to; $("pgp").value = pf.gp[pf.gem] ?? "";
+const pfSave = () => { st.pf = pf; save(); };
+$("pgem").onchange = () => { pf.gem = $("pgem").value; $("pgp").value = pf.gp[pf.gem] ?? ""; pfSave(); drawPf(); };
+for (const k of ["from", "to"]) $("p" + k).addEventListener("change", () => {
+  let a = Math.max(0, Math.min(99, Math.round(+$("pfrom").value || 0))), b = Math.max(1, Math.min(100, Math.round(+$("pto").value || 0)));
+  if (b <= a) { if (k === "from") b = a + 1; else a = b - 1; }
+  pf.from = $("pfrom").value = String(a); pf.to = $("pto").value = String(b); pfSave(); drawPf(); });
+$("pgp").addEventListener("input", () => { const n = num($("pgp").value); if (n) pf.gp[pf.gem] = $("pgp").value; else delete pf.gp[pf.gem]; pfSave(); drawPf(); });
+
+function drawPf() {
+  const a = +pf.from, b = +pf.to, gp = num(pf.gp[pf.gem]);
+  let gems = 0, gold = 0, tries = 0;
+  for (let n = a + 1; n <= b; n++) { const [, s, g, o] = pfAt(n); gems += g / (s / 100); gold += o / (s / 100); tries += 1 / (s / 100); }
+  // Simulazione per il caso sfortunato.
+  const runs = 20000, tot = [];
+  for (let i = 0; i < runs; i++) { let c = 0; for (let n = a + 1; n <= b; n++) { const [, s, g, o] = pfAt(n), per = gp ? g * gp + o : g;
+    do c += per; while (Math.random() >= s / 100); } tot.push(c); }
+  tot.sort((x, y) => x - y); const p90 = tot[Math.floor(runs * 0.9)], p50 = tot[runs >> 1];
+  const gemName = GEMS.find(x => String(x[0]) === pf.gem)[1];
+  $("ptiles").innerHTML = gp
+    ? `<div class="tile"><div class="muted">Spesa attesa</div><b>${short(gems * gp + gold)}</b><div class="muted">da ${a} a ${b} punti</div></div>` +
+      `<div class="tile"><div class="muted">Nel 90% dei casi</div><b>${short(p90)}</b><div class="muted">al massimo · metà delle volte ${short(p50)}</div></div>` +
+      `<div class="tile"><div class="muted">Gemme attese</div><b>${fmt(gems)}</b><div class="muted">${short(gold)} di oro · ${fmt(tries)} tentativi</div></div>`
+    : `<div class="tile"><div class="muted">Gemme attese</div><b>${fmt(gems)}</b><div class="muted">${gemName}</div></div>` +
+      `<div class="tile"><div class="muted">Nel 90% dei casi</div><b>${fmt(p90)}</b><div class="muted">gemme al massimo · metà delle volte ${fmt(p50)}</div></div>` +
+      `<div class="tile"><div class="muted">Oro</div><b>${short(gold)}</b><div class="muted">${fmt(tries)} tentativi attesi</div></div>`;
+  // Tabella per blocchi.
+  let h = `<tr><th>Punti</th><th>Successo</th><th>Per tentativo</th><th>Gemme attese</th><th>${gp ? "Spesa attesa" : "Oro atteso"}</th></tr>`, lo = 0;
+  for (const [hi, s, g, o] of PF) {
+    const x = Math.max(lo, a), y = Math.min(hi, b); lo = hi; if (y <= x) continue;
+    const t = (y - x) / (s / 100);
+    h += `<tr><td>${x} → ${y}</td><td>${s}%</td><td>${g} + ${short(o)}</td><td>${fmt(t * g)}</td><td>${short(gp ? t * (g * gp + o) : t * o)}</td></tr>`;
+  }
+  $("psteps").innerHTML = h;
+}
+const showTab = t => { st.tab = t; save(); $("sec-up").hidden = t !== "up"; $("sec-pf").hidden = t !== "pf";
+  document.querySelectorAll("#tab button").forEach(x => x.classList.toggle("on", x.dataset.t === t)); };
+document.querySelectorAll("#tab button").forEach(x => x.onclick = () => showTab(x.dataset.t));
+showTab(st.tab === "pf" ? "pf" : "up"); drawPf();
 
 fetch("data/latest.csv?" + Date.now()).then(r => r.text()).then(t => {
   const [h, ...ls] = t.trim().split(/\r?\n/); const k = parse(h), iv = k.indexOf("vnum"), ina = k.indexOf("name"), ilp = k.indexOf("lot_price"), its = k.indexOf("ts");
