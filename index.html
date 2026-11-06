@@ -96,7 +96,9 @@ async function gz(url) {
       rows.map(r => `<tr><td>${r.it.name}${r.price != null ? `<br><span class="warn">abbassa a <b>${fmt(r.price)}</b></span>` : ""}</td><td>${fmt(r.units)}</td><td>${fmt(r.top)}${r.low !== r.top ? `<br><span class="muted">da ${fmt(r.low)}</span>` : ""}</td><td class="hide-s">${fmt(r.it.min)}</td><td>${fmt(r.ahead)}</td><td class="${!r.basis ? "" : r.hours == null || r.hours > H ? "warn" : "pos"}">${!r.basis ? "-" : r.hours == null ? "oltre 7 giorni" : "≈ " + dur(r.hours)}${r.basis === "media24" ? '<br><span class="muted">media 24h</span>' : r.basis === "finestre" ? '<br><span class="muted">ultime 72h</span>' : ""}</td></tr>`).join("");
 
   // Metodi su un pezzo.
-  const ms = buildMethods(() => TAX).filter(m => !m.support).map(m => {   // le conversioni (support) contano solo nel piano const pb = v => items[v]?.lot, ps = v => items[v]?.sell;
+  // le conversioni (support) contano solo nel piano
+  const ms = buildMethods(() => TAX).filter(m => !m.support).map(m => {
+    const pb = v => items[v]?.lot, ps = v => items[v]?.sell;
     if (m.need.some(v => !(pb(v) > 0) || !(ps(v) > 0))) return { m, per: null };
     const c = m.cost(pb), per = m.gain(ps) - c; return { m, per, pct: per / c }; }).filter(x => x.per != null).sort((a, b) => b.pct - a.pct);
   document.getElementById("meth").innerHTML = "<tr><th>Metodo</th><th>Per craft o run</th><th>Margine</th></tr>" +
