@@ -35,7 +35,7 @@
 <body>
 <main>
   <h1>Bilancio</h1>
-  <div class="nav"><a href="./">Prezzi</a> · <a href="metodi.html">Metodi</a> · <a href="flipping.html">Flipping</a> · <b>Bilancio</b></div>
+  <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
   <div class="row"><label class="muted">Personaggi che vendono (separati da virgola) <input id="seller" style="width:14em" placeholder="NomePersonaggio"></label>
     <label class="muted"><input type="checkbox" id="medal" style="width:20px;height:20px;vertical-align:middle"> Medaglia NosBazar</label></div>
@@ -70,7 +70,7 @@
 
   <h2>Backup</h2>
   <div class="row"><button id="exp">Esporta</button><button id="imp">Importa</button></div>
-  <p class="muted">I dati restano salvati solo in questo browser. "Esporta" copia tutto negli appunti: incollalo da qualche parte (note, mail) per non perderlo. "Importa" lo ripristina, anche su un altro telefono.</p>
+  <p class="muted">Per un backup anche delle impostazioni usa "Esporta tutto" in <a href="impostazioni.html">Impostazioni</a>. I dati restano salvati solo in questo browser. "Esporta" copia il Bilancio negli appunti: incollalo da qualche parte (note, mail) per non perderlo. "Importa" lo ripristina, anche su un altro telefono.</p>
 </main>
 <script>
 const KEY = "bilancio";

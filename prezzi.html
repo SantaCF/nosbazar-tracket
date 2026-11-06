@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="icons/manifest.webmanifest">
+<meta name="theme-color" content="#0f1115">
+<title>Prezzi bazar NosTale</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#b42318; --down:#067647; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#f97066; --down:#47cd89; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width:900px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .muted { color:var(--muted); font-size:13px; }
+  select { width:100%; font-size:16px; padding:10px; margin:12px 0; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
+  .chart { position:relative; height:300px; background:var(--card); border-radius:12px; padding:8px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:8px; margin:12px 0; }
+  .tile { background:var(--card); border-radius:10px; padding:10px; }
+  .tile b { display:block; font-size:18px; }
+  table { width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
+  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
+  th:first-child, td:first-child { text-align:left; }
+  .up { color:var(--up); } .down { color:var(--down); }
+  .wrap { overflow-x:auto; }
+  #t tr[data-v] { cursor:pointer; }
+  @media (max-width:480px) { #t th:nth-child(7), #t td:nth-child(7) { display:none; } #t { font-size:13px; } }
+  #t tr[data-v]:hover td, #t tr.sel td { background:var(--card); }
+  #t tr.sel td:first-child { font-weight:600; }
+  .star { background:none; border:none; font-size:18px; padding:0 6px 0 0; cursor:pointer; color:#f79009; line-height:1; }
+  .seg { display:flex; gap:6px; margin:0 0 8px; } .seg button { font-size:14px; padding:6px 12px; border-radius:16px; border:1px solid var(--line); background:var(--card); color:var(--fg); cursor:pointer; }
+  .seg button.on { background:#2e90fa; border-color:#2e90fa; color:#fff; }
+  #q { width:100%; box-sizing:border-box; font-size:16px; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); margin-top:8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Prezzi bazar NosTale · EU-Dragonveil</h1>
+  <div id="nav"></div><script src="nav.js"></script>
+  <div class="muted" id="updated">Caricamento…</div>
+  <select id="item" aria-label="Item"></select>
+  <div class="tiles" id="tiles"></div>
+  <div class="seg" id="period"><button data-p="1">24 ore</button><button data-p="7">7 giorni</button><button data-p="0">Tutto</button></div>
+  <div class="chart"><canvas id="c"></canvas></div>
+  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza (venduti o ritirati dal venditore, senza contare chi li rimette subito in vendita), riportati a 24 ore: è un massimo, le vendite vere possono essere meno. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
+  <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
+  <input id="q" type="search" placeholder="Cerca un item…" aria-label="Cerca un item">
+  <p class="muted" style="margin:6px 0 0">Tocca ☆ per mettere un item tra i preferiti: va in cima alla tabella e al menu.</p>
+  <div class="wrap"><table id="t"></table></div>
+</main>
+<script>
+const fmt = n => n === "" || n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
+const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+let chart;
+const store = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } };
+const keep = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+let fav = new Set(JSON.parse(store("fav", "[]"))), period = store("period", "7");
+Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.now()).then(r => r.ok ? r.text() : ""))).then(([text, salesText]) => {
+  const parse = l => { const out = []; let cur = "", q = false;
+    for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
+    out.push(cur); return out; };
+  const [head, ...lines] = text.trim().split(/\r?\n/);
+  const keys = parse(head);
+  const rows = lines.map(l => { const v = parse(l); const o = {}; keys.forEach((k, i) => o[k] = v[i] === "" || isNaN(v[i]) ? v[i] : +v[i]); return o; });
+  const byItem = {};
+  rows.forEach(r => (byItem[r.vnum] ??= { name: r.name, rows: [] }).rows.push(r));
+  const last = rows[rows.length - 1].ts;
+  // Pezzi spariti prima della scadenza (venduti o ritirati) nelle ultime 24h, riportati a un giorno
+  // sulla base delle ore effettivamente coperte da giri consecutivi (buchi > 40 min esclusi).
+  const since = new Date(last) - 864e5;
+  const tss = [...new Set(rows.map(r => r.ts))].map(t => +new Date(t)).filter(t => t >= since).sort((a, b) => a - b);
+  let covered = 0; for (let i = 1; i < tss.length; i++) { const g = (tss[i] - tss[i - 1]) / 6e4; if (g <= 40) covered += g; }
+  const sold = {}, soldAt = {};   // soldAt[vnum][ts] = { u: pezzi spariti, p: prezzo medio a cui sono spariti }
+  if (salesText) { const [sh, ...sl] = salesText.trim().split(/\r?\n/); const sk = parse(sh);
+    sl.forEach(l => { const v = parse(l), o = {}; sk.forEach((k, i) => o[k] = v[i]);
+      // Messi sul giro PRECEDENTE: i pezzi spariti erano in vendita lì, quindi si confrontano con quel minimo
+      // (nel giro dopo gli annunci più economici possono essere già spariti e il minimo risulta più alto).
+      if (+o.units_gone > 0) (soldAt[o.vnum] ??= {})[o.prev_ts] = { u: +o.units_gone, p: +o.wavg_price };
+      if (+new Date(o.ts) >= since) { const x = (sold[o.vnum] ??= { u: 0, val: 0 }); x.u += +o.units_gone; x.val += +o.value_gone; } }); }
+  const perDay = v => covered >= 120 ? ((sold[v]?.u || 0) * 1440 / covered) : null;
+  const soldPrice = v => sold[v]?.u ? sold[v].val / sold[v].u : null;
+  const covTxt = covered >= 120 ? `stima su ${Math.round(covered / 60)}h di giri` : "servono almeno 2 ore di giri";
+  document.getElementById("updated").textContent = "Ultimo aggiornamento: " + when(last) + " · " + rows.filter(r => r.ts === last).length + " item";
+  const sel = document.getElementById("item");
+  const current = new Set(rows.filter(r => r.ts === last).map(r => String(r.vnum)));
+  const fillSel = () => { const keepV = sel.value; sel.innerHTML = "";
+    const list = Object.entries(byItem).filter(([v]) => current.has(v)).sort((a, b) => a[1].name.localeCompare(b[1].name));
+    const fv = list.filter(([v]) => fav.has(v));
+    if (fv.length) { const g = document.createElement("optgroup"); g.label = "Preferiti"; fv.forEach(([v, it]) => g.append(new Option("★ " + it.name, v))); sel.append(g);
+      const o = document.createElement("optgroup"); o.label = "Tutti"; list.filter(([v]) => !fav.has(v)).forEach(([v, it]) => o.append(new Option(it.name, v))); sel.append(o); }
+    else list.forEach(([v, it]) => sel.add(new Option(it.name, v)));
+    if (keepV) sel.value = keepV; };
+  fillSel();
+  if (current.has("1013")) sel.value = "1013";
+  try { const saved = localStorage.getItem("item"); if (saved && current.has(saved)) sel.value = saved; } catch (e) {}
+  // Variazione 24h: mediana dei giri nell'ultima ora contro mediana dei giri di 24h prima (±1h),
+  // così un singolo giro anomalo non fa sembrare mosso un prezzo stabile.
+  const med = a => { a = a.filter(x => typeof x === "number").sort((x, y) => x - y); return a.length ? a[a.length >> 1] : null; };
+  const around = (it, key, t, w) => med(it.rows.filter(r => Math.abs(new Date(r.ts) - t) <= w).map(r => r[key]));
+  // Con meno di 24h di dati confronta con le prime ore disponibili e mostra quante ore copre.
+  const d24 = (it, key) => { const t = +new Date(it.rows[it.rows.length - 1].ts), first = +new Date(it.rows[0].ts);
+    const thenT = Math.max(t - 864e5, first + 36e5); if (t - thenT < 2 * 36e5) return null;
+    const now = around(it, key, t, 36e5), then = around(it, key, thenT, 36e5);
+    return now && then ? { d: (now - then) / then * 100, h: Math.round((t - thenT) / 36e5) } : null; };
+  const pct = x => { if (x == null) return '<span class="muted">-</span>'; const d = x.d, c = d > 0.5 ? "up" : d < -0.5 ? "down" : "";
+    return `<span class="${c}">${d > 0 ? "+" : ""}${d.toFixed(1)}%</span>` + (x.h < 23 ? ` <span class="muted">${x.h}h</span>` : ""); };
+  const band = (it, key) => { const t = new Date(it.rows[it.rows.length - 1].ts) - 864e5;
+    const v = it.rows.filter(r => new Date(r.ts) >= t).map(r => r[key]).filter(x => typeof x === "number");
+    return v.length ? fmt(Math.min(...v)) + " – " + fmt(Math.max(...v)) : "-"; };
+  function show(v) {
+    const it = byItem[v], cur = it.rows[it.rows.length - 1];
+    const from = +period ? new Date(cur.ts) - +period * 864e5 : -Infinity, r = it.rows.filter(x => +new Date(x.ts) >= from);
+    sel.value = v;
+    document.getElementById("tiles").innerHTML = [
+      ["Riferimento (10%)", fmt(cur.wp10), pct(d24(it, "wp10"))], ["Minimo", fmt(cur.min), pct(d24(it, "min"))],
+      ["Banda rif. 24h", band(it, "wp10"), ""], ["Banda minimo 24h", band(it, "min"), ""],
+      ["Mediana pesata", fmt(cur.wmedian), ""], ["Lotto da " + fmt(cur.lot_size) + " pz", fmt(cur.lot_price), ""],
+      ["Pezzi in vendita", fmt(cur.quantity), pct(d24(it, "quantity"))], ["Annunci", fmt(cur.listings), ""],
+      ["Venduti al giorno (stima)", perDay(v) == null ? "-" : "≈ " + fmt(perDay(v)), `<span class="muted">${covTxt}</span>`],
+      ["Prezzo medio dei venduti", fmt(soldPrice(v)), ""]]
+      .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b>${c}</div>`).join("");
+    document.querySelectorAll("#t tr[data-v]").forEach(tr => tr.classList.toggle("sel", tr.dataset.v === String(v)));
+    const css = getComputedStyle(document.documentElement);
+    const ds = (label, key, color, dash) => ({ label, data: r.map(x => x[key]), borderColor: color, backgroundColor: color, borderDash: dash, pointRadius: 0, borderWidth: 2, tension: .2 });
+    // Asse y stretto sui dati (minimo e riferimento) così si vedono le variazioni.
+    const ys = r.flatMap(x => [x.min, x.wp10]).filter(y => typeof y === "number" && y > 0);
+    const lo = Math.min(...ys), hi = Math.max(...ys), pad = Math.max((hi - lo) * 0.08, hi * 0.005);
+    // Prezzo a cui sono spariti i pezzi tra un giro e l'altro (venduti, o ritirati): mostra le vendite anche
+    // quando avvengono sopra il minimo. Esclusi i valori fuori scala (es. annunci da 200M ritirati).
+    const sa = soldAt[v] || {}, soldPts = r.map(x => { const s = sa[x.ts]; return s && s.p >= lo * 0.7 && s.p <= hi * 1.5 ? s.p : null; });
+    const all = ys.concat(soldPts.filter(y => y != null)), lo2 = Math.min(...all), hi2 = Math.max(...all), pad2 = Math.max((hi2 - lo2) * 0.08, hi2 * 0.005);
+    const yLo = ys.length ? Math.max(0, Math.floor(lo2 - pad2)) : undefined, yHi = ys.length ? Math.ceil(hi2 + pad2) : undefined;
+    chart?.destroy();
+    if (typeof Chart === "undefined") return;
+    chart = new Chart(document.getElementById("c"), { type: "line",
+      data: { labels: r.map(x => when(x.ts)), datasets: [ds("Riferimento 10%", "wp10", "#2e90fa"), ds("Minimo", "min", "#f79009", [4, 4]),
+        { label: "Venduti a (media)", data: soldPts, showLine: false, pointRadius: soldPts.map((y, i) => y == null ? 0 : Math.min(7, 2.5 + Math.log10(sa[r[i].ts].u + 1) * 1.6)), pointHoverRadius: 7, borderColor: "#12b76a", backgroundColor: "#12b76a" }] },
+      options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") } } },
+        scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } } } } });
+    try { localStorage.setItem("item", v); } catch (e) {}
+  }
+  sel.onchange = () => show(sel.value);
+  const latest = rows.filter(r => r.ts === last);
+  const t = document.getElementById("t");
+  const table = () => { const q = document.getElementById("q").value.trim().toLowerCase();
+  t.innerHTML = "<tr><th>Item</th><th>Rif. 10%</th><th>24h</th><th>Minimo</th><th>24h</th><th>Venduti/g</th><th>Pezzi</th></tr>" +
+    latest.filter(r => !q || r.name.toLowerCase().includes(q)).sort((a, b) => (fav.has(String(b.vnum)) - fav.has(String(a.vnum))) || a.name.localeCompare(b.name)).map(r => { const it = byItem[r.vnum];
+      return `<tr data-v="${r.vnum}"${String(r.vnum) === sel.value ? ' class="sel"' : ""}><td><button class="star" data-fav="${r.vnum}" aria-label="preferito">${fav.has(String(r.vnum)) ? "★" : "☆"}</button>${r.name}</td><td>${fmt(r.wp10)}</td><td>${pct(d24(it, "wp10"))}</td><td>${fmt(r.min)}</td><td>${pct(d24(it, "min"))}</td><td>${fmt(perDay(r.vnum))}</td><td>${fmt(r.quantity)}</td></tr>`; }).join(""); };
+  table();
+  document.getElementById("q").oninput = table;
+  document.querySelectorAll("#period button").forEach(b => { b.classList.toggle("on", b.dataset.p === period);
+    b.onclick = () => { period = b.dataset.p; keep("period", period); document.querySelectorAll("#period button").forEach(x => x.classList.toggle("on", x === b)); show(sel.value); }; });
+  t.onclick = e => { const st = e.target.closest("button[data-fav]");
+    if (st) { const v = st.dataset.fav; fav.has(v) ? fav.delete(v) : fav.add(v); keep("fav", JSON.stringify([...fav])); table(); fillSel(); return; }
+    const tr = e.target.closest("tr[data-v]"); if (!tr) return;
+    show(tr.dataset.v); document.getElementById("item").scrollIntoView({ behavior: "smooth" }); };
+  show(sel.value);
+}).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
+</script>
+<script src="stato.js"></script>
+</body>
+</html>
