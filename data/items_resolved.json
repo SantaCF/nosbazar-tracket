@@ -429,28 +429,238 @@
       "name": "Frammento di cristallo bianco"
     }
   ],
-  "1800": [
+  "2091": [
     {
-      "vnum": 1800,
-      "name": "Combatti contro i Vampy di fuoco forti."
+      "vnum": 2091,
+      "name": "Tela di ragno"
     }
   ],
-  "1806": [
+  "2092": [
     {
-      "vnum": 1806,
-      "name": "Morte del Re dei Ragni"
+      "vnum": 2092,
+      "name": "Occhio del Re ragno"
     }
   ],
-  "1017": [
+  "2094": [
     {
-      "vnum": 1017,
-      "name": "Cellon (liv. 1)"
+      "vnum": 2094,
+      "name": "Perla delle tenebre"
     }
   ],
-  "1018": [
+  "2172": [
     {
-      "vnum": 1018,
-      "name": "Cellon (liv. 2)"
+      "vnum": 2172,
+      "name": "Artiglio di Slade"
+    }
+  ],
+  "376": [
+    {
+      "vnum": 376,
+      "name": "Guanti da battaglia brillanti"
+    }
+  ],
+  "377": [
+    {
+      "vnum": 377,
+      "name": "Guanti a maglie brillanti"
+    }
+  ],
+  "378": [
+    {
+      "vnum": 378,
+      "name": "Guanti veloci brillanti"
+    }
+  ],
+  "379": [
+    {
+      "vnum": 379,
+      "name": "Guanti della resistenza brillanti"
+    }
+  ],
+  "380": [
+    {
+      "vnum": 380,
+      "name": "Guanti della tempesta brillanti"
+    }
+  ],
+  "381": [
+    {
+      "vnum": 381,
+      "name": "Guanti del fuoco brillanti"
+    }
+  ],
+  "382": [
+    {
+      "vnum": 382,
+      "name": "Guanti divini brillanti"
+    }
+  ],
+  "383": [
+    {
+      "vnum": 383,
+      "name": "Guanti della morte brillanti"
+    }
+  ],
+  "384": [
+    {
+      "vnum": 384,
+      "name": "Stivali protettivi scintillanti"
+    }
+  ],
+  "385": [
+    {
+      "vnum": 385,
+      "name": "Stivali in metallo pesante scintillanti"
+    }
+  ],
+  "386": [
+    {
+      "vnum": 386,
+      "name": "Stivali del vento scintillanti"
+    }
+  ],
+  "387": [
+    {
+      "vnum": 387,
+      "name": "Stivali in acciaio scintillanti"
+    }
+  ],
+  "388": [
+    {
+      "vnum": 388,
+      "name": "Scarpe delle onde scintillanti"
+    }
+  ],
+  "389": [
+    {
+      "vnum": 389,
+      "name": "Scarpe del fuoco scintillanti"
+    }
+  ],
+  "390": [
+    {
+      "vnum": 390,
+      "name": "Scarpe della luce scintillanti"
+    }
+  ],
+  "391": [
+    {
+      "vnum": 391,
+      "name": "Scarpe dell'ombra scintillanti"
+    }
+  ],
+  "1237": [
+    {
+      "vnum": 1237,
+      "name": "Combinazione stivali Tipo A"
+    }
+  ],
+  "1238": [
+    {
+      "vnum": 1238,
+      "name": "Combinazione stivali Tipo B"
+    }
+  ],
+  "1239": [
+    {
+      "vnum": 1239,
+      "name": "Combinazione guanti Tipo A"
+    }
+  ],
+  "1240": [
+    {
+      "vnum": 1240,
+      "name": "Progetto B (Guanti)"
+    }
+  ],
+  "1034": [
+    {
+      "vnum": 1034,
+      "name": "Frammento di cristallo nero"
+    }
+  ],
+  "2036": [
+    {
+      "vnum": 2036,
+      "name": "Metallo di alta qualitŕ"
+    }
+  ],
+  "2040": [
+    {
+      "vnum": 2040,
+      "name": "Legno di alta qualitŕ"
+    }
+  ],
+  "2044": [
+    {
+      "vnum": 2044,
+      "name": "Stoffa di alta qualitŕ"
+    }
+  ],
+  "2048": [
+    {
+      "vnum": 2048,
+      "name": "Pelle di alta qualitŕ"
+    }
+  ],
+  "2201": [
+    {
+      "vnum": 2201,
+      "name": "Diamante"
+    }
+  ],
+  "2202": [
+    {
+      "vnum": 2202,
+      "name": "Ramo della foresta"
+    }
+  ],
+  "2203": [
+    {
+      "vnum": 2203,
+      "name": "Polvere magica"
+    }
+  ],
+  "2204": [
+    {
+      "vnum": 2204,
+      "name": "Balena"
+    }
+  ],
+  "2205": [
+    {
+      "vnum": 2205,
+      "name": "Pietra misteriosa"
+    }
+  ],
+  "2207": [
+    {
+      "vnum": 2207,
+      "name": "Penna dorata"
+    }
+  ],
+  "2209": [
+    {
+      "vnum": 2209,
+      "name": "Pietra del fuoco"
+    }
+  ],
+  "2210": [
+    {
+      "vnum": 2210,
+      "name": "Pietra Acqua"
+    }
+  ],
+  "2211": [
+    {
+      "vnum": 2211,
+      "name": "Pietra Proton"
+    }
+  ],
+  "2212": [
+    {
+      "vnum": 2212,
+      "name": "Pietra dell'ombra"
     }
   ]
 }
