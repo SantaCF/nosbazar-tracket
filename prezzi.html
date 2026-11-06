@@ -169,7 +169,10 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
       const buf = await (await fetch(`data/listings/${ts.getUTCFullYear()}-${pad(ts.getUTCMonth() + 1)}-${pad(ts.getUTCDate())}/${pad(ts.getUTCHours())}${pad(ts.getUTCMinutes())}.csv.gz`)).arrayBuffer();
       let text; try { text = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); } catch (e) { text = new TextDecoder().decode(buf); }
       const [h, ...ls] = text.trim().split(/\r?\n/), k = parse(h);
-      ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); for (let c = 0; c < (+o.count || 1); c++) (calcBook[o.vnum] ??= []).push([+o.price, +o.amount]); });
+      // I tuoi annunci non sono concorrenza: li tolgo dal libro (nome dei personaggi da Impostazioni).
+      let mine = []; try { mine = (JSON.parse(localStorage.getItem("bilancio") || "{}").seller || "").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); } catch (e) {}
+      ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); if (mine.includes((o.owner || "").toLowerCase())) return;
+        for (let c = 0; c < (+o.count || 1); c++) (calcBook[o.vnum] ??= []).push([+o.price, +o.amount]); });
       Object.values(calcBook).forEach(a => a.sort((x, y) => x[0] - y[0]));
     } catch (e) {}
     await loadFlow();
@@ -188,8 +191,8 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
       below += am; }
     const range = dm.all && dm.all.length ? ` (nei ${dm.all.length} giorni passati, in queste ore: da ${fmt(Math.min(...dm.all))} a ${fmt(Math.max(...dm.all))})` : "";
     out.innerHTML = `Prezzo consigliato <b>${fmt(Math.max(1, price))}</b><br>` +
-      `Venduti attesi entro ${H === 1 ? "1 ora" : H + " ore"}: ${fmt(dm.units)} pezzi` + (dm.est === "fascia" ? `, superati con fiducia ${Math.round(conf * 100)}%${range}` : ` (media delle ultime 24 ore: per questa fascia oraria ci sono ancora ${dm.days} giorni di dati, ne servono 3)`) +
-      `<br>Davanti a te: ${fmt(ahead)} pezzi più economici.` + (q > dm.units ? ` <span style="color:var(--up)">Anche al minimo (${fmt(a[0][0] - 1)}) ${fmt(q)} pezzi sono più di quanto si vende in queste ore.</span>` : "") +
+      `Pezzi che si liberano davanti a te entro ${H === 1 ? "1 ora" : H + " ore"}: ${fmt(dm.units)} (venduti meno i nuovi annunci messi al minimo o sotto)` + (dm.est === "fascia" ? `, superati con fiducia ${Math.round(conf * 100)}%${range}` : dm.est === "finestre" ? `, superati con fiducia ${Math.round(conf * 100)}% nelle finestre da ${H === 1 ? "1 ora" : H + " ore"} delle ultime 72 ore (${dm.windows} finestre, da ${fmt(dm.all[0])} a ${fmt(dm.all[dm.all.length - 1])}). Per la stessa fascia oraria dei giorni passati servono almeno 3 giorni di dati.` : ` (media delle ultime 24 ore: ancora pochi dati)`) +
+      `<br>A questo prezzo hai davanti ${fmt(ahead)} pezzi più economici (i tuoi annunci non contano).` + (q > dm.units ? ` <span style="color:var(--up)">Anche al minimo (${fmt(a[0][0] - 1)}) ${fmt(q)} pezzi sono più di quanto si vende in queste ore.</span>` : "") +
       (capped ? " Non salgo sopra il riferimento 10%: oltre è fuori mercato." : "");
   };
   [cq, ch, cc].forEach(x => x.oninput = x.onchange = calc);

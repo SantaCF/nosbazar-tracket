@@ -46,12 +46,14 @@ CONF = 0.7
 
 
 def hours_to_sell(fl, v, start, qty, d):
-    """First hour at which the expected sales from start reach qty (max 7 days); 24h average with little data."""
-    if flow.expected(fl, v, start, 24, CONF)[0] is None:
-        return qty / d * 24 if d else None
+    """First hour at which the expected net flow from start reaches qty (max 7 days); 24h average without data."""
     for h in range(1, 169):
         e, _ = flow.expected(fl, v, start, h, CONF)
-        if e is not None and e >= qty:
+        if e is None:
+            e = d * h / 24 if d else None
+        if e is None:
+            return None
+        if e >= qty:
             return h
     return None
 
@@ -108,7 +110,7 @@ def main():
         start = datetime.fromtimestamp(now * 60, timezone.utc)
         exp, _ = flow.expected(fl, v, start, HOURS, CONF)
         limit = exp if exp is not None else (d * HOURS / 24 if d else None)
-        if limit and limit > 0:
+        if limit is not None and mine.get(v):
             top = max(p for p, _ in mine[v])
             book = sorted(others.get(v, []))
             ahead = sum(a for p, a in book if p < top)
@@ -128,7 +130,7 @@ def main():
                 if price < top and (st["slow_price"] != price or now - st["slow_at"] >= REPEAT_MIN):
                     st["slow_at"], st["slow_price"] = now, price
                     cheaper = sum(a for p, a in book if p < min(p2 for p2, _ in mine[v]))
-                    notify(f"Vendita lenta: {name}", f"Al tuo prezzo ({fmt(top)}) ci vorrebbero {'più di 7 giorni' if hours is None else f"circa {fmt(hours)} {'ora' if hours < 1.5 else 'ore'}"}: davanti a te ci sono {fmt(ahead)} pezzi più economici{f' ({fmt(cheaper)} sotto il tuo annuncio più basso)' if cheaper != ahead else ''}. Per vendere i tuoi {fmt(units)} pezzi entro {fmt(HOURS)} ore: {fmt(price)}.", "warning")
+                    notify(f"Vendita lenta: {name}", f"Al tuo prezzo ({fmt(top)}) ci vorrebbero {'più di 7 giorni' if hours is None else f"circa {fmt(hours)} {'ora' if hours < 1.5 else 'ore'}"}: davanti a te ci sono {fmt(ahead)} pezzi più economici{f' ({fmt(cheaper)} sotto il tuo annuncio più basso)' if cheaper != ahead else ''}. Per vendere i tuoi {fmt(units)} pezzi entro {fmt(HOURS)} ore: {fmt(price)}.{' Attenzione: in queste ore gli altri mettono annunci al minimo quasi quanto se ne vendono, quindi anche al primo posto non è garantito.' if limit < units else ''}", "warning")
         state[v] = st
     os.makedirs(".alerts", exist_ok=True)
     json.dump(state, open(STATE, "w", encoding="utf-8"))
