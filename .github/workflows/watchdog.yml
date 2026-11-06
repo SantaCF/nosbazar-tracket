@@ -1,0 +1,23 @@
+name: Controllo raccolta
+# Ogni ora controlla che la raccolta stia salvando dati e, se è ferma, avvisa sul telefono (ntfy).
+# Il cron di GitHub può saltare o ritardare: è solo una rete di sicurezza in più.
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            scripts
+            data/listings
+      - run: python3 scripts/watchdog.py --stale
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}

@@ -68,9 +68,9 @@ def main():
             t = list(csv.reader(f))
         if "sell" in t[0]:
             k = t[0].index("sell"); t = [r[:k] + r[k + 1:] for r in t]
-        t[0].append("sell")
-        for r in t[1:]:
-            r.append(latest.get(r[1], ""))
+        # Right after sold_day (column N of the Google Sheet), otherwise at the end.
+        k = t[0].index("sold_day") + 1 if "sold_day" in t[0] else len(t[0])
+        t = [r[:k] + ["sell"] + r[k:] for r in t[:1]] + [r[:k] + [latest.get(r[1], "")] + r[k:] for r in t[1:]]
         with open("data/latest.csv", "w", newline="", encoding="utf-8") as f:
             csv.writer(f).writerows(t)
 

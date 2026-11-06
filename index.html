@@ -136,5 +136,6 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
   show(sel.value);
 }).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 </script>
+<script src="stato.js"></script>
 </body>
 </html>

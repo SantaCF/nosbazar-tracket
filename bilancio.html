@@ -58,10 +58,15 @@
     <select id="lotItem" style="max-width:14em"></select>
     <input id="lotQty" inputmode="numeric" placeholder="pezzi" style="width:6em">
     <input id="lotCost" inputmode="numeric" placeholder="costo totale" style="width:9em">
+    <label class="muted">prodotto il <input id="lotWhen" type="datetime-local" style="width:13em"></label>
     <button class="main" id="addLot">Aggiungi lotto</button>
   </div>
-  <p class="muted">Puoi salvarli anche dalla lista della spesa della pagina Metodi ("Salva lotto"). Pareggio = prezzo minimo di vendita per non perderci, commissione compresa. "In vendita" = pezzi di quell'item nei tuoi annunci dell'ultimo giro (tutti i lotti dello stesso item insieme).</p>
+  <p class="muted">Puoi salvarli anche dalla lista della spesa della pagina Metodi ("Salva lotto"). Il costo salvato da Metodi è una stima: tocca ✎ per scrivere quello vero e l'ora in cui l'hai prodotto (le vendite contano da lì). Se non scrivi "prodotto il", vale adesso. Pareggio = prezzo minimo di vendita per non perderci, commissione compresa. "Venduti" = le tue vendite di quell'item dopo la data del lotto, assegnate prima ai lotti più vecchi; "Realizzato" = incasso netto meno il costo dei pezzi venduti.</p>
   <div class="wrap"><table id="lots"></table></div>
+
+  <h2>Le tue vendite</h2>
+  <p class="muted">Lette dal bazar a ogni giro: pezzi spariti dai tuoi annunci prima della scadenza. Se ritiri un annuncio senza rimetterlo a un altro prezzo, qui risulta venduto. Incasso al netto della commissione (0 con la medaglia).</p>
+  <div class="wrap"><table id="sales"></table></div>
 
   <h2>Backup</h2>
   <div class="row"><button id="exp">Esporta</button><button id="imp">Importa</button></div>
@@ -81,7 +86,7 @@ const parse = l => { const out = []; let cur = "", q = false;
 const csv = t => { const [h, ...ls] = t.trim().split(/\r?\n/), k = parse(h); return ls.map(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); return o; }); };
 function load() { try { return Object.assign({ seller: "", moves: [], lots: [] }, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return { seller: "", moves: [], lots: [] }; } }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
-let db = load(), items = {}, book = [], lastTs, chart;
+let db = load(), items = {}, book = [], lastTs, chart, owners = [];
 const tax = () => document.getElementById("medal").checked ? 0 : 0.005;
 
 (async () => {
@@ -103,7 +108,35 @@ const tax = () => document.getElementById("medal").checked ? 0 : 0.005;
   const md = document.getElementById("medal"); try { md.checked = localStorage.getItem("medal") === "1"; } catch (e) {}
   md.onchange = () => { try { localStorage.setItem("medal", md.checked ? "1" : "0"); } catch (e) {} render(); };
   render();
+  await loadOwners(); render();
 })().catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; render(); });
+
+// Vendite per venditore (data/owners/GIORNO.csv), dal giorno più vecchio che serve (max 31 giorni).
+async function loadOwners() {
+  const pad = n => String(n).padStart(2, "0"), dates = [...db.lots.filter(l => !l.closed).map(l => l.t), new Date(Date.now() - 7 * 864e5).toISOString()].sort();
+  let d = new Date(Math.max(new Date(dates[0]), Date.now() - 31 * 864e5)); d.setUTCHours(0, 0, 0, 0);
+  const days = []; for (; d <= new Date(); d = new Date(+d + 864e5)) days.push(`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`);
+  const texts = await Promise.all(days.map(x => fetch(`data/owners/${x}.csv?` + Date.now()).then(r => r.ok ? r.text() : "").catch(() => "")));
+  owners = texts.filter(Boolean).flatMap(csv);
+}
+function mySales() {
+  const names = db.seller.toLowerCase().split(",").map(x => x.trim()).filter(Boolean);
+  return owners.filter(r => names.includes((r.owner || "").toLowerCase())).map(r => ({ t: r.ts, vnum: r.vnum, u: +r.units, v: +r.value }));
+}
+// Assegna le vendite ai lotti aperti dello stesso item, dal più vecchio: lotto.t -> {u, v}.
+function lotSales(sales) {
+  const out = {}, byItem = {};
+  db.lots.filter(l => !l.closed).sort((a, b) => a.t.localeCompare(b.t)).forEach(l => (byItem[l.vnum] ??= []).push(l));
+  sales.slice().sort((a, b) => a.t.localeCompare(b.t)).forEach(s => {
+    let u = s.u; const p = s.v / s.u;
+    for (const l of byItem[s.vnum] || []) {
+      if (l.t > s.t || u <= 0) continue;
+      const o = (out[l.t] ??= { u: 0, v: 0 }), take = Math.min(u, l.qty - o.u);
+      if (take > 0) { o.u += take; o.v += take * p; u -= take; }
+    }
+  });
+  return out;
+}
 
 // Tuoi annunci dell'ultimo giro: vnum -> pezzi; valore al prezzo di vendita realistico, commissione tolta.
 function myListings() {
@@ -125,11 +158,15 @@ function render() {
   const adj = since => moves.filter(m => m.t > since && m.kind !== "gold").reduce((t, m) => t + (m.kind === "out" ? m.amount : -m.amount), 0);
   const gain = first ? nowWorth - (first.amount + first.listed) + adj(first.t) : null;
   const days = first ? (Date.now() - new Date(first.t)) / 864e5 : 0;
+  const sales = mySales(), wk = new Date(Date.now() - 7 * 864e5).toISOString();
+  const week = sales.filter(x => x.t >= wk).reduce((t, x) => t + x.v, 0), weekU = sales.filter(x => x.t >= wk).reduce((t, x) => t + x.u, 0);
+  const sold = lotSales(sales);
   const spent = moves.filter(m => m.kind === "out").reduce((t, m) => t + m.amount, 0);
   document.getElementById("tiles").innerHTML = `
     <div class="tile"><span class="muted">Patrimonio${lastG ? " al " + day(lastG.t) : ""}</span><b>${short(nowWorth)}</b><span class="muted">oro ${short(lastG?.amount)} + annunci ${short(lastG?.listed)}</span></div>
     <div class="tile"><span class="muted">Guadagno dal ${first ? day(first.t).slice(0, 5) : "-"}</span><b class="${cls(gain)}">${gain == null ? "-" : sign(gain)}</b><span class="muted">${days >= 1 ? sign(gain / days) + " al giorno" : "senza spese e aggiunte"}</span></div>
     <div class="tile"><span class="muted">In vendita ora</span><b>${short(listed)}</b><span class="muted">${db.seller ? Object.values(mine).reduce((a, b) => a + b, 0).toLocaleString("it-IT") + " pezzi" : "scrivi il nome del personaggio"}</span></div>
+    <div class="tile"><span class="muted">Vendite ultimi 7 giorni</span><b>${db.seller ? short(week * (1 - tax())) : "-"}</b><span class="muted">${db.seller ? "incasso netto, " + fmt(weekU) + " pezzi" : "scrivi il nome del personaggio"}</span></div>
     <div class="tile"><span class="muted">Spese fuori dal giro</span><b>${short(spent)}</b><span class="muted">totale</span></div>`;
   // Grafico: guadagno cumulato a ogni aggiornamento dell'oro.
   const pts = golds.map(g => ({ t: g.t, v: g.amount + g.listed - (first.amount + first.listed) + adj(first.t) - adj(g.t) }));
@@ -144,13 +181,23 @@ function render() {
   document.getElementById("moves").innerHTML = moves.length ? "<tr><th>Quando</th><th>Tipo</th><th>Importo</th><th class='hide-s'>Nota</th><th></th></tr>" +
     moves.slice().reverse().map(m => `<tr><td>${day(m.t)}</td><td>${label[m.kind]}</td><td>${fmt(m.amount)}${m.kind === "gold" ? `<br><span class="muted">+ annunci ${short(m.listed)}</span>` : ""}</td><td class="hide-s">${m.note || ""}</td><td><button class="x" data-del="${m.t}">✕</button></td></tr>`).join("")
     : '<tr><td class="muted">Ancora niente: scrivi l\'oro che hai adesso e tocca Salva.</td></tr>';
+  // Vendite: raggruppate per giorno (ora italiana) e item, le più recenti prima.
+  const g = {};
+  sales.forEach(x => { const d = new Date(x.t).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }), k = d + "|" + x.vnum;
+    const o = (g[k] ??= { d, t: x.t, vnum: x.vnum, u: 0, v: 0 }); o.u += x.u; o.v += x.v; if (x.t > o.t) o.t = x.t; });
+  const rows = Object.values(g).sort((a, b) => b.t.localeCompare(a.t)).slice(0, 40);
+  document.getElementById("sales").innerHTML = !db.seller ? '<tr><td class="muted">Scrivi in alto il nome del personaggio.</td></tr>'
+    : !owners.length ? '<tr><td class="muted">Dati delle vendite non ancora disponibili.</td></tr>'
+    : rows.length ? "<tr><th>Giorno</th><th>Item</th><th>Pezzi</th><th>Prezzo medio</th><th>Incasso</th></tr>" +
+      rows.map(o => `<tr><td>${o.d}</td><td>${items[o.vnum]?.name || o.vnum}</td><td>${fmt(o.u)}</td><td>${fmt(o.v / o.u)}</td><td>${short(o.v * (1 - tax()))}</td></tr>`).join("")
+    : '<tr><td class="muted">Nessuna vendita trovata negli ultimi giorni.</td></tr>';
   // Lotti
   const open = db.lots.filter(l => !l.closed);
   document.getElementById("lots").innerHTML = db.lots.length ? "<tr><th>Lotto</th><th>Costo/pz</th><th>Pareggio</th><th>Vendi ora a</th><th>Margine</th><th></th></tr>" +
     db.lots.slice().reverse().map(l => { const it = items[l.vnum] || {}, unit = l.cost / l.qty, be = unit / (1 - tax()), sell = it.sell || 0, m = sell * (1 - tax()) - unit;
       return `<tr style="${l.closed ? "opacity:.5" : ""}"><td>${l.name}<br><span class="muted">${fmt(l.qty)} pz · ${day(l.t).slice(0, 5)}${mine[l.vnum] ? " · in vendita " + fmt(mine[l.vnum]) : ""}</span></td><td>${fmt(unit)}</td><td><b>${fmt(Math.ceil(be))}</b></td><td>${fmt(sell)}</td>
-        <td class="${cls(m)}">${sign(m)}/pz<br><span class="muted">${sign(m * l.qty)} sul lotto</span></td>
-        <td><button class="x" data-close="${l.t}" title="chiudi">${l.closed ? "↺" : "✓"}</button><button class="x" data-dellot="${l.t}">✕</button></td></tr>`; }).join("")
+        <td class="${cls(m)}">${sign(m)}/pz<br><span class="muted">${sign(m * l.qty)} sul lotto</span>${sold[l.t] ? `<br><span class="muted">venduti ${fmt(sold[l.t].u)} a ${fmt(sold[l.t].v / sold[l.t].u)}</span><br><b class="${cls(sold[l.t].v * (1 - tax()) - unit * sold[l.t].u)}">${sign(sold[l.t].v * (1 - tax()) - unit * sold[l.t].u)} realizzato</b>` : ""}</td>
+        <td><button class="x" data-cost="${l.t}" title="correggi il costo">✎</button><button class="x" data-close="${l.t}" title="chiudi">${l.closed ? "↺" : "✓"}</button><button class="x" data-dellot="${l.t}">✕</button></td></tr>`; }).join("")
     : '<tr><td class="muted">Nessun lotto salvato.</td></tr>';
 }
 document.getElementById("add").onclick = () => {
@@ -162,13 +209,19 @@ document.getElementById("add").onclick = () => {
 document.getElementById("addLot").onclick = () => {
   const v = document.getElementById("lotItem").value, qty = num(document.getElementById("lotQty").value), cost = num(document.getElementById("lotCost").value);
   if (!qty || !cost) return;
-  db.lots.push({ t: new Date().toISOString(), vnum: v, name: items[v]?.name || v, qty, cost });
-  document.getElementById("lotQty").value = ""; document.getElementById("lotCost").value = ""; save(); render();
+  const w = document.getElementById("lotWhen").value, t = w && !isNaN(new Date(w)) ? new Date(w).toISOString() : new Date().toISOString();
+  db.lots.push({ t, vnum: v, name: items[v]?.name || v, qty, cost });
+  document.getElementById("lotQty").value = ""; document.getElementById("lotCost").value = ""; document.getElementById("lotWhen").value = ""; save(); render(); loadOwners().then(render);
 };
 document.body.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.del && confirm("Cancellare questa voce?")) { db.moves = db.moves.filter(m => m.t !== b.dataset.del); save(); render(); }
   if (b.dataset.dellot && confirm("Cancellare questo lotto?")) { db.lots = db.lots.filter(l => l.t !== b.dataset.dellot); save(); render(); }
+  if (b.dataset.cost) { const l = db.lots.find(l => l.t === b.dataset.cost), v = num(prompt(`Costo totale vero del lotto (${fmt(l.qty)} pz):`, l.cost) || ""); if (v) l.cost = v;
+    const pad = n => String(n).padStart(2, "0"), d = new Date(l.t), cur = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const w = prompt("Quando l'hai prodotto (gg/mm/aaaa hh:mm, ora italiana)? Le vendite contano da questo momento.", cur), m = w && w.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+    if (m) { const nt = new Date(+m[3], m[2] - 1, +m[1], +m[4], +m[5]).toISOString(); if (!db.lots.some(x => x.t === nt)) l.t = nt; }
+    save(); render(); loadOwners().then(render); }
   if (b.dataset.close) { const l = db.lots.find(l => l.t === b.dataset.close); l.closed = !l.closed; save(); render(); }
 });
 document.getElementById("exp").onclick = async () => {
@@ -182,5 +235,6 @@ document.getElementById("imp").onclick = () => {
   catch (e) { alert("Testo non valido."); }
 };
 </script>
+<script src="stato.js"></script>
 </body>
 </html>
