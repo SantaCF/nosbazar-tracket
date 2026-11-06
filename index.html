@@ -7,134 +7,117 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="icons/manifest.webmanifest">
 <meta name="theme-color" content="#0f1115">
-<title>Prezzi bazar NosTale</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>Oggi · NosBazar</title>
 <style>
-  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#b42318; --down:#067647; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#f97066; --down:#47cd89; } }
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --up:#067647; --down:#b42318; --warn:#b54708; --link:#1f6feb; --acc:#2e90fa; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --up:#47cd89; --down:#f97066; --warn:#fdb022; --link:#58a6ff; --acc:#58a6ff; } }
   body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
   main { max-width:900px; margin:0 auto; padding:16px; }
-  h1 { font-size:20px; margin:0 0 4px; }
-  .muted { color:var(--muted); font-size:13px; }
-  select { width:100%; font-size:16px; padding:10px; margin:12px 0; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); }
-  .chart { position:relative; height:300px; background:var(--card); border-radius:12px; padding:8px; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:8px; margin:12px 0; }
-  .tile { background:var(--card); border-radius:10px; padding:10px; }
-  .tile b { display:block; font-size:18px; }
-  table { width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
-  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); }
+  h1 { font-size:20px; margin:0 0 4px; } h2 { font-size:16px; margin:22px 0 4px; }
+  a { color:var(--link); } .muted { color:var(--muted); font-size:13px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin-top:10px; }
+  .tile { background:var(--card); border-radius:10px; padding:10px; display:block; color:inherit; text-decoration:none; }
+  .tile b { display:block; font-size:19px; margin-top:2px; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+  th, td { text-align:right; padding:6px 4px; border-bottom:1px solid var(--line); vertical-align:top; }
   th:first-child, td:first-child { text-align:left; }
-  .up { color:var(--up); } .down { color:var(--down); }
-  .wrap { overflow-x:auto; }
-  #t tr[data-v] { cursor:pointer; }
-  @media (max-width:480px) { #t th:nth-child(7), #t td:nth-child(7) { display:none; } #t { font-size:13px; } }
-  #t tr[data-v]:hover td, #t tr.sel td { background:var(--card); }
-  #t tr.sel td:first-child { font-weight:600; }
+  .pos { color:var(--up); } .neg { color:var(--down); } .warn { color:var(--warn); }
+  @media (max-width:480px) { table { font-size:12px; } th, td { padding:6px 2px; } .hide-s { display:none; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>Prezzi bazar NosTale · EU-Dragonveil</h1>
-  <div style="margin:4px 0 8px;font-size:14px"><b>Prezzi</b> · <a href="metodi.html" style="color:#1f6feb">Metodi</a> · <a href="flipping.html" style="color:#1f6feb">Flipping</a> · <a href="bilancio.html" style="color:#1f6feb">Bilancio</a></div>
+  <h1>Oggi</h1>
+  <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
-  <select id="item" aria-label="Item"></select>
   <div class="tiles" id="tiles"></div>
-  <div class="chart"><canvas id="c"></canvas></div>
-  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza (venduti o ritirati dal venditore, senza contare chi li rimette subito in vendita), riportati a 24 ore: è un massimo, le vendite vere possono essere meno. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
-  <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
-  <div class="wrap"><table id="t"></table></div>
+
+  <h2>I tuoi annunci</h2>
+  <div class="wrap"><table id="mine"></table></div>
+  <p class="muted" id="mineNote">"Davanti" = pezzi più economici dei tuoi messi in vendita da altri. "Si vende in" = stima con i venduti al giorno: i pezzi davanti a te più i tuoi. Oltre il limite che hai scelto in <a href="impostazioni.html">Impostazioni</a> propongo il prezzo più alto che vende tutto in tempo.</p>
+
+  <h2>Metodi adesso</h2>
+  <div class="wrap"><table id="meth"></table></div>
+  <p class="muted">Stima su un pezzo con i prezzi dell'ultimo giro (compri al prezzo lotto 2%, vendi al prezzo realistico). Quanto fare e come dividere l'oro: <a href="metodi.html">piano consigliato in Metodi</a>.</p>
 </main>
+<script src="ricette.js"></script>
 <script>
-const fmt = n => n === "" || n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
-const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
-let chart;
-Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.now()).then(r => r.ok ? r.text() : ""))).then(([text, salesText]) => {
-  const parse = l => { const out = []; let cur = "", q = false;
-    for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
-    out.push(cur); return out; };
-  const [head, ...lines] = text.trim().split(/\r?\n/);
-  const keys = parse(head);
-  const rows = lines.map(l => { const v = parse(l); const o = {}; keys.forEach((k, i) => o[k] = v[i] === "" || isNaN(v[i]) ? v[i] : +v[i]); return o; });
-  const byItem = {};
-  rows.forEach(r => (byItem[r.vnum] ??= { name: r.name, rows: [] }).rows.push(r));
-  const last = rows[rows.length - 1].ts;
-  // Pezzi spariti prima della scadenza (venduti o ritirati) nelle ultime 24h, riportati a un giorno
-  // sulla base delle ore effettivamente coperte da giri consecutivi (buchi > 40 min esclusi).
-  const since = new Date(last) - 864e5;
-  const tss = [...new Set(rows.map(r => r.ts))].map(t => +new Date(t)).filter(t => t >= since).sort((a, b) => a - b);
-  let covered = 0; for (let i = 1; i < tss.length; i++) { const g = (tss[i] - tss[i - 1]) / 6e4; if (g <= 40) covered += g; }
-  const sold = {}, soldAt = {};   // soldAt[vnum][ts] = { u: pezzi spariti, p: prezzo medio a cui sono spariti }
-  if (salesText) { const [sh, ...sl] = salesText.trim().split(/\r?\n/); const sk = parse(sh);
-    sl.forEach(l => { const v = parse(l), o = {}; sk.forEach((k, i) => o[k] = v[i]);
-      // Messi sul giro PRECEDENTE: i pezzi spariti erano in vendita lì, quindi si confrontano con quel minimo
-      // (nel giro dopo gli annunci più economici possono essere già spariti e il minimo risulta più alto).
-      if (+o.units_gone > 0) (soldAt[o.vnum] ??= {})[o.prev_ts] = { u: +o.units_gone, p: +o.wavg_price };
-      if (+new Date(o.ts) >= since) { const x = (sold[o.vnum] ??= { u: 0, val: 0 }); x.u += +o.units_gone; x.val += +o.value_gone; } }); }
-  const perDay = v => covered >= 120 ? ((sold[v]?.u || 0) * 1440 / covered) : null;
-  const soldPrice = v => sold[v]?.u ? sold[v].val / sold[v].u : null;
-  const covTxt = covered >= 120 ? `stima su ${Math.round(covered / 60)}h di giri` : "servono almeno 2 ore di giri";
-  document.getElementById("updated").textContent = "Ultimo aggiornamento: " + when(last) + " · " + rows.filter(r => r.ts === last).length + " item";
-  const sel = document.getElementById("item");
-  const current = new Set(rows.filter(r => r.ts === last).map(r => String(r.vnum)));
-  Object.entries(byItem).filter(([v]) => current.has(v)).sort((a, b) => a[1].name.localeCompare(b[1].name)).forEach(([v, it]) => sel.add(new Option(it.name, v)));
-  if (current.has("1013")) sel.value = "1013";
-  try { const saved = localStorage.getItem("item"); if (saved && current.has(saved)) sel.value = saved; } catch (e) {}
-  // Variazione 24h: mediana dei giri nell'ultima ora contro mediana dei giri di 24h prima (±1h),
-  // così un singolo giro anomalo non fa sembrare mosso un prezzo stabile.
-  const med = a => { a = a.filter(x => typeof x === "number").sort((x, y) => x - y); return a.length ? a[a.length >> 1] : null; };
-  const around = (it, key, t, w) => med(it.rows.filter(r => Math.abs(new Date(r.ts) - t) <= w).map(r => r[key]));
-  // Con meno di 24h di dati confronta con le prime ore disponibili e mostra quante ore copre.
-  const d24 = (it, key) => { const t = +new Date(it.rows[it.rows.length - 1].ts), first = +new Date(it.rows[0].ts);
-    const thenT = Math.max(t - 864e5, first + 36e5); if (t - thenT < 2 * 36e5) return null;
-    const now = around(it, key, t, 36e5), then = around(it, key, thenT, 36e5);
-    return now && then ? { d: (now - then) / then * 100, h: Math.round((t - thenT) / 36e5) } : null; };
-  const pct = x => { if (x == null) return '<span class="muted">-</span>'; const d = x.d, c = d > 0.5 ? "up" : d < -0.5 ? "down" : "";
-    return `<span class="${c}">${d > 0 ? "+" : ""}${d.toFixed(1)}%</span>` + (x.h < 23 ? ` <span class="muted">${x.h}h</span>` : ""); };
-  const band = (it, key) => { const t = new Date(it.rows[it.rows.length - 1].ts) - 864e5;
-    const v = it.rows.filter(r => new Date(r.ts) >= t).map(r => r[key]).filter(x => typeof x === "number");
-    return v.length ? fmt(Math.min(...v)) + " – " + fmt(Math.max(...v)) : "-"; };
-  function show(v) {
-    const it = byItem[v], r = it.rows, cur = r[r.length - 1];
-    sel.value = v;
-    document.getElementById("tiles").innerHTML = [
-      ["Riferimento (10%)", fmt(cur.wp10), pct(d24(it, "wp10"))], ["Minimo", fmt(cur.min), pct(d24(it, "min"))],
-      ["Banda rif. 24h", band(it, "wp10"), ""], ["Banda minimo 24h", band(it, "min"), ""],
-      ["Mediana pesata", fmt(cur.wmedian), ""], ["Lotto da " + fmt(cur.lot_size) + " pz", fmt(cur.lot_price), ""],
-      ["Pezzi in vendita", fmt(cur.quantity), pct(d24(it, "quantity"))], ["Annunci", fmt(cur.listings), ""],
-      ["Venduti al giorno (stima)", perDay(v) == null ? "-" : "≈ " + fmt(perDay(v)), `<span class="muted">${covTxt}</span>`],
-      ["Prezzo medio dei venduti", fmt(soldPrice(v)), ""]]
-      .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b>${c}</div>`).join("");
-    document.querySelectorAll("#t tr[data-v]").forEach(tr => tr.classList.toggle("sel", tr.dataset.v === String(v)));
-    const css = getComputedStyle(document.documentElement);
-    const ds = (label, key, color, dash) => ({ label, data: r.map(x => x[key]), borderColor: color, backgroundColor: color, borderDash: dash, pointRadius: 0, borderWidth: 2, tension: .2 });
-    // Asse y stretto sui dati (minimo e riferimento) così si vedono le variazioni.
-    const ys = r.flatMap(x => [x.min, x.wp10]).filter(y => typeof y === "number" && y > 0);
-    const lo = Math.min(...ys), hi = Math.max(...ys), pad = Math.max((hi - lo) * 0.08, hi * 0.005);
-    // Prezzo a cui sono spariti i pezzi tra un giro e l'altro (venduti, o ritirati): mostra le vendite anche
-    // quando avvengono sopra il minimo. Esclusi i valori fuori scala (es. annunci da 200M ritirati).
-    const sa = soldAt[v] || {}, soldPts = r.map(x => { const s = sa[x.ts]; return s && s.p >= lo * 0.7 && s.p <= hi * 1.5 ? s.p : null; });
-    const all = ys.concat(soldPts.filter(y => y != null)), lo2 = Math.min(...all), hi2 = Math.max(...all), pad2 = Math.max((hi2 - lo2) * 0.08, hi2 * 0.005);
-    const yLo = ys.length ? Math.max(0, Math.floor(lo2 - pad2)) : undefined, yHi = ys.length ? Math.ceil(hi2 + pad2) : undefined;
-    chart?.destroy();
-    if (typeof Chart === "undefined") return;
-    chart = new Chart(document.getElementById("c"), { type: "line",
-      data: { labels: r.map(x => when(x.ts)), datasets: [ds("Riferimento 10%", "wp10", "#2e90fa"), ds("Minimo", "min", "#f79009", [4, 4]),
-        { label: "Venduti a (media)", data: soldPts, showLine: false, pointRadius: soldPts.map((y, i) => y == null ? 0 : Math.min(7, 2.5 + Math.log10(sa[r[i].ts].u + 1) * 1.6)), pointHoverRadius: 7, borderColor: "#12b76a", backgroundColor: "#12b76a" }] },
-      options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") } } },
-        scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } } } } });
-    try { localStorage.setItem("item", v); } catch (e) {}
-  }
-  sel.onchange = () => show(sel.value);
-  const latest = rows.filter(r => r.ts === last);
-  const t = document.getElementById("t");
-  t.innerHTML = "<tr><th>Item</th><th>Rif. 10%</th><th>24h</th><th>Minimo</th><th>24h</th><th>Venduti/g</th><th>Pezzi</th></tr>" +
-    latest.sort((a, b) => a.name.localeCompare(b.name)).map(r => { const it = byItem[r.vnum];
-      return `<tr data-v="${r.vnum}"><td>${r.name}</td><td>${fmt(r.wp10)}</td><td>${pct(d24(it, "wp10"))}</td><td>${fmt(r.min)}</td><td>${pct(d24(it, "min"))}</td><td>${fmt(perDay(r.vnum))}</td><td>${fmt(r.quantity)}</td></tr>`; }).join("");
-  t.onclick = e => { const tr = e.target.closest("tr[data-v]"); if (!tr) return;
-    show(tr.dataset.v); document.getElementById("item").scrollIntoView({ behavior: "smooth" }); };
-  show(sel.value);
-}).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
+const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
+const short = n => n == null || isNaN(n) ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 2 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
+const sign = n => (n > 0 ? "+" : "") + short(n);
+const cls = n => n > 0 ? "pos" : n < 0 ? "neg" : "";
+const when = s => new Date(s).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const dur = h => h < 1 ? Math.max(1, Math.round(h * 60)) + " min" : h < 48 ? Math.round(h) + (Math.round(h) === 1 ? " ora" : " ore") : Math.round(h / 24) + " giorni";
+const parse = l => { const out = []; let cur = "", q = false;
+  for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
+  out.push(cur); return out; };
+const csv = t => { const [h, ...ls] = t.trim().split(/\r?\n/), k = parse(h); return ls.map(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); return o; }); };
+const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const bil = (() => { try { return JSON.parse(get("bilancio") || "{}"); } catch (e) { return {}; } })();
+const names = (bil.seller || "").toLowerCase().split(",").map(x => x.trim()).filter(Boolean);
+const medal = get("medal") === "1", TAX = medal ? 0 : 0.005;
+const H = Math.min(24, Math.max(1, +(get("sellh") || 6)));
+const pad = n => String(n).padStart(2, "0"), ymd = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+async function gz(url) {
+  const buf = await (await fetch(url)).arrayBuffer();
+  try { return await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); } catch (e) { return new TextDecoder().decode(buf); }
+}
+
+(async () => {
+  const latest = csv(await (await fetch("data/latest.csv?" + Date.now())).text()), items = {};
+  latest.forEach(r => items[r.vnum] = { name: r.name, min: +r.min, sell: +r.sell || +r.wp10 || +r.min, lot: +r.lot_price || +r.min, day: +r.sold_day || 0 });
+  const ts = new Date(latest[0].ts);
+  document.getElementById("updated").textContent = "Ultimo giro: " + when(ts) + " · " + latest.length + " item seguiti";
+  const [bookText, ...ownTexts] = await Promise.all([
+    gz(`data/listings/${ymd(ts)}/${pad(ts.getUTCHours())}${pad(ts.getUTCMinutes())}.csv.gz`).catch(() => ""),
+    ...[ts, new Date(ts - 864e5)].map(d => fetch(`data/owners/${ymd(d)}.csv?` + Date.now()).then(r => r.ok ? r.text() : "").catch(() => ""))]);
+  const book = bookText ? csv(bookText) : [];
+  const mine = {}, others = {};
+  book.forEach(r => { const row = [+r.price, (+r.amount || 0) * (+r.count || 1)];
+    ((names.includes(r.owner.toLowerCase()) ? mine : others)[r.vnum] ??= []).push(row); });
+  const since = new Date(ts - 864e5).toISOString();
+  const sales = ownTexts.filter(Boolean).flatMap(csv).filter(r => names.includes((r.owner || "").toLowerCase()) && r.ts >= since);
+  const sold = sales.reduce((t, r) => t + +r.value, 0), soldU = sales.reduce((t, r) => t + +r.units, 0);
+  const listed = Object.entries(mine).reduce((t, [v, l]) => t + l.reduce((a, [, q]) => a + q, 0) * (items[v]?.sell || 0), 0);
+
+  // Annunci: stima dei tempi di vendita e prezzo consigliato (stessa logica delle notifiche).
+  let slow = 0;
+  const rows = Object.entries(mine).map(([v, l]) => {
+    const it = items[v] || { name: v }, units = l.reduce((a, [, q]) => a + q, 0), top = Math.max(...l.map(x => x[0])), low = Math.min(...l.map(x => x[0]));
+    const ob = (others[v] || []).sort((a, b) => a[0] - b[0]), ahead = ob.filter(([p]) => p < top).reduce((a, [, q]) => a + q, 0);
+    const hours = it.day > 0 ? (ahead + units) / it.day * 24 : null;
+    let price = null;
+    if (hours != null && hours > H) {
+      const limit = it.day * H / 24; let below = 0;
+      for (let i = 0; i < ob.length; i++) { if (i === 0 || ob[i][0] !== ob[i - 1][0]) { if (below + units <= limit) price = ob[i][0] - 1; else break; } below += ob[i][1]; }
+      if (price == null) price = ob.length ? ob[0][0] - 1 : top;
+      if (price >= top) price = null; else slow++;
+    }
+    return { v, it, units, top, low, ahead, hours, price };
+  }).sort((a, b) => (b.price != null) - (a.price != null) || b.units * b.top - a.units * a.top);
+  const T = document.getElementById("mine");
+  T.innerHTML = !names.length ? '<tr><td class="muted">Scrivi il nome del personaggio in <a href="impostazioni.html">Impostazioni</a>.</td></tr>'
+    : !rows.length ? '<tr><td class="muted">Nessun annuncio tuo nell\'ultimo giro.</td></tr>'
+    : "<tr><th>Item</th><th>Pezzi</th><th>Tuo prezzo</th><th class='hide-s'>Minimo</th><th>Davanti</th><th>Si vende in</th></tr>" +
+      rows.map(r => `<tr><td>${r.it.name}${r.price != null ? `<br><span class="warn">abbassa a <b>${fmt(r.price)}</b> per vendere entro ${dur(H)}</span>` : ""}</td><td>${fmt(r.units)}</td><td>${fmt(r.top)}${r.low !== r.top ? `<br><span class="muted">da ${fmt(r.low)}</span>` : ""}</td><td class="hide-s">${fmt(r.it.min)}</td><td>${fmt(r.ahead)}</td><td class="${r.hours == null ? "" : r.hours > H ? "warn" : "pos"}">${r.hours == null ? "-" : "≈ " + dur(r.hours)}</td></tr>`).join("");
+
+  // Metodi su un pezzo.
+  const ms = buildMethods(() => TAX).map(m => { const pb = v => items[v]?.lot, ps = v => items[v]?.sell;
+    if (m.need.some(v => !(pb(v) > 0) || !(ps(v) > 0))) return { m, per: null };
+    const per = m.gain(ps) - m.cost(pb); return { m, per, h: per * m.perH }; }).filter(x => x.per != null).sort((a, b) => b.h - a.h);
+  document.getElementById("meth").innerHTML = "<tr><th>Metodo</th><th>Per craft o run</th><th>All'ora</th></tr>" +
+    ms.filter(x => x.per > 0).map(x => `<tr><td>${x.m.name}</td><td class="${cls(x.per)}">${sign(x.per)}</td><td class="${cls(x.h)}">${sign(x.h)}</td></tr>`).join("") +
+    (ms.some(x => x.per <= 0) ? `<tr><td colspan="3" class="muted">In perdita adesso: ${ms.filter(x => x.per <= 0).map(x => x.m.name).join(", ")}</td></tr>` : "");
+
+  // Riquadri.
+  const golds = (bil.moves || []).filter(m => m.kind === "gold").sort((a, b) => a.t.localeCompare(b.t)), lastG = golds[golds.length - 1];
+  const best = ms[0];
+  document.getElementById("tiles").innerHTML = `
+    <a class="tile" href="bilancio.html"><span class="muted">Vendite ultime 24 ore</span><b>${names.length ? short(sold * (1 - TAX)) : "-"}</b><span class="muted">${names.length ? fmt(soldU) + " pezzi, incasso netto" : "manca il nome del personaggio"}</span></a>
+    <a class="tile" href="#mine"><span class="muted">In vendita ora</span><b>${names.length ? short(listed) : "-"}</b><span class="${slow ? "warn" : "muted"}">${!names.length ? "" : slow ? slow + (slow === 1 ? " annuncio lento" : " annunci lenti") : rows.length + " item, tutto ok"}</span></a>
+    <a class="tile" href="metodi.html"><span class="muted">Metodo migliore adesso</span><b>${best && best.h > 0 ? best.m.name : "nessuno"}</b><span class="muted">${best && best.h > 0 ? sign(best.h) + " all'ora (stima)" : "tutti in perdita"}</span></a>
+    <a class="tile" href="bilancio.html"><span class="muted">Patrimonio${lastG ? " al " + when(lastG.t).slice(0, 5) : ""}</span><b>${lastG ? short(lastG.amount + lastG.listed) : "-"}</b><span class="muted">${lastG ? "oro + annunci" : "aggiorna l'oro nel Bilancio"}</span></a>`;
+})().catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 </script>
 <script src="stato.js"></script>
 </body>

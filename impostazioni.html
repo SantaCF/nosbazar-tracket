@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="icons/manifest.webmanifest">
+<meta name="theme-color" content="#0f1115">
+<title>Impostazioni NosBazar</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6470; --line:#e3e6ea; --card:#f6f8fa; --link:#1f6feb; --acc:#2e90fa; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --card:#171a20; --link:#58a6ff; --acc:#58a6ff; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  main { max-width:700px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px; } h2 { font-size:16px; margin:22px 0 6px; }
+  a { color:var(--link); } .muted { color:var(--muted); font-size:13px; }
+  .field { background:var(--card); border-radius:10px; padding:10px 12px; margin-top:8px; }
+  .field label { display:block; font-weight:600; margin-bottom:6px; }
+  input, select, button { font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--fg); box-sizing:border-box; }
+  input[type=text], input[inputmode] { width:100%; } input[type=checkbox] { width:22px; height:22px; vertical-align:middle; }
+  button { cursor:pointer; } button.main { background:var(--acc); color:#fff; border-color:var(--acc); }
+  .row { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  #saved { color:#12b76a; font-size:13px; min-height:1.2em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Impostazioni</h1>
+  <div id="nav"></div><script src="nav.js"></script>
+  <p class="muted">Valgono per tutte le pagine e restano salvate in questo browser. Per portarle su un altro telefono o sul PC usa "Esporta" e "Importa" in fondo.</p>
+
+  <h2>Tu</h2>
+  <div class="field"><label for="seller">Personaggi che vendono</label>
+    <input id="seller" type="text" placeholder="NomePersonaggio, AltroPersonaggio" autocomplete="off">
+    <div class="muted">Separati da virgola. Servono per i tuoi annunci (Oggi, Bilancio) e le tue vendite. Restano solo qui, non vanno nel repo.</div></div>
+  <div class="field"><label><input id="medal" type="checkbox"> Medaglia del NosBazar attiva</label>
+    <div class="muted">Niente commissione (0,5%, minimo 500 per annuncio) in tutti i calcoli.</div></div>
+  <div class="field"><label for="cap">Oro disponibile per i metodi</label>
+    <input id="cap" inputmode="numeric" placeholder="25.000.000"></div>
+  <div class="field"><label for="hrs">Ore che puoi dedicare (piano consigliato)</label>
+    <input id="hrs" inputmode="decimal" placeholder="3"></div>
+
+  <h2>Vendita</h2>
+  <div class="field"><label for="hz">Vendere entro (Metodi)</label>
+    <select id="hz"><option value="1">1 ora</option><option value="3">3 ore</option><option value="6">6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select>
+    <div class="muted">Il prezzo di vendita nei calcoli è il più alto a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro questo tempo.</div></div>
+  <div class="field"><label for="sellh">Ore massime per vendere i tuoi annunci (Oggi)</label>
+    <input id="sellh" inputmode="numeric" placeholder="6">
+    <div class="muted">Oltre questo tempo la pagina Oggi segna l'annuncio come lento e propone un prezzo. Le notifiche sul telefono usano invece la variabile ALERT_HOURS su GitHub (Settings → Secrets and variables → Actions → Variables): se cambi qui, cambiala anche lì.</div></div>
+  <div class="field"><label for="metric">Prezzi usati nel grafico dei metodi</label>
+    <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select></div>
+  <div id="saved"></div>
+
+  <h2>Backup</h2>
+  <div class="row"><button class="main" id="exp">Esporta tutto</button><button id="imp">Importa</button></div>
+  <p class="muted">"Esporta tutto" copia negli appunti impostazioni, preferiti, movimenti e lotti del Bilancio: incollalo in una nota o in una mail. "Importa" accetta anche un backup fatto dalla pagina Bilancio.</p>
+</main>
+<script>
+const KEYS = ["medal", "cap", "hrs", "hz", "sellh", "metric2", "fav", "item", "period"];
+const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const set = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const bil = () => { try { return JSON.parse(get("bilancio") || "{}"); } catch (e) { return {}; } };
+const $ = id => document.getElementById(id);
+const fmtNum = s => { const n = +String(s).replace(/[^0-9]/g, ""); return n ? n.toLocaleString("it-IT") : ""; };
+let tm; const ok = () => { $("saved").textContent = "Salvato ✓"; clearTimeout(tm); tm = setTimeout(() => $("saved").textContent = "", 1500); };
+function fill() {
+  $("seller").value = bil().seller || "";
+  $("medal").checked = get("medal") === "1";
+  $("cap").value = get("cap") || "25.000.000";
+  $("hrs").value = get("hrs") || "3";
+  $("hz").value = get("hz") || "3";
+  $("sellh").value = get("sellh") || "6";
+  $("metric").value = get("metric2") || "real";
+}
+fill();
+$("seller").onchange = () => { const b = bil(); b.seller = $("seller").value.trim(); b.moves ??= []; b.lots ??= []; set("bilancio", JSON.stringify(b)); ok(); };
+$("medal").onchange = () => { set("medal", $("medal").checked ? "1" : "0"); ok(); };
+$("cap").onchange = () => { $("cap").value = fmtNum($("cap").value); set("cap", $("cap").value); ok(); };
+$("hrs").onchange = () => { set("hrs", $("hrs").value.replace(/[^0-9.,]/g, "") || "3"); ok(); };
+$("hz").onchange = () => { set("hz", $("hz").value); ok(); };
+$("sellh").onchange = () => { const h = Math.min(24, Math.max(1, +$("sellh").value.replace(/[^0-9]/g, "") || 6)); $("sellh").value = h; set("sellh", String(h)); ok(); };
+$("metric").onchange = () => { set("metric2", $("metric").value); ok(); };
+$("exp").onclick = async () => {
+  const all = { v: 1, bilancio: bil() }; KEYS.forEach(k => { const x = get(k); if (x != null) all[k] = x; });
+  const s = JSON.stringify(all);
+  try { await navigator.clipboard.writeText(s); alert("Copiato negli appunti: incollalo in una nota per tenerlo da parte."); }
+  catch (e) { prompt("Copia questo testo e tienilo da parte:", s); }
+};
+$("imp").onclick = () => {
+  const s = prompt("Incolla qui il testo esportato:"); if (!s) return;
+  try {
+    const d = JSON.parse(s);
+    const b = d.bilancio || (Array.isArray(d.moves) ? d : null);
+    if (!b && !KEYS.some(k => k in d)) throw 0;
+    if (!confirm("Sostituire i dati di questo browser con quelli incollati?")) return;
+    if (b) set("bilancio", JSON.stringify(Object.assign({ seller: "", moves: [], lots: [] }, b)));
+    KEYS.forEach(k => { if (k in d) set(k, d[k]); });
+    fill(); ok();
+  } catch (e) { alert("Testo non valido."); }
+};
+</script>
+<script src="stato.js"></script>
+</body>
+</html>
