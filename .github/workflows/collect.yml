@@ -63,7 +63,8 @@ jobs:
           git diff --no-color -U0 data/prices.csv | grep '^+[^+]' | cut -c2- > /tmp/run/prices.csv || true
           git diff --no-color -U0 data/summary.csv | grep '^+[^+]' | cut -c2- > /tmp/run/summary.csv || true
           # sales.csv ricostruito da capo (formato nuovo): si salva intero, non si accoda.
-          if [ "$(git show HEAD:data/sales.csv | head -1)" != "$(head -1 data/sales.csv)" ]; then
+          # Ricostruito anche quando cambiano le regole di conteggio (data/sales_rules.txt).
+          if [ "$(git show HEAD:data/sales.csv | head -1)" != "$(head -1 data/sales.csv)" ] || [ "$(git show HEAD:data/sales_rules.txt 2>/dev/null)" != "$(cat data/sales_rules.txt 2>/dev/null)" ]; then
             cp data/sales.csv /tmp/run/sales_full.csv; : > /tmp/run/sales.csv
           else
             git diff --no-color -U0 data/sales.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sales.csv || true
@@ -79,7 +80,7 @@ jobs:
             fi
           done
           git diff --no-color -U0 data/sell.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sell.csv || true
-          tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $( [ -e data/flow.csv ] && echo data/flow.csv ) $(cat /tmp/run/new_files)
+          tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $( [ -e data/flow.csv ] && echo data/flow.csv ) $( [ -e data/sales_rules.txt ] && echo data/sales_rules.txt ) $(cat /tmp/run/new_files)
           [ -s /tmp/run/new_files ] || { echo "Nessun dato nuovo"; exit 0; }
           for i in 1 2 3 4 5; do
             git fetch -q origin main && git reset -q --hard origin/main
