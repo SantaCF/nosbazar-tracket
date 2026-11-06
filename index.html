@@ -40,7 +40,7 @@
   <select id="item" aria-label="Item"></select>
   <div class="tiles" id="tiles"></div>
   <div class="chart"><canvas id="c"></canvas></div>
-  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza (venduti o ritirati dal venditore, senza contare chi li rimette subito in vendita), riportati a 24 ore: è un massimo, le vendite vere possono essere meno. Nel grafico i pallini verdi sono il prezzo medio a cui sono spariti i pezzi tra un giro e l'altro (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
+  <p class="muted">Prezzo di riferimento = prezzo sotto cui sta il 10% dei pezzi in vendita (pesato sulle quantità): un singolo annuncio economico non lo sposta. "Lotto" = prezzo medio pagato comprando il 2% più economico dei pezzi in vendita (o il lotto fissato in config/items.txt). Le variazioni 24h confrontano la mediana dell'ultima ora con quella di 24 ore prima (finché non ci sono 24 ore di dati, il confronto è con le prime ore e accanto c'è quante ore copre); la banda è il minimo e il massimo toccati nelle ultime 24 ore. "Venduti al giorno" = pezzi spariti prima della scadenza (venduti o ritirati dal venditore, senza contare chi li rimette subito in vendita), riportati a 24 ore: è un massimo, le vendite vere possono essere meno. Nel grafico i pallini verdi sono il prezzo medio dei pezzi che erano in vendita in quel giro e sono spariti entro il giro successivo (più grandi = più pezzi): mostrano le vendite anche quando avvengono sopra il minimo. Tocca una riga della tabella per vederne il grafico. Sono prezzi di annuncio, non di vendita. Trend affidabili solo dopo 2 settimane di dati.</p>
   <h2 style="font-size:16px">Tutti gli item (ultimo giro)</h2>
   <div class="wrap"><table id="t"></table></div>
 </main>
@@ -66,7 +66,9 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
   const sold = {}, soldAt = {};   // soldAt[vnum][ts] = { u: pezzi spariti, p: prezzo medio a cui sono spariti }
   if (salesText) { const [sh, ...sl] = salesText.trim().split(/\r?\n/); const sk = parse(sh);
     sl.forEach(l => { const v = parse(l), o = {}; sk.forEach((k, i) => o[k] = v[i]);
-      if (+o.units_gone > 0) (soldAt[o.vnum] ??= {})[o.ts] = { u: +o.units_gone, p: +o.wavg_price };
+      // Messi sul giro PRECEDENTE: i pezzi spariti erano in vendita lì, quindi si confrontano con quel minimo
+      // (nel giro dopo gli annunci più economici possono essere già spariti e il minimo risulta più alto).
+      if (+o.units_gone > 0) (soldAt[o.vnum] ??= {})[o.prev_ts] = { u: +o.units_gone, p: +o.wavg_price };
       if (+new Date(o.ts) >= since) { const x = (sold[o.vnum] ??= { u: 0, val: 0 }); x.u += +o.units_gone; x.val += +o.value_gone; } }); }
   const perDay = v => covered >= 120 ? ((sold[v]?.u || 0) * 1440 / covered) : null;
   const soldPrice = v => sold[v]?.u ? sold[v].val / sold[v].u : null;
@@ -119,7 +121,7 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
       data: { labels: r.map(x => when(x.ts)), datasets: [ds("Riferimento 10%", "wp10", "#2e90fa"), ds("Minimo", "min", "#f79009", [4, 4]),
         { label: "Venduti a (media)", data: soldPts, showLine: false, pointRadius: soldPts.map((y, i) => y == null ? 0 : Math.min(7, 2.5 + Math.log10(sa[r[i].ts].u + 1) * 1.6)), pointHoverRadius: 7, borderColor: "#12b76a", backgroundColor: "#12b76a" }] },
       options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz)` : "") } } },
+        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") } } },
         scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } } } } });
     try { localStorage.setItem("item", v); } catch (e) {}
   }
