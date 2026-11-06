@@ -232,6 +232,20 @@ function bestPlan(p) {
   // Pulizia: un metodo con un contributo minimo (meno dello 0,5% del guadagno) lo tolgo, il piano resta più semplice.
   for (const x of cand) { if (!bestR.c[x.i]) continue; const c = bestR.c.slice(); c[x.i] = 0;
     const r = portfolio(c, p); if (r.cost + r.fee <= cap && r.profit >= bestR.r.profit * 0.995) bestR = { c, r }; }
+  // Due versioni dello stesso metodo (stessi prodotti, es. PTS con mezze lune craftate o comprate) nello stesso piano:
+  // se le mezze lune "comprate" in realtà vengono dalla tua produzione, le due righe sono la stessa cosa.
+  // Provo a unirle nella versione col guadagno più alto (togliendo, se serve, i craft dell'intermedio che diventano
+  // interni al metodo) e tengo l'unione se il guadagno resta praticamente uguale: il piano si legge più semplice.
+  const sameOut = (a, b) => JSON.stringify(a.outs) === JSON.stringify(b.outs);
+  METHODS.forEach((ma, a) => METHODS.forEach((mb, b) => {
+    if (a === b || !sameOut(ma, mb) || !bestR.c[a] || !bestR.c[b]) return;
+    const k = bestR.c[b], tries = [];
+    const base = bestR.c.slice(); base[a] += k; base[b] = 0; tries.push(base);
+    ma.crafts.forEach(([v, q]) => { const pi = METHODS.findIndex(m => m.unit === "craft" && String(m.prod) === String(v));
+      if (pi >= 0 && base[pi]) { const c = base.slice(); c[pi] = Math.max(0, c[pi] - q * k); tries.push(c); } });
+    for (const c of tries) { if (mins(c) > H) continue; const r = portfolio(c, p);
+      if (r.cost + r.fee <= cap && r.profit >= bestR.r.profit * 0.995) { bestR = { c, r }; break; } }
+  }));
   const total = bestR.r.cost + bestR.r.fee;
   return { counts: bestR.c, cur: bestR.r, lastRoi: null, mins: mins(bestR.c), capLeft: cap - total };
 }
