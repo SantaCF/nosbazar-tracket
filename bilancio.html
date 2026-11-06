@@ -52,7 +52,8 @@
   <div class="wrap"><table id="sales"></table></div>
 
   <h2>Backup</h2>
-  <div class="row"><button id="exp">Esporta</button><button id="imp">Importa</button></div>
+  <div class="row"><button id="exp">Esporta</button><button id="imp">Importa</button><button id="restart">Ricomincia da adesso</button></div>
+  <p class="muted" id="startInfo"></p>
   <details class="how"><summary>Come funziona</summary><p>Per un backup anche delle impostazioni usa "Esporta tutto" in <a href="impostazioni.html">Impostazioni</a>. I dati restano salvati solo in questo browser. "Esporta" copia il Bilancio negli appunti: incollalo da qualche parte (note, mail) per non perderlo. "Importa" lo ripristina, anche su un altro telefono.</p></details>
 </main>
 <script>
@@ -104,7 +105,8 @@ async function loadOwners() {
 }
 function mySales() {
   const names = db.seller.toLowerCase().split(",").map(x => x.trim()).filter(Boolean);
-  return owners.filter(r => names.includes((r.owner || "").toLowerCase())).map(r => ({ t: r.ts, vnum: r.vnum, u: +r.units, v: +r.value }));
+  // Le vendite contano solo da "db.start" (inizio del Bilancio): quelle prima restano nei dati del bazar ma non qui.
+  return owners.filter(r => names.includes((r.owner || "").toLowerCase()) && (!db.start || r.ts >= db.start)).map(r => ({ t: r.ts, vnum: r.vnum, u: +r.units, v: +r.value }));
 }
 // Assegna le vendite ai lotti aperti dello stesso item, dal più vecchio: lotto.t -> {u, v}.
 function lotSales(sales) {
@@ -131,6 +133,7 @@ function myListings() {
 function listedValue(mine) { return Object.entries(mine).reduce((t, [v, q]) => t + q * (items[v]?.sell || 0) * (1 - tax()), 0); }
 
 function render() {
+  document.getElementById("startInfo").textContent = db.start ? "Il Bilancio conta le vendite dal " + day(db.start) + "." : "Il Bilancio inizia quando salvi per la prima volta l'oro che hai.";
   const mine = myListings(), listed = listedValue(mine);
   const moves = db.moves.slice().sort((a, b) => a.t.localeCompare(b.t));
   const golds = moves.filter(m => m.kind === "gold");
@@ -183,9 +186,15 @@ function render() {
         <td><button class="x" data-cost="${l.t}" title="correggi il costo">✎</button><button class="x" data-close="${l.t}" title="chiudi">${l.closed ? "↺" : "✓"}</button><button class="x" data-dellot="${l.t}">✕</button></td></tr>`; }).join("")
     : '<tr><td class="muted">Nessun lotto salvato.</td></tr>';
 }
+// Ricomincia: le vendite e i movimenti di prima non contano più (i lotti aperti restano). Chiede conferma.
+document.getElementById("restart").onclick = () => {
+  if (!confirm("Ricominciare il Bilancio da adesso? Le vendite e i movimenti dell'oro di prima non verranno più contati (i lotti restano). Poi scrivi l'oro che hai adesso.")) return;
+  db.start = new Date().toISOString(); db.moves = []; save(); render();
+};
 document.getElementById("add").onclick = () => {
   const kind = document.getElementById("kind").value, amount = num(document.getElementById("amount").value);
   if (!amount) return;
+  if (kind === "gold" && !db.start && !db.moves.some(m => m.kind === "gold")) db.start = new Date().toISOString();   // primo oro = inizio del Bilancio
   db.moves.push({ t: new Date().toISOString(), kind, amount, note: document.getElementById("note").value.trim(), listed: kind === "gold" ? Math.round(listedValue(myListings())) : 0 });
   document.getElementById("amount").value = ""; document.getElementById("note").value = ""; save(); render();
 };
