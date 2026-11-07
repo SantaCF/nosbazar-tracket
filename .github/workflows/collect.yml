@@ -44,6 +44,7 @@ jobs:
           NOS_SELLERS: ${{ vars.NOS_SELLERS || secrets.NOS_SELLERS }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           ALERT_HOURS: ${{ vars.ALERT_HOURS }}
+          ALERT_MARGIN: ${{ vars.ALERT_MARGIN }}
       - name: Salva lo stato delle notifiche
         if: hashFiles('.alerts/state.json') != ''
         uses: actions/cache/save@v4

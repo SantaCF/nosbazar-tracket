@@ -11,6 +11,12 @@ Configuration comes from repository settings (Settings > Secrets and variables >
   NOS_SELLERS   variable (or secret): character names, comma separated, not case sensitive
   NTFY_TOPIC    the ntfy topic subscribed in the phone app
   ALERT_HOURS   variable, optional: hours you are willing to wait, 1 to 24 (default 6)
+Smart alerts (same run):
+  - someone undercut you: you were the cheapest and now someone sells below you;
+  - you can raise: the cheapest of the others is clearly above your price (e.g. after a bulk buyer swept the queue);
+  - a method's margin per piece crossed ALERT_MARGIN (variable, %, default 10) at the current prices;
+  - an ingredient or product of the methods is below its usual floor (10th percentile of the last 7 days).
+  ALERT_MARGIN   variable, optional: method margin threshold in % (default 10)
 State (what was already notified) lives in .alerts/state.json, kept between runs by the Actions cache.
 Units that vanish before expiry count as sold: if you withdraw a listing yourself it counts as sold too.
 """
@@ -26,7 +32,13 @@ try:
     HOURS = min(24.0, max(1.0, float(os.environ.get("ALERT_HOURS") or 6)))   # 1-24 ore, default 6
 except ValueError:
     HOURS = 6.0
+try:
+    MARGIN = float(os.environ.get("ALERT_MARGIN") or 10) / 100
+except ValueError:
+    MARGIN = 0.10
 SOLD_SHARE = 0.8
+RAISE_SHARE = 0.03   # "puoi alzare" when the cheapest of the others is at least 3% above you
+SMART_REPEAT = 2 * 60
 STATE = ".alerts/state.json"
 REPEAT_MIN = 6 * 60   # a "slow" warning for the same item is repeated at most every 6 hours
 
@@ -56,6 +68,58 @@ def hours_to_sell(fl, v, start, qty, d):
         if e >= qty:
             return h
     return None
+
+
+def load_recipes():
+    """RICETTE from ricette.js (pure JSON between "RICETTE =" and the final ";")."""
+    try:
+        t = open("ricette.js", encoding="utf-8").read()
+        a = t.index("const RICETTE =") + len("const RICETTE =")
+        return json.loads(t[a:t.index("};", a) + 1])
+    except Exception as e:
+        print("ricette non lette:", e)
+        return None
+
+
+def smart(state, mine, others, names, now):
+    """Method margins over ALERT_MARGIN and ingredients/products under their usual floor."""
+    rec = load_recipes()
+    if not rec or not os.path.exists("data/latest.csv"):
+        return
+    last = {r["vnum"]: r for r in csv.DictReader(open("data/latest.csv", encoding="utf-8"))}
+    num = lambda x: float(x) if x not in (None, "") else 0
+    buy = lambda v: rec["npc"].get(str(v)) or num(last.get(str(v), {}).get("lot_price")) or num(last.get(str(v), {}).get("min"))
+    sell = lambda v: num(last.get(str(v), {}).get("sell")) or num(last.get(str(v), {}).get("wp10"))
+    ms = state.setdefault("_m", {})
+    for m in rec["methods"]:
+        if m.get("support"):
+            continue
+        cost = sum(q * buy(v) for v, q in m["ing"])
+        gain = sum(q * sell(v) for v, q in m["out"])
+        if not cost or not all(buy(v) for v, _ in m["ing"]) or not all(sell(v) for v, _ in m["out"]):
+            continue
+        mg, was = gain / cost - 1, ms.get(m["name"], False)
+        if mg >= MARGIN and not was:
+            ms[m["name"]] = True
+            notify(f"Metodo in guadagno: {m['name']}", f"Margine {round(mg * 100)}% a pezzo con i prezzi di adesso (soglia {round(MARGIN * 100)}%). Apri Metodi per sapere quanti farne.", "chart_with_upwards_trend")
+        elif mg < MARGIN - 0.02:
+            ms[m["name"]] = False          # sotto la soglia (con 2 punti di margine): al prossimo superamento riavvisa
+    # Occasioni: item delle ricette (ingredienti e prodotti) sotto il loro pavimento abituale.
+    watch = {str(v) for m in rec["methods"] for v, _ in m["ing"] + m["out"]} - set(rec["npc"])
+    hist = {}
+    if os.path.exists("data/sell.csv"):
+        since = datetime.fromtimestamp((now - 7 * 1440) * 60, timezone.utc).isoformat()
+        for r in csv.DictReader(open("data/sell.csv", encoding="utf-8")):
+            if r["vnum"] in watch and r["ts"] >= since and r["sell"]:
+                hist.setdefault(r["vnum"], []).append(int(r["sell"]))
+    os_ = state.setdefault("_o", {})
+    for v, h in hist.items():
+        if len(h) < 4 * 96:                 # almeno 4 giorni di giri
+            continue
+        cur, floor = h[-1], sorted(h[:-4])[len(h[:-4]) // 10]
+        if cur < floor * 0.98 and now - os_.get(v, 0) >= 12 * 60:
+            os_[v] = now
+            notify(f"Occasione: {names.get(v, v)}", f"Si compra a {fmt(cur)}, sotto il pavimento degli ultimi 7 giorni ({fmt(floor)}, il prezzo più basso nel 10% dei giri). Guarda Prezzi prima di comprare.", "shopping_cart")
 
 
 def fmt(n):
@@ -90,7 +154,8 @@ def main():
     if first:
         items = ", ".join(f"{names.get(v, v)} ({fmt(sum(a for _, a in l))})" for v, l in mine.items()) or "nessun annuncio trovato adesso"
         notify("Notifiche bazar attive", f"Ti avviso quando vendi l'{round(SOLD_SHARE * 100)}% e quando venderesti in più di {fmt(HOURS)} ore. Annunci tuoi: {items}", "white_check_mark")
-    for v in set(mine) | set(state):
+    smart(state, mine, others, names, now)
+    for v in (set(mine) | set(state)) - {k for k in state if k.startswith("_")}:
         units = sum(a for _, a in mine.get(v, []))
         st = state.get(v, {"peak": 0, "prev": 0, "sold80": False, "slow_at": 0, "slow_price": 0})
         if units > st["prev"]:
@@ -110,6 +175,18 @@ def main():
         start = datetime.fromtimestamp(now * 60, timezone.utc)
         exp, _ = flow.expected(fl, v, start, HOURS, CONF)
         limit = exp if exp is not None else (d * HOURS / 24 if d else None)
+        # Passato davanti / puoi alzare.
+        if mine.get(v):
+            low = min(p for p, _ in mine[v])
+            book0 = sorted(others.get(v, []))
+            under = [(p, a) for p, a in book0 if p < low]
+            if under and st.get("first") and now - st.get("under_at", 0) >= SMART_REPEAT:
+                st["under_at"] = now
+                notify(f"Ti hanno passato davanti: {name}", f"Eri il più economico a {fmt(low)}, ora ci sono {fmt(sum(a for _, a in under))} pezzi sotto di te (il più basso a {fmt(under[0][0])}).", "arrow_down")
+            st["first"] = not under
+            if book0 and book0[0][0] >= low * (1 + RAISE_SHARE) and st.get("raise_price") != book0[0][0] and now - st.get("raise_at", 0) >= SMART_REPEAT:
+                st["raise_at"], st["raise_price"] = now, book0[0][0]
+                notify(f"Puoi alzare: {name}", f"Il più economico degli altri ora è a {fmt(book0[0][0])}, {round((book0[0][0] / low - 1) * 100)}% sopra il tuo {fmt(low)}: puoi rimettere a {fmt(book0[0][0] - 1)} e restare primo.", "arrow_up")
         if limit is not None and mine.get(v):
             top = max(p for p, _ in mine[v])
             book = sorted(others.get(v, []))
