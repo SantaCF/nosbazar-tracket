@@ -24,7 +24,7 @@
   </div>
   <h2>Compra e rivendi subito</h2>
   <div class="wrap"><table id="now"></table></div>
-  <details class="how"><summary>Come funziona</summary><p>Compri gli annunci più economici e rimetti in vendita appena sotto il prezzo che resta. Per ogni item provo tutte le quantità e tengo quella col guadagno più alto, con due vincoli. Il primo: i pezzi davanti ai tuoi, più i tuoi, devono vendersi entro il tempo scelto secondo la stima dei venduti al giorno. Il secondo: non vendi sopra il prezzo sotto cui sta il 25% dei pezzi, né sopra il livello più alto toccato di solito dal prezzo più basso nelle ultime 24 ore (perché oltre, di solito, qualcuno rimette annunci più bassi). Mostro solo i guadagni da almeno l'1% e almeno pari al "Guadagno minimo". Commissione compresa, oro disponibile rispettato.</p></details>
+  <details class="how"><summary>Come funziona</summary><p>Compri gli annunci più economici e rimetti in vendita appena sotto il prezzo che resta. Per ogni item provo tutte le quantità e tengo quella col guadagno più alto, con due vincoli. Il primo: i pezzi davanti ai tuoi, più i tuoi, devono vendersi entro il tempo scelto secondo la stima dei venduti al giorno. Il secondo: non vendi sopra il prezzo sotto cui sta il 25% dei pezzi, né sopra il livello più alto toccato di solito dal prezzo più basso nelle ultime 24 ore (perché oltre, di solito, qualcuno rimette annunci più bassi). Eccezione per gli item molto liquidi: se nella fascia oraria di adesso si vendono almeno 3 volte i pezzi davanti ai tuoi più i tuoi, il secondo limite non vale (anche se qualcuno ti passa davanti, vendi lo stesso). Mostro solo i guadagni da almeno l'1% e almeno pari al "Guadagno minimo". Commissione compresa, oro disponibile rispettato.</p></details>
   <h2>Sotto il solito</h2>
   <div class="wrap"><table id="hold"></table></div>
   <details class="how"><summary>Come funziona</summary><p>Item che adesso si comprano sotto il loro prezzo di vendita abituale (mediana delle ultime ore del prezzo di vendita realistico). Guadagno se il prezzo torna lì: è una scommessa, non un guadagno sicuro. Quantità limitata a quanti pezzi il bazar vende in un giorno e, come sopra, a quanti se ne venderebbero entro il tempo scelto insieme a quelli più economici del tuo prezzo. Mostro solo i guadagni da almeno il "Guadagno minimo". Più giorni di dati raccogliamo, più "il solito" è affidabile.</p></details>
@@ -94,15 +94,21 @@ function flipNow(it) {
   // Tetto al prezzo di rivendita: il 25% dei pezzi in vendita e il livello più alto (75° percentile) a cui è stato
   // il prezzo di vendita realistico nelle ultime 24 ore: oltre quello qualcuno di solito rimette annunci più bassi.
   const cap = Math.min(it.wp25 || it.wp10, hi || it.wp10);
+  // Item molto liquidi: se nella fascia oraria di adesso il bazar vende almeno 3 volte i pezzi davanti ai tuoi più i tuoi,
+  // posso superare il livello abituale (resta il tetto del 25% dei pezzi): anche se qualcuno rimette più basso, vendi lo stesso.
+  const capLiquid = it.wp25 || it.wp10;
   let q = 0, cost = 0, best = null;
   for (let i = 0; i < a.length; i++) {
     const [p, am] = a[i]; if (p >= cap) break;
     let take = am; if (cost + take * p > money) take = Math.floor((money - cost) / p); if (take <= 0) break;
     q += take; cost += take * p;
     const rest = (take < am ? [[p, am - take]] : []).concat(a.slice(i + 1).map(x => [x[0], x[1]]));
-    const s = resell(rest, q, d, cap); if (!s || s.price <= p) { if (take < am) break; continue; }
+    let s = resell(rest, q, d, cap);
+    const sl = capLiquid > cap ? resell(rest, q, d / 3, capLiquid) : null;
+    if (sl && sl.price > (s?.price || 0)) s = { ...sl, liquid: true };
+    if (!s || s.price <= p) { if (take < am) break; continue; }
     const gross = q * s.price, profit = gross - feeFor(gross, q) - cost;
-    if (!best || profit > best.profit) best = { it, kind: "now", q, cost, top: p, sell: s.price, profit, ahead: s.ahead, fee: feeFor(gross, q), lots: i + 1 };
+    if (!best || profit > best.profit) best = { it, kind: "now", q, cost, top: p, sell: s.price, profit, ahead: s.ahead, fee: feeFor(gross, q), lots: i + 1, liquid: !!s.liquid, usualCap: cap };
     if (take < am) break;
   }
   return best && best.profit > 0 && best.profit >= best.cost * 0.01 && best.profit >= minProfit() ? best : null;
@@ -187,11 +193,12 @@ function detail(r) {
     <div class="muted">${r.kind === "now" ? "Compra e rivendi subito" : "Sotto il solito: scommessa che il prezzo torni a " + fmt(r.usual.price) + " (mediana di " + fmt(r.usual.span) + " ore di dati)"}</div>
     <table><tr><td>Compri</td><td><b>${fmt(r.q)}</b> pezzi da ${fmt(r.lots)} annunci, fino a ${fmt(r.top)}</td></tr>
     <tr><td>Spendi</td><td>${fmt(r.cost)} (in media ${fmt(r.cost / r.q)} l'uno)</td></tr>
-    <tr><td>Rimetti in vendita a</td><td><b>${fmt(r.sell)}</b></td></tr>
+    <tr><td>Rimetti in vendita a</td><td><b>${fmt(r.sell)}</b>${r.liquid ? `<br><span class="muted">sopra il solito (${fmt(r.usualCap)}): nel tempo scelto il bazar vende almeno 3 volte i pezzi davanti ai tuoi più i tuoi</span>` : ""}</td></tr>
     <tr><td>Commissione</td><td>${fmt(r.fee)}</td></tr>
     <tr><td><b>Guadagno</b></td><td class="pos"><b>${fmt(r.profit)}</b> (${pct(r.profit / r.cost)})</td></tr>
     ${r.kind === "now" ? `<tr><td>Tempo stimato per vendere</td><td>${hrs(hoursToSell(r.it.vnum, Date.now(), r.ahead + r.q, r.it.day))}</td></tr>` : ""}
-    <tr><td>Venduti al giorno (stima)</td><td>${fmt(r.it.day)}</td></tr>
+    <tr><td>Venduti attesi nelle prossime ${hours()} ore</td><td>${fmt(expectedSold(r.it.vnum, Date.now(), hours(), r.it.day).units)}<br><span class="muted">stima prudente su questa fascia oraria dei giorni passati</span></td></tr>
+    <tr><td>Venduti al giorno (media)</td><td>${fmt(r.it.day)}<br><span class="muted">conta anche gli annunci ritirati: è per eccesso</span></td></tr>
     <tr><td>Pezzi in vendita ora</td><td>${fmt(r.it.qty)}</td></tr></table>
     <h3 style="margin:16px 0 0;font-size:15px">Il prezzo di rivendita è normale o un caso?</h3>
     <p id="freg" style="margin:6px 0 0">Carico lo storico…</p>
