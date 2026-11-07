@@ -136,14 +136,23 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     const sa = soldAt[v] || {}, soldPts = r.map(x => { const s = sa[x.ts]; return s && s.p >= lo * 0.7 && s.p <= hi * 1.5 ? s.p : null; });
     const all = ys.concat(soldPts.filter(y => y != null)), lo2 = Math.min(...all), hi2 = Math.max(...all), pad2 = Math.max((hi2 - lo2) * 0.08, hi2 * 0.005);
     const yLo = ys.length ? Math.max(0, Math.floor(lo2 - pad2)) : undefined, yHi = ys.length ? Math.ceil(hi2 + pad2) : undefined;
+    // Volumi: pezzi venduti per giro (stesse regole delle stime: ribassi e correzioni esclusi). Con tanti giri
+    // (periodi lunghi) li sommo per ora, sulla prima barra dell'ora, così le barre restano leggibili.
+    const byHour = r.length > 200, vol = r.map(() => null);
+    r.forEach((x, i) => { const u = sa[x.ts]?.u || 0; if (!u) return;
+      const j = byHour ? r.findIndex(y => y.ts.slice(0, 13) === x.ts.slice(0, 13)) : i; vol[j] = (vol[j] || 0) + u; });
+    const vMax = Math.max(1, ...vol.filter(u => u != null));
     chart?.destroy();
     if (typeof Chart === "undefined") return;
     chart = new Chart(document.getElementById("c"), { type: "line",
       data: { labels: r.map(x => when(x.ts)), datasets: [ds("Riferimento 10%", "wp10", "#2e90fa"), ds("Minimo", "min", "#f79009", [4, 4]),
-        { label: "Venduti a (media)", data: soldPts, showLine: false, pointRadius: soldPts.map((y, i) => y == null ? 0 : Math.min(7, 2.5 + Math.log10(sa[r[i].ts].u + 1) * 1.6)), pointHoverRadius: 7, borderColor: "#12b76a", backgroundColor: "#12b76a" }] },
+        { label: "Venduti a (media)", data: soldPts, showLine: false, pointRadius: soldPts.map((y, i) => y == null ? 0 : Math.min(7, 2.5 + Math.log10(sa[r[i].ts].u + 1) * 1.6)), pointHoverRadius: 7, borderColor: "#12b76a", backgroundColor: "#12b76a" },
+        { type: "bar", label: byHour ? "Pezzi venduti (per ora)" : "Pezzi venduti", data: vol, yAxisID: "y2", backgroundColor: "rgba(152,162,179,.6)", borderWidth: 0, barPercentage: 1, categoryPercentage: 1, order: 9 }] },
       options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") } } },
-        scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } } } } });
+        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") + (c.datasetIndex === 3 ? " pz" : "") } } },
+        scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } },
+          // Barre nella metà bassa del grafico, senza asse: il numero esatto è nel tocco sulla barra.
+          y2: { display: false, min: 0, max: vMax * 2 } } } });
     try { localStorage.setItem("item", v); } catch (e) {}
     if (typeof calc === "function") calc();
   }
