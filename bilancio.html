@@ -33,7 +33,8 @@
     <input id="note" placeholder="nota (facoltativa)" style="width:10em">
     <button class="main" id="add">Salva</button>
   </div>
-  <details class="how"><summary>Come funziona</summary><p>"Oro che ho adesso" = l'oro del personaggio (e del magazzino, se lo usi). Il valore dei tuoi annunci lo aggiungo io, letto dal bazar, e lo salvo insieme all'oro: aggiorna l'oro ogni tanto (per esempio la sera) e il guadagno resta preciso. Le spese fuori dal giro e l'oro aggiunto da fuori non contano come guadagno o perdita.</p></details>
+  <div class="row" id="perAcc" hidden></div>
+  <details class="how"><summary>Come funziona</summary><p>"Oro che ho adesso" = l'oro del personaggio (e del magazzino, se lo usi). Con più personaggi in alto (separati da virgola) scrivi l'oro di ognuno e lo sommo io; un campo lasciato vuoto vale come l'ultima volta. Gli annunci li conto di tutti i personaggi. Il valore dei tuoi annunci lo aggiungo io, letto dal bazar, e lo salvo insieme all'oro: aggiorna l'oro ogni tanto (per esempio la sera) e il guadagno resta preciso. Le spese fuori dal giro e l'oro aggiunto da fuori non contano come guadagno o perdita.</p></details>
   <div class="wrap"><table id="moves"></table></div>
 
   <h2>Lotti prodotti</h2>
@@ -88,7 +89,8 @@ const tax = () => document.getElementById("medal").checked ? 0 : 0.005;
   const sel = document.getElementById("lotItem");
   sel.innerHTML = Object.entries(items).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([v, it]) => `<option value="${v}">${it.name}</option>`).join("");
   const s = document.getElementById("seller"); s.value = db.seller;
-  s.onchange = () => { db.seller = s.value.trim(); save(); render(); };
+  s.onchange = () => { db.seller = s.value.trim(); save(); render(); accounts(); };
+  document.getElementById("kind").onchange = accounts; accounts();
   const md = document.getElementById("medal"); try { md.checked = localStorage.getItem("medal") === "1"; } catch (e) {}
   md.onchange = () => { try { localStorage.setItem("medal", md.checked ? "1" : "0"); } catch (e) {} render(); };
   render();
@@ -165,7 +167,7 @@ function render() {
   document.getElementById("c").parentElement.style.display = pts.length > 1 ? "" : "none";
   const label = { gold: "Oro in gioco", out: "Spesa fuori", in: "Aggiunto" };
   document.getElementById("moves").innerHTML = moves.length ? "<tr><th>Quando</th><th>Tipo</th><th>Importo</th><th class='hide-s'>Nota</th><th></th></tr>" +
-    moves.slice().reverse().map(m => `<tr><td>${day(m.t)}</td><td>${label[m.kind]}</td><td>${fmt(m.amount)}${m.kind === "gold" ? `<br><span class="muted">+ annunci ${short(m.listed)}</span>` : ""}</td><td class="hide-s">${m.note || ""}</td><td><button class="x" data-del="${m.t}">✕</button></td></tr>`).join("")
+    moves.slice().reverse().map(m => `<tr><td>${day(m.t)}</td><td>${label[m.kind]}</td><td>${fmt(m.amount)}${m.kind === "gold" ? `<br><span class="muted">${m.per ? Object.entries(m.per).map(([n, v]) => n + " " + short(v)).join(", ") + "<br>" : ""}+ annunci ${short(m.listed)}</span>` : ""}</td><td class="hide-s">${m.note || ""}</td><td><button class="x" data-del="${m.t}">✕</button></td></tr>`).join("")
     : '<tr><td class="muted">Ancora niente: scrivi l\'oro che hai adesso e tocca Salva.</td></tr>';
   // Vendite: raggruppate per giorno (ora italiana) e item, le più recenti prima.
   const g = {};
@@ -191,12 +193,29 @@ document.getElementById("restart").onclick = () => {
   if (!confirm("Ricominciare il Bilancio da adesso? Le vendite e i movimenti dell'oro di prima non verranno più contati (i lotti restano). Poi scrivi l'oro che hai adesso.")) return;
   db.start = new Date().toISOString(); db.moves = []; save(); render();
 };
+// Più personaggi: l'oro lo scrivi per ognuno e lo sommo io (l'ultimo valore salvato resta come promemoria).
+const accNames = () => db.seller.split(",").map(x => x.trim()).filter(Boolean);
+function accounts() {
+  const box = document.getElementById("perAcc"), names = accNames(), multi = document.getElementById("kind").value === "gold" && names.length > 1;
+  box.hidden = !multi; document.getElementById("amount").hidden = multi; if (!multi) return;
+  const last = [...db.moves].reverse().find(m => m.kind === "gold" && m.per)?.per || {};
+  box.innerHTML = names.map((n, i) => `<label class="muted">${n} <input data-acc="${i}" inputmode="numeric" style="width:8em" placeholder="${last[n] != null ? fmt(last[n]) : "oro"}"></label>`).join("") + ' <span class="muted" id="accSum"></span>';
+  const sum = () => { const t = [...box.querySelectorAll("input[data-acc]")].reduce((a, x) => a + num(x.value), 0); document.getElementById("accSum").textContent = t ? "totale " + fmt(t) : ""; };
+  box.oninput = sum;
+}
 document.getElementById("add").onclick = () => {
-  const kind = document.getElementById("kind").value, amount = num(document.getElementById("amount").value);
+  const kind = document.getElementById("kind").value, names = accNames(), multi = kind === "gold" && names.length > 1;
+  let per = null, amount = num(document.getElementById("amount").value);
+  if (multi) { const ins = [...document.querySelectorAll("#perAcc input[data-acc]")];
+    if (!ins.some(x => x.value.trim())) return;
+    // Un campo vuoto = stesso oro dell'ultima volta per quel personaggio.
+    const last = [...db.moves].reverse().find(m => m.kind === "gold" && m.per)?.per || {};
+    per = {}; ins.forEach(x => { const n = names[+x.dataset.acc]; per[n] = x.value.trim() ? num(x.value) : (last[n] || 0); });
+    amount = Object.values(per).reduce((a, b) => a + b, 0); }
   if (!amount) return;
   if (kind === "gold" && !db.start && !db.moves.some(m => m.kind === "gold")) db.start = new Date().toISOString();   // primo oro = inizio del Bilancio
-  db.moves.push({ t: new Date().toISOString(), kind, amount, note: document.getElementById("note").value.trim(), listed: kind === "gold" ? Math.round(listedValue(myListings())) : 0 });
-  document.getElementById("amount").value = ""; document.getElementById("note").value = ""; save(); render();
+  db.moves.push({ t: new Date().toISOString(), kind, amount, note: document.getElementById("note").value.trim(), listed: kind === "gold" ? Math.round(listedValue(myListings())) : 0, ...(per ? { per } : {}) });
+  document.getElementById("amount").value = ""; document.getElementById("note").value = ""; save(); render(); accounts();
 };
 document.getElementById("addLot").onclick = () => {
   const v = document.getElementById("lotItem").value, qty = num(document.getElementById("lotQty").value), cost = num(document.getElementById("lotCost").value);
