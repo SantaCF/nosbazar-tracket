@@ -161,7 +161,20 @@ function sellFor(v, n, fallback, win = hours()) {
   }
   // Pezzi nuovi che si vendono davvero entro il tempo: prima quelli più economici davanti, poi i tuoi già in vendita.
   // Il resto non conta nell'incasso (non lo vendi entro il tempo scelto), così il piano non produce più di quanto si vende.
-  const sold = Math.max(0, Math.min(nNew, day - ahead - mine));
+  let sold = Math.max(0, Math.min(nNew, day - ahead - mine));
+  // Se non vendi tutto nemmeno sotto il minimo, scendere sotto due annunci piccoli e stracciati (es. polvere: 67 pezzi
+  // a 760-777 davanti a un muro a 1.145) non fa vendere di più: vendi comunque solo quanto chiede il mercato.
+  // Allora provo ogni gradino e tengo quello con l'incasso più alto sui pezzi che vendi davvero.
+  if (sold < nNew) {
+    let b2 = 0;
+    for (let i = 0; i < a.length; i++) {
+      if (i > 0 && a[i][0] === a[i - 1][0]) { b2 += a[i][1]; continue; }
+      if (b2 > total / 10) break;
+      const pr = i ? a[i][0] - 1 : a[0][0] - 1, s = Math.max(0, Math.min(nNew, day - b2 - mine));
+      if (pr * s > Math.max(1, best) * sold) { best = pr; ahead = b2; sold = s; }
+      b2 += a[i][1];
+    }
+  }
   return { price: Math.max(1, best), est: false, ahead, basis: dm.est, half, sold };
 }
 function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craft
@@ -197,7 +210,8 @@ async function capacity(metric) {
   const live = METHODS.map(m => { const r = best(m, p), n = r && r.top.n > 0 ? r.top.n : 1, x = plan(m, n, p);
     const v = x.profit / n * m.perH; return { m, n, v: isFinite(v) ? v : null }; }).sort((a, b) => (b.v ?? -Infinity) - (a.v ?? -Infinity));
   document.getElementById("t").innerHTML = "<tr><th>Metodo</th><th>Oro/ora</th><th>Su quanti</th></tr>" +
-    live.map(r => `<tr><td>${r.m.name}</td><td class="${cls(r.v)}">${fmt(r.v)}</td><td>${r.v == null ? "mancano prezzi" : fmt(r.n) + " " + (r.m.unit === "run" ? "run" : "craft")}</td></tr>`).join("");
+    live.map(r => r.m.support && !(r.v > 0) ? `<tr><td>${r.m.name}</td><td class="muted" colspan="2">da sola non rende (non vendi abbastanza in tempo): conta nel piano, con le tue Pietre Gillion</td></tr>` :
+      `<tr><td>${r.m.name}</td><td class="${cls(r.v)}">${fmt(r.v)}</td><td>${r.v == null ? "mancano prezzi" : fmt(r.n) + " " + (r.m.unit === "run" ? "run" : "craft")}</td></tr>`).join("");
   const t = n => { n = Math.round(n); return n >= 60 ? Math.floor(n / 60) + "h " + (n % 60) + "m" : n + " min"; };
   document.getElementById("k").innerHTML = "<tr><th>Metodo</th><th>Massimo</th><th>Consigl.</th><th>Guadagno</th><th>Tempo</th></tr>" +
     rows.map((r, i) => `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.top.n)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.top.profit)}${(() => { const w = worstOf(r.top, r.top.n).profit; return `<br><span class="${w >= 0 ? "muted" : "neg"}">peggio ${short(w)}</span>`; })()}</td><td>${t(r.top.n / r.m.perH * 60)}</td></tr>`).join("")
