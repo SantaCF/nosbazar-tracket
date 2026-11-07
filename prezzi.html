@@ -96,6 +96,8 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
   fillSel();
   if (current.has("1013")) sel.value = "1013";
   try { const saved = localStorage.getItem("item"); if (saved && current.has(saved)) sel.value = saved; } catch (e) {}
+  // Link da altre pagine: prezzi.html#v=1029 apre direttamente quell'item.
+  const hv = new URLSearchParams(location.hash.slice(1)).get("v"); if (hv && current.has(hv)) sel.value = hv;
   // Variazione 24h: mediana dei giri nell'ultima ora contro mediana dei giri di 24h prima (±1h),
   // così un singolo giro anomalo non fa sembrare mosso un prezzo stabile.
   const med = a => { a = a.filter(x => typeof x === "number").sort((x, y) => x - y); return a.length ? a[a.length >> 1] : null; };

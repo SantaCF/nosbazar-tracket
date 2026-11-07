@@ -318,7 +318,7 @@ function worstPrices() {
 }
 function worstOf(x, mult = 1) {   // x = portfolio(..., true) (o plan() con mult = n): guadagno se vendi tutto ai prezzi del caso peggiore
   const w = worstPrices(); let loss = 0;
-  x.sell.forEach(s => { const wp = w.price[s.v]; if (wp > 0 && wp < s.price) loss += (s.price - wp) * s.q * mult; });
+  x.sell.forEach(s => { const wp = w.price[s.v]; if (wp > 0 && wp < s.price) loss += (s.price - wp) * (s.sold ?? s.q * mult); });
   return { profit: x.profit - loss * (1 - (medal ? 0 : TAX)), days: w.days };
 }
 function renderPlan(p) {
@@ -334,10 +334,35 @@ function renderPlan(p) {
     `<tr><td><b>Totale</b></td><td></td><td><b>${short(cur.cost + cur.fee)}</b><br><span class="muted">commiss. ${short(cur.fee)}</span></td><td><b>${t(mins)}</b></td></tr>
      <tr><td><b>Guadagno atteso</b></td><td colspan="3" class="pos" style="text-align:right"><b>${short(cur.profit)}</b> (${(cur.profit / (cur.cost + cur.fee) * 100).toFixed(1)}%)</td></tr>
      ${(() => { const w = worstOf(pd), c = w.profit >= 0 ? "pos" : "neg";
-       return `<tr><td><b>Caso peggiore</b><br><span class="muted">prezzi di vendita al 10% più basso ${w.days >= 6.5 ? "degli ultimi 7 giorni" : "di " + w.days.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " giorni di dati"}</span></td><td colspan="3" class="${c}" style="text-align:right"><b>${short(w.profit)}</b> (${(w.profit / (cur.cost + cur.fee) * 100).toFixed(1)}%)</td></tr>`; })()}
+       return `<tr id="worstRow" style="cursor:pointer"><td><b>Caso peggiore</b> <span class="muted">(tocca per i dettagli)</span><br><span class="muted">prezzi di vendita al 10% più basso ${w.days >= 6.5 ? "degli ultimi 7 giorni" : "di " + w.days.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " giorni di dati"}</span></td><td colspan="3" class="${c}" style="text-align:right"><b>${short(w.profit)}</b> (${(w.profit / (cur.cost + cur.fee) * 100).toFixed(1)}%)</td></tr>`; })()}
      <tr><td class="muted">Limite</td><td colspan="3" class="muted" style="text-align:right">${mins >= playHours() * 60 * 0.95 ? "le ore" : capital() - cur.cost - cur.fee < capital() * 0.03 ? "l'oro" : maxShare() < 1 && cur.share > maxShare() - 0.03 ? "il massimo in un prodotto" : "il mercato"}${capital() - cur.cost - cur.fee > capital() * 0.03 ? " · " + short(capital() - cur.cost - cur.fee) + " restano liberi" : ""}</td></tr>`
     : `<tr><td class="muted">${maxShare() < 1 ? "Nessun piano in guadagno con questo \"Massimo in un prodotto\": " + (Object.keys(myStock).length ? "quello che hai già in vendita è concentrato in un prodotto e i metodi che convengono adesso non bastano a bilanciarlo. " : "i metodi che convengono adesso producono quasi tutti la stessa cosa. ") + "Prova un limite più alto." : "Nessun metodo conviene adesso."}</td></tr>`;
   planList(counts, p);
+  const wr = document.getElementById("worstRow"); if (wr) wr.onclick = () => worstDetail(counts, p, pd);
+}
+// Dettaglio del caso peggiore: per ogni prodotto da vendere costo per pezzo, prezzo di adesso e prezzo peggiore.
+// Costo per pezzo = costo del metodo che lo produce comprando tutti gli ingredienti al bazar (come "Spesa da solo"),
+// commissione compresa; se il metodo fa più prodotti (PTS) il costo si divide in base al valore. I totali invece sono
+// quelli del piano, che usa i tuoi prodotti come ingredienti (es. Gillion della PTS nei sigilli) e quindi spende meno.
+const pct = x => (x * 100).toLocaleString("it-IT", { maximumFractionDigits: 0 }) + "%";
+function worstDetail(counts, p, x) {
+  const w = worstPrices(), last = byTs.get(times[times.length - 1]) || {}, nm = v => last[v]?.name || v;
+  const cost = {}, made = {};
+  METHODS.forEach((m, i) => { const n = counts[i]; if (!n || m.support) return; const r = plan(m, n, p), spend = r.cost + r.fee;
+    const vals = m.outs.map(([v, q]) => (x.sell.find(s => String(s.v) === String(v))?.price || p.s(v) || 0) * q), tot = vals.reduce((a, b) => a + b, 0) || 1;
+    m.outs.forEach(([v, q], k) => { cost[v] = (cost[v] || 0) + spend * vals[k] / tot; made[v] = (made[v] || 0) + q * n; }); });
+  let worstTot = 0, nowTot = 0;
+  const rows = x.sell.map(s => { const q = s.sold ?? s.q, wp = Math.min(w.price[s.v] || s.price, s.price), cpp = made[s.v] ? cost[s.v] / made[s.v] : null;
+    nowTot += s.price * q; worstTot += wp * q; const ok = cpp == null || wp >= cpp;
+    return `<tr><td><a href="prezzi.html#v=${s.v}">${nm(s.v)}</a><br><span class="muted">${fmt(q)} pezzi${s.q > q ? ` (+${fmt(s.q - q)} che non si vendono in tempo)` : ""}</span></td><td>${cpp == null ? "-" : fmt(cpp)}</td><td>${fmt(s.price)}</td><td class="${ok ? "" : "neg"}">${w.price[s.v] ? fmt(wp) : "-"}</td><td class="${ok ? "pos" : "neg"}">${cpp == null ? "-" : pct((wp - cpp) / cpp)}</td></tr>`; }).join("");
+  const spend = x.cost + x.fee, gw = worstTot - spend;
+  document.getElementById("dlgBody").innerHTML = `<h3 style="margin:0 0 4px;font-size:17px">Caso peggiore del piano</h3>
+    <p class="muted" style="margin:0 0 8px">Peggiore = prezzo di vendita realistico sotto cui il prodotto è stato solo il 10% del tempo ${w.days >= 6.5 ? "negli ultimi 7 giorni" : "nei " + w.days.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " giorni di dati"} (mai sopra quello di adesso). Costo/pz = costo del metodo che lo produce comprando tutto al bazar, commissione compresa (per la PTS diviso tra i prodotti in base al valore). Margine = peggiore rispetto al costo. Tocca un prodotto per il grafico dei prezzi.</p>
+    <div class="wrap"><table><tr><th>Prodotto</th><th>Costo/pz</th><th>Adesso</th><th>Peggiore</th><th>Margine</th></tr>${rows}</table></div>
+    <table><tr><td>Incasso adesso / nel peggiore</td><td>${short(nowTot)} / ${short(worstTot)}</td></tr>
+    <tr><td>Spesa del piano</td><td>${short(spend)}<br><span class="muted">meno della somma dei costi qui sopra se il piano usa i tuoi prodotti come ingredienti</span></td></tr>
+    <tr><td><b>Guadagno nel caso peggiore</b></td><td class="${gw >= 0 ? "pos" : "neg"}"><b>${short(gw)}</b></td></tr></table>`;
+  document.getElementById("dlg").showModal();
 }
 // Lista unica del piano: tutto quello che compri, crafti e vendi, sommato tra i metodi (stessi conti del guadagno atteso).
 function planList(counts, p) {
