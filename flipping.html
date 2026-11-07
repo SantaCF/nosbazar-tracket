@@ -19,7 +19,7 @@
   <div class="card ctl">
     <label class="muted">Oro disponibile <input id="cap" inputmode="numeric" style="width:9em" value="25.000.000"></label>
     <label class="muted">Rivendere entro <select id="hz"><option value="1">1 ora</option><option value="2">2 ore</option><option value="3" selected>3 ore</option><option value="6">6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select></label>
-    <label class="muted">Guadagno minimo <input id="fmin" inputmode="numeric" style="width:7em" value="0"></label>
+    <label class="muted">Guadagno minimo <input id="fmin" inputmode="decimal" style="width:4em" value="0"> % dell'oro</label>
     <label class="muted"><input type="checkbox" id="medal"> Medaglia NosBazar</label>
   </div>
   <h2>Compra e rivendi subito</h2>
@@ -48,7 +48,8 @@ const store = (k, v) => { try { if (v === undefined) return localStorage.getItem
 let items = {}, book = {}, sellHist = {}, lastTs;
 const capital = () => +String(document.getElementById("cap").value).replace(/[^0-9]/g, "") || 0;
 const hours = () => +document.getElementById("hz").value;
-const minProfit = () => +String(document.getElementById("fmin").value).replace(/[^0-9]/g, "") || 0;
+// Guadagno minimo in % dell'oro disponibile (es. 1 = con 25M almeno 250k a operazione).
+const minProfit = () => (+String(document.getElementById("fmin").value).replace(",", ".").replace(/[^0-9.]/g, "") || 0) / 100 * capital();
 const medal = () => document.getElementById("medal").checked;
 const feeFor = (gross, q) => medal() ? 0 : Math.max(gross * 0.005, 500 * Math.ceil(q / 999));
 
@@ -66,8 +67,8 @@ const feeFor = (gross, q) => medal() ? 0 : Math.max(gross * 0.005, 500 * Math.ce
   Object.values(book).forEach(a => a.sort((x, y) => x[0] - y[0]));
   document.getElementById("updated").textContent = "Annunci dell'ultimo giro: " + new Date(lastTs).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const cap = document.getElementById("cap"), hz = document.getElementById("hz"), md = document.getElementById("medal"), fm = document.getElementById("fmin");
-  if (store("fmin")) fm.value = store("fmin");
-  fm.oninput = () => { store("fmin", fm.value); render(); };
+  if (store("fminp")) fm.value = store("fminp");
+  fm.oninput = () => { store("fminp", fm.value); render(); };
   if (store("cap")) cap.value = store("cap"); if (store("hz")) hz.value = store("hz"); md.checked = store("medal") === "1";
   cap.oninput = () => { store("cap", cap.value); render(); };
   hz.onchange = () => { store("hz", hz.value); render(); };
