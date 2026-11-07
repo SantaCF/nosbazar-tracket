@@ -38,14 +38,9 @@
   <details class="how"><summary>Come funziona</summary><p>Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Il tempo per vendere parte da adesso e dura quanto la produzione più il tempo scelto (i pezzi escono man mano mentre produci). Quanto si vende in quel tempo lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. "Peggio" = il guadagno se vendi ai prezzi di vendita più bassi degli ultimi 7 giorni (quelli sotto cui il prezzo è stato solo il 10% del tempo), con gli stessi costi di adesso: in rosso se andresti in perdita. Tocca un metodo per la lista della spesa e di vendita.</p></details>
   <dialog id="dlg"><div id="dlgBody"></div><form method="dialog"><button>Chiudi</button></form></dialog>
   <h2>Stabilità del margine: ultimo giro e medie</h2>
-  <label class="muted">Prezzi usati
-    <select id="metric"><option value="real">realistico (consigliato)</option><option value="min">minimo</option><option value="wp10">riferimento 10%</option><option value="lot_price">lotto 2%</option></select>
-  </label>
+  <input type="hidden" id="metric" value="real">
   <div class="wrap"><table id="st"></table></div>
   <details class="how"><summary>Come funziona</summary><p>Guadagno su un solo craft (o run) a ogni giro, senza contare la quantità: serve a capire se il margine di adesso è quello solito o un picco. Con "realistico" compri al prezzo lotto 2% e vendi al prezzo realistico. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. ▲/▼ = ultimo giro molto sopra/sotto la media 24h.</p></details>
-  <h2>Ultimo giro: oro all'ora</h2>
-  <div class="wrap"><table id="t"></table></div>
-  <details class="how"><summary>Come funziona</summary><p>Tabella: oro all'ora dell'ultimo giro facendo il numero di craft (o run) consigliato con il tuo oro, con acquisto e vendita calcolati per quantità sugli annunci, commissione 0,5% compresa. Ricette: 40 craft al minuto, PTS 50-60 con 3 account e ciclo 5 minuti, in due versioni: mezze lune prodotte da te o comprate al bazar. Prezzi NPC fissi: attrezzi per gemme 5.000, bottiglia vuota 500, pozione magica 100. "Su quanti" = il numero consigliato: l'oro all'ora vale finché fai quei craft, oltre il mercato non regge.</p></details>
 </main>
 <script src="ricette.js"></script>
 <script src="flow.js"></script>
@@ -79,8 +74,6 @@ fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t =>
   times = [...byTs.keys()].sort();
   document.getElementById("updated").textContent = "Ultimo giro: " + when(times[times.length - 1]) + " · " + times.length + " giri";
   const sel = document.getElementById("metric");
-  try { const s = localStorage.getItem("metric2"); if (s) sel.value = s; } catch (e) {}
-  sel.onchange = () => { try { localStorage.setItem("metric2", sel.value); } catch (e) {} draw(sel.value); };
   const cap = document.getElementById("cap");
   try { const c = localStorage.getItem("cap"); if (c) cap.value = c; } catch (e) {}
   cap.oninput = () => { try { localStorage.setItem("cap", cap.value); } catch (e) {} capacity(sel.value); };
@@ -210,13 +203,6 @@ async function capacity(metric) {
   const lossRows = METHODS.map(m => !m.support && best(m, p)).filter(r => r && !(r.top.n > 0 && r.top.profit > 0))
     .map(r => ({ ...r, top: plan(r.m, 1, p), loss: true })).filter(r => isFinite(r.top.profit)).sort((a, b) => b.top.profit - a.top.profit);
   rows.push(...lossRows);
-  // Oro all'ora dell'ultimo giro facendo il numero consigliato (o 1 se il metodo è in perdita), con costi e vendite per quantità.
-  const cls = n => n == null ? "" : n > 0 ? "pos" : "neg";
-  const live = METHODS.map(m => { const r = best(m, p), n = r && r.top.n > 0 ? r.top.n : 1, x = plan(m, n, p);
-    const v = x.profit / n * m.perH; return { m, n, v: isFinite(v) ? v : null }; }).sort((a, b) => (b.v ?? -Infinity) - (a.v ?? -Infinity));
-  document.getElementById("t").innerHTML = "<tr><th>Metodo</th><th>Oro/ora</th><th>Su quanti</th></tr>" +
-    live.map(r => r.m.support && !(r.v > 0) ? `<tr><td>${r.m.name}</td><td class="muted" colspan="2">da sola non rende (non vendi abbastanza in tempo): conta nel piano, con le tue Pietre Gillion</td></tr>` :
-      `<tr><td>${r.m.name}</td><td class="${cls(r.v)}">${fmt(r.v)}</td><td>${r.v == null ? "mancano prezzi" : fmt(r.n) + " " + (r.m.unit === "run" ? "run" : "craft")}</td></tr>`).join("");
   const t = n => { n = Math.round(n); return n >= 60 ? Math.floor(n / 60) + "h " + (n % 60) + "m" : n + " min"; };
   document.getElementById("k").innerHTML = "<tr><th>Metodo</th><th>Massimo</th><th>Consigl.</th><th>Guadagno</th><th>Tempo</th></tr>" +
     rows.map((r, i) => r.loss ? `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td class="muted">in perdita</td><td class="neg">${short(r.top.profit)}<br><span class="muted">a ${r.m.unit === "run" ? "run" : "craft"}</span></td><td></td></tr>` : `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.top.n)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.top.profit)}${(() => { const w = worstOf(r.top, r.top.n).profit; return `<br><span class="${w >= 0 ? "muted" : "neg"}">peggio ${short(w)}</span>`; })()}</td><td>${t(r.top.n / r.m.perH * 60)}</td></tr>`).join("")

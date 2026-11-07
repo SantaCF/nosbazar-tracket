@@ -28,9 +28,6 @@
   <div class="wrap"><table id="risk"></table></div>
   <details class="how" id="riskHow" hidden><summary>Come funziona</summary><p>Per ogni prodotto che hai in vendita: quanta parte del tuo patrimonio (oro dell'ultimo Bilancio + annunci) è ferma lì, in quanto tempo si smaltisce al ritmo delle stesse ore dei giorni passati, quanto perderesti se il prezzo scendesse al caso peggiore (il prezzo di vendita più basso nel 10% dei giri degli ultimi 7 giorni) e il pareggio dei tuoi lotti nel Bilancio. "Il solito" = mediana del prezzo di vendita dei 7 giorni. Il consiglio: se per vendere in tempo devi scendere ancora dentro il solito, abbassa; se dovresti scendere sotto il solito (mercato in stallo o pieno di ribassi), valuta di tenere e aspettare che torni, soprattutto se abbassando andresti sotto il pareggio.</p></details>
 
-  <h2>Metodi adesso</h2>
-  <div class="wrap"><table id="meth"></table></div>
-  <details class="how"><summary>Come funziona</summary><p>Margine su un solo craft (o run) con i prezzi dell'ultimo giro: compri al prezzo lotto 2%, vendi al prezzo realistico, commissione tolta. Non dice quanto farne: comprando tanto i prezzi salgono e vendendo tanto scendono. Per quanto fare e come dividere l'oro c'è il <a href="metodi.html">piano consigliato in Metodi</a>.</p></details>
 </main>
 <script src="ricette.js"></script>
 <script src="flow.js"></script>
@@ -143,9 +140,6 @@ async function gz(url) {
     const pb = v => items[v]?.lot, ps = v => items[v]?.sell;
     if (m.need.some(v => !(pb(v) > 0) || !(ps(v) > 0))) return { m, per: null };
     const c = m.cost(pb), per = m.gain(ps) - c; return { m, per, pct: per / c }; }).filter(x => x.per != null).sort((a, b) => b.pct - a.pct);
-  document.getElementById("meth").innerHTML = "<tr><th>Metodo</th><th>Per craft o run</th><th>Margine</th></tr>" +
-    ms.filter(x => x.per > 0).map(x => `<tr><td>${x.m.name}</td><td class="${cls(x.per)}">${sign(x.per)}</td><td class="${cls(x.per)}">${(x.pct * 100).toFixed(1)}%</td></tr>`).join("") +
-    (ms.some(x => x.per <= 0) ? `<tr><td colspan="3" class="muted">In perdita adesso: ${ms.filter(x => x.per <= 0).map(x => x.m.name).join(", ")}</td></tr>` : "");
 
   // Riquadri.
   const golds = (bil.moves || []).filter(m => m.kind === "gold").sort((a, b) => a.t.localeCompare(b.t)), lastG = golds[golds.length - 1];
@@ -161,21 +155,9 @@ async function gz(url) {
   if (names.length && (!lastG || Date.now() - new Date(lastG.t) > 2 * 864e5)) todo.push(["n", "＋", "Aggiorna l'oro nel Bilancio", lastG ? "ultimo aggiornamento " + when(lastG.t) : "per vedere quanto stai guadagnando", "bilancio.html"]);
   document.getElementById("todo").innerHTML = todo.map(([c, i, t, d, h]) => `<a class="${c}" href="${h}"><span class="ic">${i}</span><span><b>${t}</b><span class="muted">${d}</span></span></a>`).join("");
 
-  // Polvere del sottosuolo: comprarla o farla da Gillion (140 Gillion -> 999 Polvere, Malcolm Mix)?
-  // Costo reale scorrendo gli annunci degli altri per la quantità esatta, non il minimo.
-  function powderTile() {
-    const buy = (v, q) => { let c = 0, left = q; for (const [p, a] of (others[v] || []).slice().sort((x, y) => x[0] - y[0])) {
-      const t = Math.min(a, left); c += t * p; left -= t; if (left <= 0) return c; } return null; };
-    const n = 5, pw = buy(1014, 999 * n), gi = buy(1013, 140 * n);
-    if (!pw || !gi) return "";
-    const d = (gi - pw) / pw, best = d < 0 ? "Fai la polvere dai Gillion" : "Compra la polvere";
-    return `<a class="tile" href="metodi.html"><span class="muted">Polvere del sottosuolo</span><b class="${Math.abs(d) < 0.01 ? "" : "pos"}">${Math.abs(d) < 0.01 ? "Pari" : best}</b>` +
-      `<span class="muted">999 polvere ${short(pw / n)} · 140 Gillion ${short(gi / n)}${Math.abs(d) < 0.01 ? "" : ` · risparmi ${Math.round(Math.abs(d) * 100)}%`}<br>Gillion conviene sotto ${fmt(pw / n / 140)}</span></a>`;
-  }
   document.getElementById("tiles").innerHTML = `
     <a class="tile" href="bilancio.html"><span class="muted">Ricavi ultime 24 ore</span><b>${names.length ? short(sold * (1 - TAX)) : "-"}</b><span class="muted">${!names.length ? "manca il nome del personaggio" : fmt(soldU) + " pezzi venduti, costi non tolti" + (revLot ? `<br>guadagno <span class="${cls(gainLot)}">${sign(gainLot)}</span> sui pezzi con un lotto nel Bilancio${revLot < sold * 0.99 ? " (" + Math.round(revLot / sold * 100) + "% dei ricavi)" : ""}` : "<br>per il guadagno salva i lotti nel Bilancio")}</span></a>
     <a class="tile" href="#mine"><span class="muted">In vendita ora</span><b>${names.length ? short(listed) : "-"}</b><span class="${slow ? "warn" : "muted"}">${!names.length ? "" : slow ? slow + (slow === 1 ? " annuncio lento" : " annunci lenti") : rows.length + " item, tutto ok"}</span></a>
-    ${powderTile()}
     <a class="tile" href="bilancio.html"><span class="muted">Patrimonio${lastG ? " al " + when(lastG.t).slice(0, 5) : ""}</span><b>${lastG ? short(lastG.amount + lastG.listed) : "-"}</b><span class="muted">${lastG ? "oro + annunci" : "aggiorna l'oro nel Bilancio"}</span></a>`;
 })().catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 </script>
