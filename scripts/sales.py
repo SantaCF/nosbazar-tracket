@@ -25,7 +25,7 @@ MAX_GAP_MIN = 40       # larger gaps: too much can happen in between, skip
 TOL_MIN = 3            # expiry-time tolerance when matching a listing
 OUT = "data/sales.csv"
 # Versione delle regole di conteggio: se cambia, sales.csv e data/owners si ricalcolano da capo.
-RULES = "3"   # 2 = ribasso anche con quantità diversa (06/11); 3 = ribasso anche se rimette nel giro dopo + correzione di prezzo appena messo (07/11)
+RULES = "4"   # 2 = ribasso anche con quantità diversa (06/11); 3 = ribasso anche se rimette nel giro dopo + correzione di prezzo appena messo (07/11); 4 = giri con l'ora sfasata (07/11)
 RULES_FILE = "data/sales_rules.txt"
 HEADER = ["ts", "prev_ts", "minutes", "vnum", "name", "units_gone", "listings_gone", "value_gone", "wavg_price", "max_price", "units_raw", "units_under"]
 OWN_DIR = "data/owners"
@@ -57,11 +57,38 @@ def appeared(p, c):
     return out
 
 
+def clock_shift(p, c):
+    """Minutes by which the expiries of run c are shifted against run p (median over listings present in both with
+    the same seller, price and amount). Normally 0; a run whose timestamp was taken minutes before the listings were
+    read (old collect.py, 03:00 refresh) has all its expiries off by the same amount."""
+    d = []
+    for key, lst in p.items():
+        new = c.get(key)
+        if not new:
+            continue
+        for exp, amt in lst:
+            same = [e for e, a in new if a == amt and abs(e - exp) <= 10]
+            if same:
+                d.append(min(same, key=lambda e: abs(e - exp)) - exp)
+    if len(d) < 20:
+        return 0
+    d.sort()
+    m = d[len(d) // 2]
+    return m if abs(m) >= 1.5 else 0
+
+
+def unshift(run, m):
+    return run if not m else {k: [[e - m, a] for e, a in lst] for k, lst in run.items()}
+
+
 def compare(prev, cur, names, nxt=None):
     """Return (rows for sales.csv, rows for data/owners/DAY.csv) for one pair of runs.
     nxt = the run after cur, if any: a seller who withdraws in this run and relists lower in the next one
     (the bazar scan can fall between the two clicks) is also a price cut."""
     (pts, p), (cts, c) = prev, cur
+    c = unshift(c, clock_shift(p, c))
+    if nxt:
+        nxt = (nxt[0], unshift(nxt[1], clock_shift(c, nxt[1])))
     later = appeared(c, nxt[1]) if nxt and 0 < (nxt[0] - cts).total_seconds() / 60 <= MAX_GAP_MIN else {}
     minutes = (cts - pts).total_seconds() / 60
     if minutes <= 0 or minutes > MAX_GAP_MIN:

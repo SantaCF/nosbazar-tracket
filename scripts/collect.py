@@ -158,6 +158,10 @@ def main():
         for m in resolved[q]:
             items[m["vnum"]] = m["name"]
     json.dump(resolved, open("data/items_resolved.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    # L'ora del giro la prendo adesso, dopo la ricerca dei nomi: con minutes_left fa la scadenza di ogni annuncio, e se la
+    # ricerca dei nomi è lunga (refresh delle 03:00, righe nuove in items.txt) le scadenze slitterebbero di qualche minuto
+    # rispetto agli altri giri e sales.py conterebbe come vendute migliaia di annunci rimasti al loro posto (07/11 03:01).
+    ts = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     overrides = lot_overrides(config, resolved)
 
     os.makedirs(f"data/listings/{now:%Y-%m-%d}", exist_ok=True)
