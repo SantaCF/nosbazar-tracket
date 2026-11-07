@@ -28,6 +28,7 @@
       <select id="share"><option value="1">nessun limite</option><option value="0.7">70%</option><option value="0.5">50%</option><option value="0.34">un terzo</option></select></label>
     <label class="muted"><input type="checkbox" id="medal"> Medaglia NosBazar</label>
   </div>
+  <div id="lotti"></div>
   <h2>Piano consigliato</h2>
   <div class="wrap"><table id="pf"></table></div>
   <div id="pfList"></div>
@@ -222,6 +223,7 @@ async function capacity(metric) {
     || '<tr><td class="muted">Nessun metodo in guadagno all\'ultimo giro.</td></tr>';
   document.getElementById("k").onclick = e => { const tr = e.target.closest("tr[data-i]"); if (tr) shopping(rows[+tr.dataset.i], p); };
   renderPlan(p);
+  renderLotti(p);
   const hrs = document.getElementById("hrs");
   hrs.oninput = () => { try { localStorage.setItem("hrs", hrs.value); } catch (e) {} renderPlan(p); };
 }
@@ -405,8 +407,10 @@ function planList(counts, p) {
     ${craftRows ? `<div class="wrap"><table><tr><th>Da craftare</th><th>Totale</th></tr>${craftRows}</table></div>` : ""}
     <div class="wrap"><table><tr><th>Da vendere</th><th>Pezzi</th><th>A</th><th>Incasso</th><th>Si vende in</th></tr>${sellRows}
       <tr><td colspan="3">Commissione da tenere da parte</td><td>${short(x.fee)}</td><td></td></tr></table></div>
+    <button id="followPlan" class="main" style="margin-top:10px">${lottiLoad() ? "Aggiungi come lotto successivo" : "Seguilo passo passo"}</button>
     <button id="savePlan" style="margin-top:10px">Salva il piano nel Bilancio</button>
     <span class="muted" id="savePlanMsg"></span>`;
+  document.getElementById("followPlan").onclick = () => { lottiAdd(counts, p, x); document.getElementById("lotti").scrollIntoView({ behavior: "smooth" }); };
   // Un lotto per ogni prodotto da vendere. Costo: ogni metodo porta il suo (costo da solo, riscalato perché la somma
   // sia il costo vero del piano con gli acquisti in comune); se un metodo usa i prodotti di un altro (mezze lune per la PTS)
   // il costo di quei pezzi passa a chi li usa; dentro un metodo il costo si divide tra i prodotti in base al valore.
@@ -433,6 +437,78 @@ function planList(counts, p) {
     try { localStorage.setItem("bilancio", JSON.stringify(b)); e.target.textContent = "Salvato ✓";
       document.getElementById("savePlanMsg").innerHTML = ` ${Object.keys(lot).length} lotti, costo totale ${short(x.cost)}. <a href="bilancio.html">Apri il Bilancio</a>`; }
     catch (err) { e.target.textContent = "Non salvato: memoria del browser non disponibile"; } };
+}
+// Piano a lotti: il piano diventa una lista di passi da spuntare (compra, crafta, metti in vendita). A ogni apertura
+// i passi non fatti si ricontrollano sul mercato di adesso; l'oro rientra dalle vendite dei tuoi personaggi e il lotto
+// successivo si prepara con quell'oro. Salvato in questo browser (chiave "lotti").
+const LK = "lotti";
+const lottiLoad = () => { try { return JSON.parse(localStorage.getItem(LK) || "null"); } catch (e) { return null; } };
+const lottiSave = st => { try { st ? localStorage.setItem(LK, JSON.stringify(st)) : localStorage.removeItem(LK); } catch (e) {} };
+let lottiP = null;
+function lottiAdd(counts, p, x) {
+  const st = lottiLoad() || { t0: new Date().toISOString(), cap0: capital(), lots: [] }, k = st.lots.length + 1, steps = [];
+  x.buy.filter(b => !b.npc).sort((a, b) => b.cost - a.cost).forEach(b => steps.push({ id: k + "b" + b.v, kind: "buy", v: String(b.v), q: b.q, cost: Math.round(b.cost), top: b.w?.top || null }));
+  x.buy.filter(b => b.npc).forEach(b => steps.push({ id: k + "n" + b.v, kind: "buy", v: String(b.v), q: b.q, cost: Math.round(b.cost), npc: true }));
+  // Ordine di lavoro: prima i craft (mezze lune, conversioni), poi le run.
+  METHODS.map((m, i) => ({ m, n: counts[i] })).filter(a => a.n).sort((a, b) => (a.m.unit === "run") - (b.m.unit === "run"))
+    .forEach(a => steps.push({ id: k + "c" + a.m.name, kind: "make", name: a.m.name, n: a.n, unit: a.m.unit }));
+  x.sell.forEach(s => steps.push({ id: k + "s" + s.v, kind: "sell", v: String(s.v), q: s.q, price: s.price }));
+  st.lots.push({ k, t: new Date().toISOString(), cap: capital(), profit: Math.round(x.profit), counts: Object.fromEntries(METHODS.map((m, i) => [m.name, counts[i]]).filter(([, n]) => n)), steps, done: {} });
+  lottiSave(st); renderLotti(p);
+  const fb = document.getElementById("followPlan"); if (fb) fb.textContent = "Aggiungi come lotto successivo";
+}
+async function lottiRevenue(st) {
+  // Incassi dei tuoi personaggi da quando hai iniziato il piano (data/owners/GIORNO.csv).
+  let names = []; try { names = (JSON.parse(localStorage.getItem("bilancio") || "{}").seller || "").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); } catch (e) {}
+  if (!names.length) return null;
+  const pad = n => String(n).padStart(2, "0"), days = [];
+  for (let d = new Date(st.t0.slice(0, 10) + "T00:00:00Z"); d <= new Date(); d = new Date(+d + 864e5)) days.push(`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`);
+  const texts = await Promise.all(days.map(d => fetch(`data/owners/${d}.csv?` + Date.now()).then(r => r.ok ? r.text() : "").catch(() => "")));
+  let val = 0;
+  texts.forEach(t => t.trim().split(/\r?\n/).slice(1).forEach(l => { const [ts, , owner, , value] = parse(l); if (ts >= st.t0 && names.includes((owner || "").toLowerCase())) val += +value; }));
+  return val * (1 - TAX);
+}
+async function renderLotti(p) {
+  if (p) lottiP = p; p = lottiP;
+  const el = document.getElementById("lotti"), st = lottiLoad();
+  if (!st || !p) { el.innerHTML = ""; return; }
+  const last = byTs.get(times[times.length - 1]) || {}, nm = v => NPC_NAME[v] || last[v]?.name || v;
+  const spent = st.lots.reduce((t, l) => t + l.steps.filter(s => s.kind === "buy" && l.done[s.id]).reduce((a, s) => a + s.cost, 0), 0);
+  const rev = await lottiRevenue(st), gold = st.cap0 - spent + (rev || 0);
+  const lot = st.lots[st.lots.length - 1], todo = lot.steps.filter(s => !lot.done[s.id]);
+  let warnings = 0;
+  const line = s => {
+    const done = !!lot.done[s.id]; let what = "", now = "";
+    if (s.kind === "buy") { what = `Compra <b>${fmt(s.q)}</b> ${nm(s.v)}`; now = short(s.cost) + (s.top ? ` · fino a ${fmt(s.top)}` : "");
+      if (!done && !s.npc) { const w = walk(s.v, s.q), c = w ? w.cost + Math.max(0, w.short) * (w.top || 0) : null;
+        if (c && c > s.cost * 1.05) { warnings++; now += `<br><span class="warn">adesso costa ${short(c)} (+${Math.round((c / s.cost - 1) * 100)}%)</span>`; }
+        else if (c && c < s.cost * 0.95) now += `<br><span class="pos">adesso costa ${short(c)} (${Math.round((c / s.cost - 1) * 100)}%)</span>`; } }
+    else if (s.kind === "make") { const m = METHODS.find(m => m.name === s.name); what = `${s.unit === "run" ? "Fai" : "Crafta"} <b>${fmt(s.n)}</b> ${s.unit === "run" ? "run di " : ""}${s.name}`;
+      if (!done && m && !m.support) { const r = plan(m, s.n, p); if (r.profit < 0) { warnings++; now = `<span class="warn">con i prezzi di adesso è in perdita (${short(r.profit)})</span>`; } else now = `<span class="muted">adesso ${short(r.profit)}</span>`; } }
+    else { what = `Metti in vendita <b>${fmt(s.q)}</b> ${nm(s.v)}`; now = "a " + fmt(s.price);
+      if (!done) { const r = sellFor(s.v, s.q, p.s); if (r.price && Math.abs(r.price / s.price - 1) > 0.02) { if (r.price < s.price) warnings++;
+        now += `<br><span class="${r.price < s.price ? "warn" : "pos"}">adesso ${fmt(r.price)} (${r.price > s.price ? "+" : ""}${Math.round((r.price / s.price - 1) * 100)}%)</span>`; } } }
+    return `<tr${done ? ' style="opacity:.55"' : ""}><td style="width:2em"><input type="checkbox" data-s="${s.id}"${done ? " checked" : ""}></td><td>${what}</td><td>${now}</td></tr>`; };
+  const allDone = !todo.length;
+  el.innerHTML = `<h2>Piano a lotti: lotto ${lot.k}</h2>
+    <div class="tiles"><div class="tile"><span class="muted">Oro stimato adesso</span><b>${short(gold)}</b><span class="muted">${short(st.cap0)} iniziali − ${short(spent)} spesi${rev != null ? " + " + short(rev) + " incassati" : " (scrivi i personaggi in Impostazioni per contare gli incassi)"}</span></div>
+      <div class="tile"><span class="muted">Guadagno previsto del lotto</span><b>${short(lot.profit)}</b><span class="muted">${todo.length ? todo.length + " passi da fare" : "tutti i passi fatti"}</span></div></div>
+    ${warnings ? `<div class="card" style="margin:8px 0"><span class="warn"><b>Il mercato è cambiato</b></span> per ${warnings} ${warnings === 1 ? "passo" : "passi"} non ancora fatti. <button id="lotReplan">Rifai i passi mancanti con l'oro di adesso</button></div>` : ""}
+    <div class="wrap"><table>${lot.steps.map(line).join("")}</table></div>
+    ${allDone ? `<div class="card" style="margin:8px 0">Lotto ${lot.k} fatto. Quando i prodotti si sono venduti (o anche prima, con l'oro che hai) <button id="lotNext" class="main">Prepara il lotto ${lot.k + 1} con ${short(gold)}</button></div>` : ""}
+    <p class="muted" style="margin:6px 0">Spunta ogni passo quando l'hai fatto. I passi da fare si ricontrollano sui prezzi dell'ultimo giro. Oro stimato = oro iniziale − acquisti spuntati (al costo previsto) + vendite dei tuoi personaggi da quando hai iniziato. Se è diverso dall'oro vero, scrivi quello vero in "Oro" qui sotto prima di preparare il lotto.
+    <button id="lotEnd" style="margin-left:6px">Chiudi il piano</button></p>`;
+  el.onchange = e => { const id = e.target.dataset?.s; if (!id) return; const st2 = lottiLoad(), l2 = st2.lots[st2.lots.length - 1]; if (e.target.checked) l2.done[id] = true; else delete l2.done[id]; lottiSave(st2); renderLotti(); };
+  el.onclick = async e => {
+    if (e.target.id === "lotEnd") { if (confirm("Chiudere il piano a lotti? I passi spuntati non contano più.")) { lottiSave(null); renderLotti(); renderPlan(p); } }
+    if (e.target.id === "lotNext" || e.target.id === "lotReplan") {
+      const st2 = lottiLoad(), l2 = st2.lots[st2.lots.length - 1];
+      if (e.target.id === "lotReplan") { l2.steps = l2.steps.filter(s => l2.done[s.id]); if (!l2.steps.length) st2.lots.pop(); lottiSave(st2); }
+      const cap = document.getElementById("cap"); cap.value = fmt(Math.max(0, gold)); try { localStorage.setItem("cap", cap.value); } catch (x) {}
+      await capacity(document.getElementById("metric").value);
+      const { counts } = bestPlan(lottiP); if (!counts.some(n => n)) { alert("Con questo oro e i prezzi di adesso non c'è un piano in guadagno."); renderLotti(); return; }
+      lottiAdd(counts, lottiP, portfolio(counts, lottiP, true));
+    } };
 }
 async function shopping(r, p) {
   await loadBook();

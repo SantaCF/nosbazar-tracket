@@ -50,7 +50,7 @@
   <details class="how"><summary>Come funziona</summary><p>"Esporta tutto" copia negli appunti impostazioni, preferiti, movimenti e lotti del Bilancio: incollalo in una nota o in una mail. "Importa" accetta anche un backup fatto dalla pagina Bilancio.</p></details>
 </main>
 <script>
-const KEYS = ["medal", "cap", "hrs", "hz", "sellh", "conf", "metric2", "fav", "item", "period"];
+const KEYS = ["medal", "cap", "hrs", "hz", "sellh", "conf", "metric2", "fav", "item", "period", "lotti"];
 const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const set = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 const bil = () => { try { return JSON.parse(get("bilancio") || "{}"); } catch (e) { return {}; } };
