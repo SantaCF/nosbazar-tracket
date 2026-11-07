@@ -26,6 +26,8 @@ jobs:
           NOS_SERVER: '1'   # 1 = EU-Dragonveil
       - name: Stima vendite tra questo giro e il precedente
         run: python3 scripts/sales.py || echo "stima vendite non riuscita"
+        env:
+          NOS_SELLERS: ${{ vars.NOS_SELLERS || secrets.NOS_SELLERS }}   # i tuoi personaggi contano come un solo venditore
       - name: Venduti per fascia oraria
         run: python3 scripts/flow.py || echo "fasce orarie non riuscite"
       - name: Prezzo di vendita realistico

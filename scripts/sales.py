@@ -25,11 +25,15 @@ MAX_GAP_MIN = 40       # larger gaps: too much can happen in between, skip
 TOL_MIN = 3            # expiry-time tolerance when matching a listing
 OUT = "data/sales.csv"
 # Versione delle regole di conteggio: se cambia, sales.csv e data/owners si ricalcolano da capo.
-RULES = "2"   # 2 = ribasso anche con quantità diversa (06/11)
+RULES = "3"   # 2 = ribasso anche con quantità diversa (06/11); 3 = i personaggi in NOS_SELLERS contano come un solo venditore (07/11)
 RULES_FILE = "data/sales_rules.txt"
 HEADER = ["ts", "prev_ts", "minutes", "vnum", "name", "units_gone", "listings_gone", "value_gone", "wavg_price", "max_price", "units_raw", "units_under"]
 OWN_DIR = "data/owners"
 OWN_HEADER = ["ts", "vnum", "owner", "units", "value"]
+# Personaggi dello stesso giocatore (variabile Actions NOS_SELLERS, separati da virgola): se ritira da uno e
+# rimette da un altro a prezzo più basso è un ribasso, non una vendita. Gli altri giocatori restano per personaggio.
+SELLERS = {s.strip().lower() for s in os.environ.get("NOS_SELLERS", "").split(",") if s.strip()}
+seller = lambda owner: "\0me" if owner.lower() in SELLERS else owner
 
 
 def load(path):
@@ -67,7 +71,7 @@ def compare(prev, cur, names):
         old = [x[0] for x in p.get(key, [])]
         for exp, amt in lst:
             if not any(abs(exp - e) <= TOL_MIN for e in old):
-                new[(key[0], key[1])].append([key[2], amt])
+                new[(key[0], seller(key[1]))].append([key[2], amt])
                 if key[0] in pmin and key[2] <= pmin[key[0]] * 1.01:
                     under[key[0]] += amt
     gone = collections.defaultdict(lambda: [0, 0, 0, 0, 0])   # vnum -> units, listings, value, max price, raw units
@@ -99,7 +103,7 @@ def compare(prev, cur, names):
             # following the market up), so the vanished one still counts as sold.
             if left == 0:
                 cut = 0
-                for nl in sorted(new.get((vnum, owner), []), key=lambda x: -x[0]):
+                for nl in sorted(new.get((vnum, seller(owner)), []), key=lambda x: -x[0]):
                     if nl[0] >= price or nl[1] <= 0 or cut >= units:
                         continue
                     t = min(nl[1], units - cut); nl[1] -= t; cut += t
