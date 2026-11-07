@@ -137,16 +137,26 @@ def main():
     queries = [q for q, _ in config]
     os.makedirs("data/listings", exist_ok=True)
 
+    # Nomi -> vnum: riuso quelli del giro precedente (data/items_resolved.json) e cerco solo le righe nuove o
+    # rimaste vuote. Una volta al giorno (giro tra le 03:00 e le 03:14 UTC) li ricerco tutti. Risparmia ~2-3 minuti a giro.
+    try:
+        cache = json.load(open("data/items_resolved.json", encoding="utf-8"))
+    except Exception:
+        cache = {}
+    refresh = now.hour == 3 and now.minute < 15
     resolved, items = {}, {}
     for q in queries:
-        try:
-            resolved[q] = resolve(q)
-        except Exception as e:
-            print(f"name-search failed for {q!r}: {e}", file=sys.stderr)
-            resolved[q] = []
+        if not refresh and cache.get(q):
+            resolved[q] = cache[q]
+        else:
+            try:
+                resolved[q] = resolve(q)
+            except Exception as e:
+                print(f"name-search failed for {q!r}: {e}", file=sys.stderr)
+                resolved[q] = cache.get(q, [])
+            time.sleep(1)
         for m in resolved[q]:
             items[m["vnum"]] = m["name"]
-        time.sleep(1)
     json.dump(resolved, open("data/items_resolved.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     overrides = lot_overrides(config, resolved)
 
