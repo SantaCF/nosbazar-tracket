@@ -25,7 +25,7 @@ MAX_GAP_MIN = 40       # larger gaps: too much can happen in between, skip
 TOL_MIN = 3            # expiry-time tolerance when matching a listing
 OUT = "data/sales.csv"
 # Versione delle regole di conteggio: se cambia, sales.csv e data/owners si ricalcolano da capo.
-RULES = "2"   # 2 = ribasso anche con quantità diversa (06/11)
+RULES = "3"   # 2 = ribasso anche con quantità diversa (06/11); 3 = ribasso anche se rimette nel giro dopo (07/11)
 RULES_FILE = "data/sales_rules.txt"
 HEADER = ["ts", "prev_ts", "minutes", "vnum", "name", "units_gone", "listings_gone", "value_gone", "wavg_price", "max_price", "units_raw", "units_under"]
 OWN_DIR = "data/owners"
@@ -46,9 +46,23 @@ def load(path):
     return ts, rows
 
 
-def compare(prev, cur, names):
-    """Return (rows for sales.csv, rows for data/owners/DAY.csv) for one pair of runs."""
+def appeared(p, c):
+    """Listings in c that were not in p, per seller: (vnum, owner) -> [[price, units]]."""
+    out = collections.defaultdict(list)
+    for key, lst in c.items():
+        old = [x[0] for x in p.get(key, [])]
+        for exp, amt in lst:
+            if not any(abs(exp - e) <= TOL_MIN for e in old):
+                out[(key[0], key[1])].append([key[2], amt])
+    return out
+
+
+def compare(prev, cur, names, nxt=None):
+    """Return (rows for sales.csv, rows for data/owners/DAY.csv) for one pair of runs.
+    nxt = the run after cur, if any: a seller who withdraws in this run and relists lower in the next one
+    (the bazar scan can fall between the two clicks) is also a price cut."""
     (pts, p), (cts, c) = prev, cur
+    later = appeared(c, nxt[1]) if nxt and 0 < (nxt[0] - cts).total_seconds() / 60 <= MAX_GAP_MIN else {}
     minutes = (cts - pts).total_seconds() / 60
     if minutes <= 0 or minutes > MAX_GAP_MIN:
         return [], []
@@ -99,7 +113,7 @@ def compare(prev, cur, names):
             # following the market up), so the vanished one still counts as sold.
             if left == 0:
                 cut = 0
-                for nl in sorted(new.get((vnum, owner), []), key=lambda x: -x[0]):
+                for nl in sorted(new.get((vnum, owner), []), key=lambda x: -x[0]) + sorted(later.get((vnum, owner), []), key=lambda x: -x[0]):
                     if nl[0] >= price or nl[1] <= 0 or cut >= units:
                         continue
                     t = min(nl[1], units - cut); nl[1] -= t; cut += t
@@ -148,7 +162,11 @@ def main():
             rebuild = f.readline().strip().split(",") != HEADER   # old format: rebuild everything
         old_rules = open(RULES_FILE).read().strip() if os.path.exists(RULES_FILE) else "1"
         rebuild = rebuild or old_rules != RULES                     # new counting rules: rebuild everything
-    pairs = list(zip(files, files[1:]))
+    # Each pair waits for the run after it (relist one run later = price cut), so the last pair is
+    # counted at the next run: sales are 15 minutes behind.
+    triples = list(zip(files, files[1:], files[2:]))
+    pairs = [(a, b) for a, b, _ in triples]
+    after = {b: c for _, b, c in triples}
     if not rebuild:   # only pairs newer than the last row already saved
         last = ""
         with open(OUT, encoding="utf-8") as f:
@@ -159,8 +177,9 @@ def main():
     rows, own, cache = [], [], {}
     for a, b in pairs:
         pa = cache.pop(a, None) or load(a)
-        pb = load(b); cache[b] = pb
-        r, o = compare(pa, pb, names)
+        pb = cache.pop(b, None) or load(b)
+        pc = load(after[b]); cache[b] = pb; cache[after[b]] = pc
+        r, o = compare(pa, pb, names, pc)
         rows += r; own += o
     mode = "w" if rebuild else "a"
     with open(OUT, mode, newline="", encoding="utf-8") as f:
