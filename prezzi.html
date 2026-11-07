@@ -28,6 +28,7 @@
   <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
   <select id="item" aria-label="Item"></select>
+  <button id="bz" style="margin:8px 0 0">Cerca su NosBazar ↗</button>
   <div class="tiles" id="tiles"></div>
   <div class="calc" id="calc">
     <b>A che prezzo mettere in vendita</b>
@@ -49,6 +50,11 @@
 const fmt = n => n === "" || n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
 const when = s => new Date(s).toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
 let chart;
+// "Cerca su NosBazar": il sito non accetta la ricerca nel link, quindi copio il nome e apro il sito: incolli e cerchi.
+function openBazar(name, btn) {
+  const go = () => { btn.textContent = "Nome copiato: incollalo nella ricerca"; window.open("https://nosbazar.com/", "_blank", "noopener"); };
+  try { navigator.clipboard.writeText(name).then(go, go); } catch (e) { go(); }
+}
 const store = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } };
 const keep = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 let fav = new Set(JSON.parse(store("fav", "[]"))), period = store("period", "7");
@@ -106,6 +112,7 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     return v.length ? fmt(Math.min(...v)) + " – " + fmt(Math.max(...v)) : "-"; };
   function show(v) {
     const it = byItem[v], cur = it.rows[it.rows.length - 1];
+    const bz = document.getElementById("bz"); bz.textContent = "Cerca su NosBazar ↗"; bz.onclick = () => openBazar(it.name, bz);
     const from = +period ? new Date(cur.ts) - +period * 864e5 : -Infinity, r = it.rows.filter(x => +new Date(x.ts) >= from);
     sel.value = v;
     document.getElementById("tiles").innerHTML = [

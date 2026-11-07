@@ -182,6 +182,11 @@ function render() {
   document.getElementById("now").onclick = click("now", rowsNow);
   document.getElementById("hold").onclick = click("hold", rowsHold);
 }
+// "Cerca su NosBazar": il sito non accetta la ricerca nel link, quindi copio il nome e apro il sito: incolli e cerchi.
+function openBazar(name, btn) {
+  const go = () => { btn.textContent = "Nome copiato: incollalo nella ricerca"; window.open("https://nosbazar.com/", "_blank", "noopener"); };
+  try { navigator.clipboard.writeText(name).then(go, go); } catch (e) { go(); }
+}
 function detail(r) {
   const a = book[r.it.vnum], lines = [];
   let left = r.q;
@@ -190,6 +195,7 @@ function detail(r) {
   const topOwner = Object.entries(byOwner).sort((x, y) => y[1] - x[1])[0];
   const shown = lines.slice(0, 12).map(([p, t, o]) => `<tr><td>${o}</td><td>${fmt(t)}</td><td>${fmt(p)}</td></tr>`).join("") + (lines.length > 12 ? `<tr><td class="muted">… altri ${lines.length - 12} annunci</td><td></td><td></td></tr>` : "");
   document.getElementById("dlgBody").innerHTML = `<h3 style="margin:0 0 4px;font-size:17px">${r.it.name}</h3>
+    <button id="bz" style="margin:4px 0 6px">Cerca su NosBazar ↗</button>
     <div class="muted">${r.kind === "now" ? "Compra e rivendi subito" : "Sotto il solito: scommessa che il prezzo torni a " + fmt(r.usual.price) + " (mediana di " + fmt(r.usual.span) + " ore di dati)"}</div>
     <table><tr><td>Compri</td><td><b>${fmt(r.q)}</b> pezzi da ${fmt(r.lots)} annunci, fino a ${fmt(r.top)}</td></tr>
     <tr><td>Spendi</td><td>${fmt(r.cost)} (in media ${fmt(r.cost / r.q)} l'uno)</td></tr>
@@ -206,6 +212,7 @@ function detail(r) {
     ${topOwner && topOwner[1] / r.q > 0.6 && lines.length > 1 ? `<p class="warn" style="color:var(--down)">Il ${pct(topOwner[1] / r.q)} dei pezzi è di un solo venditore (${topOwner[0]}): potrebbe rimetterne altri allo stesso prezzo.</p>` : ""}
     <div class="wrap"><table><tr><th>Venditore</th><th>Pezzi</th><th>Prezzo</th></tr>${shown}</table></div>
     <p class="muted">Annunci dell'ultimo giro: nel frattempo qualcuno potrebbe averli già comprati. Controlla in gioco prima di comprare.</p>`;
+  document.getElementById("bz").onclick = e => openBazar(r.it.name, e.target);
   document.getElementById("dlg").showModal();
   history(r).catch(e => { document.getElementById("freg").textContent = "Storico non disponibile: " + e; });
 }
