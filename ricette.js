@@ -28,19 +28,7 @@ const RICETTE = {
     { "name": "Pozione dell'esperienza", "unit": "craft", "per_h": 2400, "color": "#ee46bc",
       "ing": [[1241, 1], [2029, 5], [2097, 5], [2196, 7], [2206, 7], [2214, 1]], "out": [[1249, 1]] },
     { "name": "Pozione SP base", "unit": "craft", "per_h": 2400, "color": "#0ba5ec",
-      "ing": [[1241, 1], [2029, 5], [2097, 5], [2196, 5], [2208, 5], [2215, 1]], "out": [[1245, 1]] },
-    { "name": "Sigillo Lord Draco", "unit": "craft", "per_h": 2400, "color": "#f04438",
-      "note": "Grande mago Kan: 20 Semi della potenza + 20 Sabbia + 20 Pietre Gillion (nosapki craft_profit/5500/1). Usa i prodotti della PTS",
-      "ing": [[1012, 20], [1027, 20], [1013, 20]], "out": [[5500, 1]] },
-    { "name": "Sigillo Glacerus", "unit": "craft", "per_h": 2400, "color": "#53b1fd",
-      "note": "Felix Frost: 20 Semi + 20 Cubetti di ghiaccio + 20 Fiori di ghiaccio (nosapki craft_profit/5512/1). Serve tanto oro per pezzo",
-      "ing": [[1012, 20], [2307, 20], [5911, 20]], "out": [[5512, 1]] },
-    { "name": "Sigillo Ragno nero", "unit": "craft", "per_h": 2400, "color": "#344054",
-      "note": "8 Semi + 4 Mezze lune + 1 Pezzo spazio-temporale raid + 30 Tele di ragno + 3 Occhi del Re ragno (nosapki craft_profit/1130/2)",
-      "ing": [[1012, 8], [1029, 4], [1094, 1], [2091, 30], [2092, 3]], "out": [[1130, 1]] },
-    { "name": "Sigillo Slade", "unit": "craft", "per_h": 2400, "color": "#7f56d9",
-      "note": "10 Semi + 5 Mezze lune + 1 Pezzo spazio-temporale raid + 40 Perle delle tenebre + 30 Artigli di Slade (nosapki craft_profit/1131/2)",
-      "ing": [[1012, 10], [1029, 5], [1094, 1], [2094, 40], [2172, 30]], "out": [[1131, 1]] }
+      "ing": [[1241, 1], [2029, 5], [2097, 5], [2196, 5], [2208, 5], [2215, 1]], "out": [[1245, 1]] }
   ]
 };
 // Metodi pronti per i calcoli. tax() = commissione corrente (0 con la medaglia).
