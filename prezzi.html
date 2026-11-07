@@ -28,7 +28,7 @@
   <div id="nav"></div><script src="nav.js"></script>
   <div class="muted" id="updated">Caricamento…</div>
   <select id="item" aria-label="Item"></select>
-  <button id="bz" style="margin:8px 0 0">Cerca su NosBazar ↗</button>
+  <button id="bz" style="margin:8px 0 0">Cerca su NosBazar ↗</button> <a id="pg" class="muted" href="pagella.html">Quanto sono affidabili le stime ›</a>
   <div class="tiles" id="tiles"></div>
   <div class="calc" id="calc">
     <b>A che prezzo mettere in vendita</b>
@@ -114,6 +114,7 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     return v.length ? fmt(Math.min(...v)) + " – " + fmt(Math.max(...v)) : "-"; };
   function show(v) {
     const it = byItem[v], cur = it.rows[it.rows.length - 1];
+    document.getElementById("pg").href = "pagella.html#v=" + v;
     const bz = document.getElementById("bz"); bz.textContent = "Cerca su NosBazar ↗"; bz.onclick = () => openBazar(it.name, bz);
     const from = +period ? new Date(cur.ts) - +period * 864e5 : -Infinity, r = it.rows.filter(x => +new Date(x.ts) >= from);
     sel.value = v;

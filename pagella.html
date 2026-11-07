@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="icons/manifest.webmanifest">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
+<title>Pagella NosTale</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1>Pagella delle previsioni</h1>
+  <div id="nav"></div><script src="nav.js"></script>
+  <div class="muted" id="updated">Caricamento…</div>
+  <div class="card ctl">
+    <label class="muted">Item <select id="item" style="max-width:100%"><option value="">Tutti</option></select></label>
+    <label class="muted">Periodo <select id="per"><option value="7">ultimi 7 giorni</option><option value="28">ultimi 28 giorni</option><option value="0">tutto</option></select></label>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <h2>In base al prezzo di partenza</h2>
+  <div class="wrap"><table id="byPrem"></table></div>
+  <h2>In base all'ora</h2>
+  <div class="wrap"><table id="byHour"></table></div>
+  <h2>Feriali e weekend</h2>
+  <div class="wrap"><table id="byDay"></table></div>
+  <h2>Per item</h2>
+  <div class="wrap"><table id="byItem"></table></div>
+  <details class="how" open><summary>Come funziona</summary><p>Ogni 2 ore, per ogni item che si vende, metto "sulla carta" un annuncio di prova: il 2% dei pezzi in vendita al prezzo di vendita realistico di quel momento. Il sito stima in quante ore si vende, cioè quando i compratori avranno preso i pezzi più economici davanti e poi i suoi, tenendo conto di chi ti passa davanti. Poi guardo cosa è successo davvero nelle ore dopo.<br><br>
+  "In tempo" = venduto entro le ore stimate. "Tempo reale" = quanto ci ha messo davvero rispetto alla stima (mediana): ×0,5 = in metà del tempo stimato. La stima che usi nel sito è al 70% di fiducia: se funziona, deve andare in tempo circa 7 volte su 10. Molto di più vuol dire stime prudenti (vendi prima di quanto dice), molto di meno vuol dire stime ottimiste (fidati meno). Il prezzo di partenza conta: un annuncio sopra il solito ha più pezzi davanti e compratori che aspettano, quindi lo valuto a parte. "Rispetto al solito" = prezzo contro la mediana del prezzo di vendita dei 7 giorni prima (±3%). Ore e giorni in ora italiana.<br><br>
+  Le prove senza stima sono quelle in cui il sito avrebbe detto "oltre 48 ore" o non aveva abbastanza dati: le conto a parte. Le prove delle ultime ore non hanno ancora un esito.</p></details>
+</main>
+<script>
+const parse = l => l.split(",");
+const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
+const pc = x => x == null ? "-" : Math.round(x * 100) + "%";
+const store = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } };
+const keep = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+let rows = [], names = {};
+// Riassunto di un gruppo di prove valutate.
+function sum(rs) {
+  const ev = rs.filter(r => r.real != null), wp = ev.filter(r => r.p70 != null), w50 = ev.filter(r => r.p50 != null);
+  const hit = wp.filter(r => r.real <= r.p70).length, hit50 = w50.filter(r => r.real <= r.p50).length;
+  const ratios = wp.filter(r => r.real <= 48).map(r => r.real / r.p70).sort((a, b) => a - b);
+  return { n: ev.length, nPred: wp.length, hit: wp.length ? hit / wp.length : null, hit50: w50.length ? hit50 / w50.length : null,
+    ratio: ratios.length ? ratios[ratios.length >> 1] : null, never: ev.filter(r => r.real > 48).length, pending: rs.length - ev.length };
+}
+const verdict = s => s.hit == null || s.nPred < 10 ? '<span class="muted">pochi dati</span>'
+  : s.hit >= 0.85 ? '<span class="pos">prudente</span>' : s.hit >= 0.6 ? '<span class="pos">giusta</span>' : s.hit >= 0.45 ? '<span class="warn">un po\' ottimista</span>' : '<span class="neg">ottimista</span>';
+const head = first => `<tr><th>${first}</th><th>Prove</th><th>In tempo</th><th>Tempo reale</th><th>Giudizio</th></tr>`;
+const line = (label, s) => `<tr><td>${label}</td><td>${fmt(s.nPred)}</td><td>${pc(s.hit)}</td><td>${s.ratio == null ? "-" : "×" + s.ratio.toFixed(2).replace(".", ",")}</td><td>${verdict(s)}</td></tr>`;
+function render() {
+  const v = document.getElementById("item").value, per = +document.getElementById("per").value;
+  const from = per ? Date.now() - per * 864e5 : 0, rs = rows.filter(r => (!v || r.vnum === v) && r.t >= from), s = sum(rs);
+  document.getElementById("tiles").innerHTML = [
+    ["Vendute entro la stima", pc(s.hit), `<span class="muted">obiettivo circa 70%</span>`],
+    ["Giudizio", verdict(s), ""],
+    ["Prove valutate", fmt(s.n), `<span class="muted">${fmt(s.pending)} in attesa</span>`],
+    ["Non vendute in 48 ore", fmt(s.never), ""]].map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b>${c}</div>`).join("");
+  const grp = (f, order) => order.map(([k, label]) => [label, sum(rs.filter(r => f(r) === k))]).filter(([, x]) => x.nPred);
+  const prem = r => r.prem == null ? "nd" : r.prem > 0.03 ? "sopra" : r.prem < -0.03 ? "sotto" : "solito";
+  document.getElementById("byPrem").innerHTML = head("Prezzo") + grp(prem, [["sotto", "Sotto il solito"], ["solito", "Nel solito (±3%)"], ["sopra", "Sopra il solito"], ["nd", "Storico corto"]]).map(([l, x]) => line(l, x)).join("");
+  const band = r => r.h < 8 ? 0 : r.h < 14 ? 1 : r.h < 19 ? 2 : 3;
+  document.getElementById("byHour").innerHTML = head("Messo in vendita") + grp(band, [[0, "Notte (0-8)"], [1, "Mattina (8-14)"], [2, "Pomeriggio (14-19)"], [3, "Sera (19-24)"]]).map(([l, x]) => line(l, x)).join("");
+  document.getElementById("byDay").innerHTML = head("Giorno") + grp(r => r.wd >= 5 ? 1 : 0, [[0, "Lunedì-venerdì"], [1, "Sabato e domenica"]]).map(([l, x]) => line(l, x)).join("");
+  const items = [...new Set(rs.map(r => r.vnum))].map(x => [x, sum(rs.filter(r => r.vnum === x))]).filter(([, x]) => x.nPred).sort((a, b) => b[1].nPred - a[1].nPred);
+  document.getElementById("byItem").innerHTML = items.length ? head("Item") + items.map(([x, st]) => line(`<a href="prezzi.html#v=${x}">${names[x] || x}</a>`, st)).join("") : '<tr><td class="muted">Ancora nessuna prova valutata.</td></tr>';
+}
+Promise.all(["data/pagella.csv", "data/latest.csv"].map(u => fetch(u + "?" + Date.now()).then(r => r.ok ? r.text() : ""))).then(([pt, lt]) => {
+  if (lt) { const [h, ...ls] = lt.trim().split(/\r?\n/), k = parse(h), iv = k.indexOf("vnum"), inm = k.indexOf("name"); ls.forEach(l => { const x = parse(l); names[x[iv]] = x[inm]; }); }
+  if (!pt) { document.getElementById("updated").textContent = "La pagella parte con il prossimo giro."; return; }
+  const [h, ...ls] = pt.trim().split(/\r?\n/), k = parse(h), ix = n => k.indexOf(n);
+  const num = s => s === "" || s == null ? null : +s;
+  rows = ls.map(l => { const x = parse(l); return { t: +new Date(x[ix("ts")]), vnum: x[ix("vnum")], p70: num(x[ix("pred70")]), p50: num(x[ix("pred50")]),
+    prem: num(x[ix("premium")]), h: +x[ix("hour_it")], wd: +x[ix("weekday")], real: num(x[ix("real")]) }; });
+  const last = Math.max(...rows.map(r => r.t));
+  document.getElementById("updated").textContent = `${fmt(rows.length)} prove, ultima ${new Date(last).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`;
+  const sel = document.getElementById("item"), have = [...new Set(rows.map(r => r.vnum))];
+  sel.innerHTML += have.map(v => [v, names[v] || v]).sort((a, b) => a[1].localeCompare(b[1])).map(([v, n]) => `<option value="${v}">${n}</option>`).join("");
+  const hv = new URLSearchParams(location.hash.slice(1)).get("v");
+  sel.value = hv && have.includes(hv) ? hv : store("pgItem", "");
+  if (![...sel.options].some(o => o.value === sel.value)) sel.value = "";
+  const per = document.getElementById("per"); per.value = store("pgPer", "7");
+  sel.onchange = () => { keep("pgItem", sel.value); render(); };
+  per.onchange = () => { keep("pgPer", per.value); render(); };
+  render();
+});
+</script>
+</body>
+</html>

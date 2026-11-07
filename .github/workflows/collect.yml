@@ -30,6 +30,8 @@ jobs:
         run: python3 scripts/flow.py || echo "fasce orarie non riuscite"
       - name: Prezzo di vendita realistico
         run: python3 scripts/sell.py || echo "prezzo di vendita non riuscito"
+      - name: Pagella delle previsioni
+        run: python3 scripts/pagella.py || echo "pagella non riuscita"
       - name: Recupera lo stato delle notifiche
         uses: actions/cache/restore@v4
         with:
@@ -80,7 +82,7 @@ jobs:
             fi
           done
           git diff --no-color -U0 data/sell.csv | grep '^+[^+]' | cut -c2- > /tmp/run/sell.csv || true
-          tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $( [ -e data/flow.csv ] && echo data/flow.csv ) $( [ -e data/sales_rules.txt ] && echo data/sales_rules.txt ) $(cat /tmp/run/new_files)
+          tar -cf /tmp/run/files.tar data/items_resolved.json data/latest.csv $( [ -e data/flow.csv ] && echo data/flow.csv ) $( [ -e data/pagella.csv ] && echo data/pagella.csv ) $( [ -e data/sales_rules.txt ] && echo data/sales_rules.txt ) $(cat /tmp/run/new_files)
           [ -s /tmp/run/new_files ] || { echo "Nessun dato nuovo"; exit 0; }
           for i in 1 2 3 4 5; do
             git fetch -q origin main && git reset -q --hard origin/main
