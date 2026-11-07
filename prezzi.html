@@ -121,9 +121,7 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     sel.value = v;
     document.getElementById("tiles").innerHTML = [
       ["Riferimento (10%)", fmt(cur.wp10), pct(d24(it, "wp10"))], ["Minimo", fmt(cur.min), pct(d24(it, "min"))],
-      ["Banda rif. 24h", band(it, "wp10"), ""], ["Banda minimo 24h", band(it, "min"), ""],
-      ["Mediana pesata", fmt(cur.wmedian), ""], ["Lotto da " + fmt(cur.lot_size) + " pz", fmt(cur.lot_price), ""],
-      ["Pezzi in vendita", fmt(cur.quantity), pct(d24(it, "quantity"))], ["Annunci", fmt(cur.listings), ""],
+      ["Banda rif. 24h", band(it, "wp10"), ""], ["Pezzi in vendita", fmt(cur.quantity), pct(d24(it, "quantity"))],
       ["Venduti al giorno (stima)", perDay(v) == null ? "-" : "≈ " + fmt(perDay(v)), `<span class="muted">${covTxt}</span>`],
       ["Prezzo medio dei venduti", fmt(soldPrice(v)), ""]]
       .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b>${c}</div>`).join("");
