@@ -21,7 +21,7 @@
 
   <h2 id="mineH">I tuoi annunci</h2>
   <div class="wrap"><table id="mine"></table></div>
-  <details class="how"><summary>Come funziona</summary><p id="mineNote">"Davanti" = pezzi più economici dei tuoi messi in vendita da altri. "Si vende in" = quanto ci vuole a vendere i pezzi davanti a te più i tuoi, stimato dalle stesse ore dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni. Finché per quella fascia oraria ci sono meno di 3 giorni di dati uso tutte le finestre della stessa durata delle ultime 72 ore ("ultime 72h": vede che le vendite arrivano a blocchi, non ancora la differenza sera/notte), e se non bastano la media delle ultime 24 ore ("media 24h"). Oltre il limite che hai scelto in <a href="impostazioni.html">Impostazioni</a> propongo il prezzo più alto che vende tutto in tempo.</p></details>
+  <details class="how"><summary>Come funziona</summary><p id="mineNote">"Valore" = quanto incassi vendendo tutti i pezzi ai prezzi dei tuoi annunci (commissione tolta) e la sua parte sul totale "In vendita ora". "Davanti" = pezzi più economici dei tuoi messi in vendita da altri. "Si vende in" = quanto ci vuole a vendere i pezzi davanti a te più i tuoi, stimato dalle stesse ore dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni. Finché per quella fascia oraria ci sono meno di 3 giorni di dati uso tutte le finestre della stessa durata delle ultime 72 ore ("ultime 72h": vede che le vendite arrivano a blocchi, non ancora la differenza sera/notte), e se non bastano la media delle ultime 24 ore ("media 24h"). Oltre il limite che hai scelto in <a href="impostazioni.html">Impostazioni</a> propongo il prezzo più alto che vende tutto in tempo.</p></details>
 
   <h2>Metodi adesso</h2>
   <div class="wrap"><table id="meth"></table></div>
@@ -71,7 +71,9 @@ async function gz(url) {
   const lotCost = {}; (bil.lots || []).filter(l => !l.closed).forEach(l => { const x = (lotCost[l.vnum] ??= { q: 0, c: 0, t: l.t }); x.q += l.qty; x.c += l.cost; if (l.t < x.t) x.t = l.t; });
   let gainLot = 0, revLot = 0;
   sales.forEach(r => { const x = lotCost[r.vnum]; if (!x || !x.q || new Date(r.ts) < new Date(x.t)) return; revLot += +r.value; gainLot += +r.value * (1 - TAX) - +r.units * x.c / x.q; });
-  const listed = Object.entries(mine).reduce((t, [v, l]) => t + l.reduce((a, [, q]) => a + q, 0) * (items[v]?.sell || 0) * (1 - TAX), 0);
+  // Valore di quello che hai in vendita: incasso se vendi tutto ai prezzi dei tuoi annunci (commissione tolta).
+  const worth = l => l.reduce((a, [p, q]) => a + p * q, 0) * (1 - TAX);
+  const listed = Object.values(mine).reduce((t, l) => t + worth(l), 0);
 
   // Annunci: stima dei tempi di vendita e prezzo consigliato (stessa logica delle notifiche).
   let slow = 0;
@@ -86,14 +88,14 @@ async function gz(url) {
       if (price == null) price = ob.length ? ob[0][0] - 1 : top;
       if (price >= top) price = null; else slow++;
     }
-    return { v, it, units, top, low, ahead, hours, price, basis: dm.est, limit: dm.units };
+    return { v, it, units, top, low, ahead, hours, price, basis: dm.est, limit: dm.units, value: worth(l) };
   }).sort((a, b) => (b.price != null) - (a.price != null) || b.units * b.top - a.units * a.top);
   const cut = r => (r.top - r.price) * r.units + (medal ? 0 : Math.max(r.price * r.units * 0.005, 500 * Math.ceil(r.units / 999)));
   const T = document.getElementById("mine");
   T.innerHTML = !names.length ? '<tr><td class="muted">Scrivi il nome del personaggio in <a href="impostazioni.html">Impostazioni</a>.</td></tr>'
     : !rows.length ? '<tr><td class="muted">Nessun annuncio tuo nell\'ultimo giro.</td></tr>'
-    : "<tr><th>Item</th><th>Pezzi</th><th>Tuo prezzo</th><th class='hide-s'>Minimo</th><th>Davanti</th><th>Si vende in</th></tr>" +
-      rows.map(r => `<tr><td>${r.it.name}${r.price != null ? `<br><span class="warn">abbassa a <b>${fmt(r.price)}</b></span>` : ""}</td><td>${fmt(r.units)}</td><td>${fmt(r.top)}${r.low !== r.top ? `<br><span class="muted">da ${fmt(r.low)}</span>` : ""}</td><td class="hide-s">${fmt(r.it.min)}</td><td>${fmt(r.ahead)}</td><td class="${!r.basis ? "" : r.hours == null || r.hours > H ? "warn" : "pos"}">${!r.basis ? "-" : r.hours == null ? "oltre 7 giorni" : "≈ " + dur(r.hours)}${r.basis === "media24" ? '<br><span class="muted">media 24h</span>' : r.basis === "finestre" ? '<br><span class="muted">ultime 72h</span>' : ""}</td></tr>`).join("");
+    : "<tr><th>Item</th><th>Pezzi</th><th>Tuo prezzo</th><th class='hide-s'>Minimo</th><th>Valore</th><th>Davanti</th><th>Si vende in</th></tr>" +
+      rows.map(r => `<tr><td>${r.it.name}${r.price != null ? `<br><span class="warn">abbassa a <b>${fmt(r.price)}</b></span>` : ""}</td><td>${fmt(r.units)}</td><td>${fmt(r.top)}${r.low !== r.top ? `<br><span class="muted">da ${fmt(r.low)}</span>` : ""}</td><td class="hide-s">${fmt(r.it.min)}</td><td>${short(r.value)}<br><span class="muted">${listed ? Math.round(r.value / listed * 100) : 0}%</span></td><td>${fmt(r.ahead)}</td><td class="${!r.basis ? "" : r.hours == null || r.hours > H ? "warn" : "pos"}">${!r.basis ? "-" : r.hours == null ? "oltre 7 giorni" : "≈ " + dur(r.hours)}${r.basis === "media24" ? '<br><span class="muted">media 24h</span>' : r.basis === "finestre" ? '<br><span class="muted">ultime 72h</span>' : ""}</td></tr>`).join("");
 
   // Metodi su un pezzo.
   // le conversioni (support) contano solo nel piano
