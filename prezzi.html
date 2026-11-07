@@ -30,6 +30,7 @@
   <select id="item" aria-label="Item"></select>
   <button id="bz" style="margin:8px 0 0">Cerca su NosBazar ↗</button> <a id="pg" class="muted" href="pagella.html">Quanto sono affidabili le stime ›</a>
   <div class="tiles" id="tiles"></div>
+  <div class="card" id="cyc" style="margin:8px 0"></div>
   <div class="calc" id="calc">
     <b>A che prezzo mettere in vendita</b>
     <div class="crow"><label>Pezzi <input id="cq" inputmode="numeric" value="100"></label>
@@ -137,6 +138,29 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     const sa = soldAt[v] || {}, soldPts = r.map(x => { const s = sa[x.ts]; return s && s.p >= lo * 0.7 && s.p <= hi * 1.5 ? s.p : null; });
     const all = ys.concat(soldPts.filter(y => y != null)), lo2 = Math.min(...all), hi2 = Math.max(...all), pad2 = Math.max((hi2 - lo2) * 0.08, hi2 * 0.005);
     const yLo = ys.length ? Math.max(0, Math.floor(lo2 - pad2)) : undefined, yHi = ys.length ? Math.ceil(hi2 + pad2) : undefined;
+    // Cicli: tetto = prezzo sopra cui si vende solo il 10% dei pezzi (vendite degli ultimi 7 giorni, pesate per pezzi),
+    // pavimento = riferimento 10% più basso nel 10% dei giri. Segnale: dove sta il riferimento di adesso tra i due.
+    const t7 = +new Date(cur.ts) - 7 * 864e5, r7 = it.rows.filter(x => +new Date(x.ts) >= t7);
+    const sales7 = r7.map(x => sa[x.ts] && { t: +new Date(x.ts), ...sa[x.ts] }).filter(x => x && x.p > 0 && x.u > 0);
+    const refs = r7.map(x => x.wp10).filter(y => y > 0).sort((a, b) => a - b), days7 = r7.length ? (+new Date(cur.ts) - +new Date(r7[0].ts)) / 864e5 : 0;
+    const wq = (pts, q) => { const a = pts.slice().sort((x, y) => x.p - y.p), tot = a.reduce((t, x) => t + x.u, 0); let run = 0; for (const x of a) { run += x.u; if (run >= q * tot) return x.p; } return a.length ? a[a.length - 1].p : null; };
+    let ceil = sales7.length >= 10 ? wq(sales7, 0.9) : null, floor = refs.length >= 50 ? refs[Math.floor(refs.length * 0.1)] : null;
+    if (ceil && floor && ceil <= floor) ceil = null;
+    const cyc = document.getElementById("cyc");
+    if (!ceil || !floor || days7 < 2) cyc.innerHTML = `<b>Cicli di prezzo</b> <span class="muted">· servono almeno 2 giorni di vendite (${days7.toLocaleString("it-IT", { maximumFractionDigits: 1 })} finora)</span>`;
+    else {
+      // Quando il prezzo tocca il tetto: vendite entro lo 0,5% dal tetto, gruppi separati da almeno 2 ore.
+      const touch = sales7.filter(x => x.p >= ceil * 0.995).map(x => x.t), groups = [];
+      touch.forEach(t => { if (!groups.length || t - groups[groups.length - 1] > 2 * 36e5) groups.push(t); else groups[groups.length - 1] = t; });
+      const gaps = groups.slice(1).map((t, i) => (t - groups[i]) / 36e5).sort((a, b) => a - b), every = gaps.length >= 2 ? gaps[gaps.length >> 1] : null;
+      const now = cur.wp10, pos = (now - floor) / (ceil - floor);
+      const sig = pos >= 0.8 ? ["pos", "Vicino al tetto: buon momento per vendere"] : pos < 0 ? ["pos", "Sotto il pavimento: occasione per comprare"] : pos <= 0.2 ? ["warn", "Vicino al pavimento: compra o produci e tieni, non svendere"] : ["", "A metà strada: niente di speciale"];
+      const ago = groups.length ? (+new Date(cur.ts) - groups[groups.length - 1]) / 36e5 : null, hh = h => h < 1 ? "meno di un'ora" : h < 48 ? Math.round(h) + " ore" : Math.round(h / 24) + " giorni";
+      cyc.innerHTML = `<b>Cicli di prezzo</b> <span class="muted">· ultimi ${Math.min(7, Math.round(days7))} giorni</span><br>
+        <span class="${sig[0]}"><b>${sig[1]}</b></span><br>
+        Tetto ${fmt(ceil)} · pavimento ${fmt(floor)} · adesso ${fmt(now)} (${Math.round(Math.max(0, Math.min(1, pos)) * 100)}% della fascia)<br>
+        <span class="muted">${groups.length ? `Ha toccato il tetto ${groups.length} ${groups.length === 1 ? "volta" : "volte"}, l'ultima ${hh(ago)} fa${every ? `; di solito ogni ${hh(every)}` : ""}.` : "Non ha toccato il tetto."} Tetto = prezzo sopra cui si è venduto solo il 10% dei pezzi; pavimento = riferimento 10% più basso nel 10% dei giri. Più settimane di dati, più i cicli diventano affidabili.</span>`;
+    }
     // Volumi: pezzi venduti per giro (stesse regole delle stime: ribassi e correzioni esclusi). Con tanti giri
     // (periodi lunghi) li sommo per ora, sulla prima barra dell'ora, così le barre restano leggibili.
     const byHour = r.length > 200, vol = r.map(() => null);
@@ -148,9 +172,11 @@ Promise.all(["data/prices.csv", "data/sales.csv"].map(u => fetch(u + "?" + Date.
     chart = new Chart(document.getElementById("c"), { type: "line",
       data: { labels: r.map(x => when(x.ts)), datasets: [ds("Riferimento 10%", "wp10", "#2e90fa"), ds("Minimo", "min", "#f79009", [4, 4]),
         { label: "Venduti a (media)", data: soldPts, showLine: false, pointRadius: soldPts.map((y, i) => y == null ? 0 : Math.min(7, 2.5 + Math.log10(sa[r[i].ts].u + 1) * 1.6)), pointHoverRadius: 7, borderColor: "#12b76a", backgroundColor: "#12b76a" },
+        ...(ceil && floor ? [{ label: "Tetto", data: r.map(() => ceil), borderColor: "#f04438", borderDash: [2, 4], borderWidth: 1, pointRadius: 0 },
+          { label: "Pavimento", data: r.map(() => floor), borderColor: "#7a5af8", borderDash: [2, 4], borderWidth: 1, pointRadius: 0 }] : []),
         { type: "bar", label: byHour ? "Pezzi venduti (per ora)" : "Pezzi venduti", data: vol, yAxisID: "y2", backgroundColor: "rgba(152,162,179,.6)", borderWidth: 0, barPercentage: 1, categoryPercentage: 1, order: 9 }] },
       options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") + (c.datasetIndex === 3 ? " pz" : "") } } },
+        plugins: { legend: { labels: { color: css.getPropertyValue("--fg") } }, tooltip: { filter: c => c.parsed.y != null, callbacks: { label: c => c.dataset.label + ": " + fmt(c.parsed.y) + (c.datasetIndex === 2 ? ` (${fmt(sa[r[c.dataIndex].ts].u)} pz, nel giro dopo)` : "") + (c.dataset.type === "bar" ? " pz" : "") } } },
         scales: { x: { ticks: { color: css.getPropertyValue("--muted"), maxTicksLimit: 6 } }, y: { min: yLo, max: yHi, ticks: { color: css.getPropertyValue("--muted"), callback: fmt } },
           // Barre nella metà bassa del grafico, senza asse: il numero esatto è nel tocco sulla barra.
           y2: { display: false, min: 0, max: vMax * 2 } } } });
