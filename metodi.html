@@ -211,12 +211,14 @@ function portfolio(counts, p, detail) {
   for (const v of Object.keys(need)) if (out[v]) { const x = Math.min(need[v], out[v]); own[v] = x; need[v] -= x; out[v] -= x; if (!need[v]) delete need[v]; if (!out[v]) delete out[v]; }
   const buy = [], sell = [];
   for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q), c = w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; cost += c; if (detail) buy.push({ v, q, cost: c, w }); }
-  let gross = 0, fee = 0, topG = 0, held = 0;
+  let gross = 0, fee = 0, held = 0; const tops = [];
   const win = METHODS.reduce((a, m, i) => a + (counts[i] || 0) / m.perH, 0) + hours();
-  for (const [v, q] of Object.entries(out)) { const s = sellFor(v, q, p.s, win), g = s.price * q; gross += g; topG = Math.max(topG, g + s.price * (myStock[v] || 0)); held += s.price * (myStock[v] || 0); if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); if (detail) sell.push({ v, q, ...s }); }
-  // Quota del prodotto più pesante su tutto quello che venderai: piano + annunci che hai già (anche di prodotti che il piano non fa).
-  Object.keys(myStock).forEach(v => { if (!out[v]) { const x = myStock[v] * (p.s(v) || 0); if (x > 0) { held += x; topG = Math.max(topG, x); } } });
-  const share = gross + held > 0 ? topG / (gross + held) : 0;
+  for (const [v, q] of Object.entries(out)) { const s = sellFor(v, q, p.s, win), g = s.price * q; gross += g; if (g > 0) tops.push(g + s.price * (myStock[v] || 0)); held += s.price * (myStock[v] || 0); if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); if (detail) sell.push({ v, q, ...s }); }
+  // Quota dei prodotti del piano su tutto quello che venderai (piano + annunci che hai già, anche di prodotti che il piano non fa).
+  // Il limite vale per i prodotti che il piano ti fa vendere: un prodotto che hai già oltre il limite non blocca il resto
+  // del piano, impedisce solo di farne altro.
+  Object.keys(myStock).forEach(v => { if (!out[v]) held += myStock[v] * (p.s(v) || 0); });
+  const share = gross + held > 0 && tops.length ? Math.max(...tops) / (gross + held) : 0;
   if (!detail) return { cost, fee, profit: gross - fee - cost, share };
   Object.entries(npc).forEach(([v, q]) => buy.push({ v, q, cost: NPC[v] * q, npc: true }));
   return { cost, fee, profit: gross - fee - cost, gross, buy, sell, own, win, share };
@@ -228,8 +230,11 @@ function bestPlan(p) {
   const mins = c => c.reduce((a, n, i) => a + n / METHODS[i].perH * 60, 0);
   // Metodi candidati: quelli in guadagno da soli (al massimo i 3 migliori). Per ognuno il massimo che stai
   // nell'oro e nelle ore; poi provo tutte le combinazioni su una griglia e affino attorno alla migliore.
+  // Due versioni dello stesso metodo (stessi prodotti, es. PTS con mezze lune craftate o comprate) occupano un posto solo:
+  // così resta spazio per un metodo con un prodotto diverso (serve soprattutto con "Massimo in un prodotto").
   const cand = METHODS.map((m, i) => ({ i, r: best(m, p) })).filter(x => x.r && x.r.top.profit > 0)
-    .sort((a, b) => b.r.top.profit - a.r.top.profit).slice(0, 3)
+    .sort((a, b) => b.r.top.profit - a.r.top.profit)
+    .filter((x, k, all) => !all.slice(0, k).some(y => JSON.stringify(METHODS[y.i].outs) === JSON.stringify(METHODS[x.i].outs))).slice(0, 3)
     // Con le conversioni spendi meno di materiali, quindi il massimo per l'oro può salire: lascio un 30% di margine.
     .map(x => ({ i: x.i, max: Math.min(Math.ceil(x.r.max * (METHODS.some(m => m.support) ? 1.3 : 1)), Math.floor(H / 60 * METHODS[x.i].perH)) })).filter(x => x.max > 0);
   // Conversioni (support, es. Gillion -> polvere): da sole non convengono, ma in un piano possono trasformare un tuo
