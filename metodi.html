@@ -24,12 +24,14 @@
     <label class="muted">Ore <input id="hrs" inputmode="decimal" value="3" style="width:4em"></label>
     <label class="muted">Vendere entro
       <select id="hz"><option value="1">1 ora</option><option value="3" selected>3 ore</option><option value="6">6 ore</option><option value="12">12 ore</option><option value="24">24 ore</option></select></label>
+    <label class="muted">Massimo in un prodotto
+      <select id="share"><option value="1">nessun limite</option><option value="0.7">70%</option><option value="0.5">50%</option><option value="0.34">un terzo</option></select></label>
     <label class="muted"><input type="checkbox" id="medal"> Medaglia NosBazar</label>
   </div>
   <h2>Piano consigliato</h2>
   <div class="wrap"><table id="pf"></table></div>
   <div id="pfList"></div>
-  <details class="how"><summary>Come funziona</summary><p id="pfNote">Cerco la combinazione di metodi (fino ai 3 migliori) che guadagna di più restando nel tuo oro e nelle tue ore, provando tutte le combinazioni di quantità e tenendo conto che i metodi si influenzano: i materiali comuni (per esempio la polvere per mezze lune e luna piena) li compri una volta sola salendo di prezzo, e i prodotti si sommano nella vendita. Se fare di più farebbe guadagnare meno (prezzi di acquisto che salgono, di vendita che scendono), lascio oro libero.</p></details>
+  <details class="how"><summary>Come funziona</summary><p id="pfNote">Cerco la combinazione di metodi (fino ai 3 migliori) che guadagna di più restando nel tuo oro e nelle tue ore, provando tutte le combinazioni di quantità e tenendo conto che i metodi si influenzano: i materiali comuni (per esempio la polvere per mezze lune e luna piena) li compri una volta sola salendo di prezzo, e i prodotti si sommano nella vendita. Se fare di più farebbe guadagnare meno (prezzi di acquisto che salgono, di vendita che scendono), lascio oro libero. "Massimo in un prodotto" obbliga a dividere: nessun prodotto può valere più di quella parte di quello che venderai (piano più annunci che hai già), così se un prezzo crolla resti bloccato solo con una parte. Nella lista "Da vendere", "Si vende in" è il tempo stimato per vendere i tuoi pezzi (con quelli più economici davanti e quelli che hai già in vendita, che conto sempre: i nuovi si vendono dopo) e "del giorno" quanto pesano rispetto a quello che il bazar vende in un giorno: sopra il 50% stai mettendo tanta merce rispetto al mercato.</p></details>
   <h2>Quanto puoi fare con ogni metodo</h2>
   <div class="wrap"><table id="k"></table></div>
   <details class="how"><summary>Come funziona</summary><p>Calcolato sugli annunci dell'ultimo giro, per quantità: comprare tanti pezzi costa di più (si sale di prezzo) e venderne tanti obbliga a scendere (prezzo a cui i pezzi più economici dei tuoi, più i tuoi, si vendono entro il tempo scelto, mai sopra il riferimento 10%). Il tempo per vendere parte da adesso e dura quanto la produzione più il tempo scelto (i pezzi escono man mano mentre produci). Quanto si vende in quel tempo lo stimo dalla stessa fascia oraria dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni; finché ci sono meno di 3 giorni di dati uso la media delle ultime 24 ore. Massimo = quanti ne paghi con il tuo oro, tenendo da parte la commissione (0,5%, minimo 500 per annuncio). Consigliati = il numero che dà il guadagno totale più alto. Tocca un metodo per la lista della spesa e di vendita.</p></details>
@@ -60,7 +62,7 @@ const parse = l => { const out = []; let cur = "", q = false;
   for (const ch of l) { if (ch === '"') q = !q; else if (ch === "," && !q) { out.push(cur); cur = ""; } else cur += ch; }
   out.push(cur); return out; };
 let byTs, times;
-let soldDay = {}, sellByTs = new Map();
+let soldDay = {}, sellByTs = new Map(), myStock = {};
 fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t => { if (!t) return;
   const [h, ...ls] = t.trim().split(/\r?\n/); const k = parse(h), iv = k.indexOf("vnum"), is = k.indexOf("sold_day");
   if (is >= 0) ls.forEach(l => { const v = parse(l); if (v[is] !== "") soldDay[v[iv]] = +v[is]; }); }).catch(() => {})
@@ -87,6 +89,9 @@ fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t =>
   const hz = document.getElementById("hz");
   try { const h = localStorage.getItem("hz"); if (h) hz.value = h; } catch (e) {}
   hz.onchange = () => { try { localStorage.setItem("hz", hz.value); } catch (e) {} demandCache.clear(); capacity(sel.value); };
+  const sh = document.getElementById("share");
+  try { const v = localStorage.getItem("share"); if (v) sh.value = v; } catch (e) {}
+  sh.onchange = () => { try { localStorage.setItem("share", sh.value); } catch (e) {} capacity(sel.value); };
   draw(sel.value);
 }).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
 
@@ -113,7 +118,10 @@ async function loadBook() {
     const [h, ...ls] = text.trim().split(/\r?\n/), k = parse(h), b = {};
     // I tuoi annunci li tolgo: non compri da te stesso (nome dei personaggi da Impostazioni).
     let mine = []; try { mine = (JSON.parse(localStorage.getItem("bilancio") || "{}").seller || "").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); } catch (e) {}
-    ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]); if (mine.includes((o.owner || "").toLowerCase())) return;
+    // ...ma restano in coda per la vendita: i pezzi nuovi si vendono solo dopo quelli che hai già in vendita (myStock).
+    myStock = {};
+    ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]);
+      if (mine.includes((o.owner || "").toLowerCase())) { myStock[o.vnum] = (myStock[o.vnum] || 0) + (+o.amount) * (+o.count || 1); return; }
       for (let c = 0; c < (+o.count || 1); c++) (b[o.vnum] ??= []).push([+o.price, +o.amount]); });
     Object.values(b).forEach(a => a.sort((x, y) => x[0] - y[0]));
     book = b;
@@ -134,7 +142,11 @@ const demandCache = new Map();
 function demand(v, win) { const w = Math.round(win * 4) / 4, k = v + "|" + w; if (!demandCache.has(k)) demandCache.set(k, expectedSold(v, Date.now(), w, soldDay[v])); return demandCache.get(k); }
 function sellFor(v, n, fallback, win = hours()) {
   const a = book?.[v], dm = demand(v, win), day = dm.units;
-  if (!a || !a.length || !(day > 0)) return { price: fallback(v), est: true };
+  if (!a || !a.length) return { price: fallback(v), est: true };
+  // Nessuna domanda netta nella finestra (arrivano più annunci al minimo di quanti se ne vendono): non posso stimare
+  // a che prezzo vendi in tempo, quindi prendo il più prudente, appena sotto il minimo, invece del prezzo abituale.
+  n += myStock[v] || 0;   // vendi anche quello che hai già in vendita, allo stesso prezzo
+  if (!(day > 0)) return { price: Math.max(1, Math.min(a[0][0] - 1, fallback(v) || Infinity)), est: true, ahead: 0, noDemand: true };
   const total = a.reduce((t, x) => t + x[1], 0);
   let below = 0, best = a[0][0] - 1, ahead = 0;
   for (let i = 0; i < a.length; i++) {
@@ -199,16 +211,20 @@ function portfolio(counts, p, detail) {
   for (const v of Object.keys(need)) if (out[v]) { const x = Math.min(need[v], out[v]); own[v] = x; need[v] -= x; out[v] -= x; if (!need[v]) delete need[v]; if (!out[v]) delete out[v]; }
   const buy = [], sell = [];
   for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q), c = w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; cost += c; if (detail) buy.push({ v, q, cost: c, w }); }
-  let gross = 0, fee = 0;
+  let gross = 0, fee = 0, topG = 0, held = 0;
   const win = METHODS.reduce((a, m, i) => a + (counts[i] || 0) / m.perH, 0) + hours();
-  for (const [v, q] of Object.entries(out)) { const s = sellFor(v, q, p.s, win), g = s.price * q; gross += g; if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); if (detail) sell.push({ v, q, ...s }); }
-  if (!detail) return { cost, fee, profit: gross - fee - cost };
+  for (const [v, q] of Object.entries(out)) { const s = sellFor(v, q, p.s, win), g = s.price * q; gross += g; topG = Math.max(topG, g + s.price * (myStock[v] || 0)); held += s.price * (myStock[v] || 0); if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); if (detail) sell.push({ v, q, ...s }); }
+  // Quota del prodotto più pesante su tutto quello che venderai: piano + annunci che hai già (anche di prodotti che il piano non fa).
+  Object.keys(myStock).forEach(v => { if (!out[v]) { const x = myStock[v] * (p.s(v) || 0); if (x > 0) { held += x; topG = Math.max(topG, x); } } });
+  const share = gross + held > 0 ? topG / (gross + held) : 0;
+  if (!detail) return { cost, fee, profit: gross - fee - cost, share };
   Object.entries(npc).forEach(([v, q]) => buy.push({ v, q, cost: NPC[v] * q, npc: true }));
-  return { cost, fee, profit: gross - fee - cost, gross, buy, sell, own, win };
+  return { cost, fee, profit: gross - fee - cost, gross, buy, sell, own, win, share };
 }
+const maxShare = () => +(document.getElementById("share")?.value || 1) || 1;
 const playHours = () => Math.max(0.25, +String(document.getElementById("hrs")?.value || "3").replace(",", ".") || 3);
 function bestPlan(p) {
-  const cap = capital(), H = playHours() * 60;
+  const cap = capital(), H = playHours() * 60, lim = maxShare() + 1e-9;
   const mins = c => c.reduce((a, n, i) => a + n / METHODS[i].perH * 60, 0);
   // Metodi candidati: quelli in guadagno da soli (al massimo i 3 migliori). Per ognuno il massimo che stai
   // nell'oro e nelle ore; poi provo tutte le combinazioni su una griglia e affino attorno alla migliore.
@@ -224,7 +240,7 @@ function bestPlan(p) {
     // Provo più quantità di conversioni: con i tuoi pezzi (es. Gillion delle PTS) e anche comprandoli sul bazar,
     // fino a coprire tutto il materiale che compreresti. Il costo scorre gli annunci, quindi esce il mix giusto
     // tra comprare il prodotto e comprare l'ingrediente da convertire.
-    const fits = x => x.cost + x.fee <= cap;
+    const fits = x => x.cost + x.fee <= cap && x.share <= lim;
     for (const i of SUP) { const m = METHODS[i], [[iv, iq]] = m.ing, x = portfolio(c, p, true);
       const have = x.sell.find(s => String(s.v) === String(iv))?.q || 0, need = x.buy.find(b => String(b.v) === String(m.prod))?.q || 0;
       const nMax = Math.floor(need / m.out); if (nMax <= 0) continue;
@@ -240,7 +256,7 @@ function bestPlan(p) {
     if (mins(c) > H) return null; const r0 = portfolio(c, p);
     // Oro: la conversione fa spendere meno, quindi una combinazione oltre il tuo oro può rientrarci.
     if (r0.cost + r0.fee > cap * 1.5) return null;
-    const e = SUP.length ? withSupport(c, r0) : { c, r: r0 }; return e.r.cost + e.r.fee > cap ? null : e; };
+    const e = SUP.length ? withSupport(c, r0) : { c, r: r0 }; return e.r.cost + e.r.fee > cap || e.r.share > lim ? null : e; };
   let bestR = { c: METHODS.map(() => 0), r: portfolio(METHODS.map(() => 0), p) };
   const search = ranges => {   // ranges[k] = lista di valori da provare per il candidato k
     const rec = (k, ns) => { if (k === cand.length) { const e = evalC(ns); if (e && e.r.profit > bestR.r.profit) bestR = e; return; }
@@ -255,7 +271,7 @@ function bestPlan(p) {
   }
   // Pulizia: un metodo con un contributo minimo (meno dello 0,5% del guadagno) lo tolgo, il piano resta più semplice.
   for (const x of cand) { if (!bestR.c[x.i]) continue; const c = bestR.c.slice(); c[x.i] = 0;
-    const r = portfolio(c, p); if (r.cost + r.fee <= cap && r.profit >= bestR.r.profit * 0.995) bestR = { c, r }; }
+    const r = portfolio(c, p); if (r.cost + r.fee <= cap && r.share <= lim && r.profit >= bestR.r.profit * 0.995) bestR = { c, r }; }
   // Due versioni dello stesso metodo (stessi prodotti, es. PTS con mezze lune craftate o comprate) nello stesso piano:
   // se le mezze lune "comprate" in realtà vengono dalla tua produzione, le due righe sono la stessa cosa.
   // Provo a unirle nella versione col guadagno più alto (togliendo, se serve, i craft dell'intermedio che diventano
@@ -270,7 +286,7 @@ function bestPlan(p) {
     for (const c of tries) { if (mins(c) > H) continue; const r = portfolio(c, p);
       // Soglia 1,5%: la versione mista sembra rendere un po' di più solo perché i craft in più allungano di qualche
       // minuto la finestra di vendita, non perché guadagni davvero di più.
-      if (r.cost + r.fee <= cap && r.profit >= bestR.r.profit * 0.985) { bestR = { c, r }; break; } }
+      if (r.cost + r.fee <= cap && r.share <= lim && r.profit >= bestR.r.profit * 0.985) { bestR = { c, r }; break; } }
   }));
   const total = bestR.r.cost + bestR.r.fee;
   return { counts: bestR.c, cur: bestR.r, lastRoi: null, mins: mins(bestR.c), capLeft: cap - total };
@@ -287,8 +303,8 @@ function renderPlan(p) {
     rows.map(r => `<tr><td>${r.m.name}</td><td>${fmt(r.n)} ${r.m.unit === "run" ? "run" : "craft"}</td><td>${r.m.support ? `<span class="muted">${supNote(r.m, r.n)}</span>` : short(r.solo.cost)}</td><td>${t(r.n / r.m.perH * 60)}</td></tr>`).join("") +
     `<tr><td><b>Totale</b></td><td></td><td><b>${short(cur.cost + cur.fee)}</b><br><span class="muted">commiss. ${short(cur.fee)}</span></td><td><b>${t(mins)}</b></td></tr>
      <tr><td><b>Guadagno atteso</b></td><td colspan="3" class="pos" style="text-align:right"><b>${short(cur.profit)}</b> (${(cur.profit / (cur.cost + cur.fee) * 100).toFixed(1)}%)</td></tr>
-     <tr><td class="muted">Limite</td><td colspan="3" class="muted" style="text-align:right">${mins >= playHours() * 60 * 0.95 ? "le ore" : capital() - cur.cost - cur.fee < capital() * 0.03 ? "l'oro" : "il mercato"}${capital() - cur.cost - cur.fee > capital() * 0.03 ? " · " + short(capital() - cur.cost - cur.fee) + " restano liberi" : ""}</td></tr>`
-    : '<tr><td class="muted">Nessun metodo conviene adesso.</td></tr>';
+     <tr><td class="muted">Limite</td><td colspan="3" class="muted" style="text-align:right">${mins >= playHours() * 60 * 0.95 ? "le ore" : capital() - cur.cost - cur.fee < capital() * 0.03 ? "l'oro" : maxShare() < 1 && cur.share > maxShare() - 0.03 ? "il massimo in un prodotto" : "il mercato"}${capital() - cur.cost - cur.fee > capital() * 0.03 ? " · " + short(capital() - cur.cost - cur.fee) + " restano liberi" : ""}</td></tr>`
+    : `<tr><td class="muted">${maxShare() < 1 ? "Nessun piano in guadagno con questo \"Massimo in un prodotto\": " + (Object.keys(myStock).length ? "quello che hai già in vendita è concentrato in un prodotto e i metodi che convengono adesso non bastano a bilanciarlo. " : "i metodi che convengono adesso producono quasi tutti la stessa cosa. ") + "Prova un limite più alto." : "Nessun metodo conviene adesso."}</td></tr>`;
   planList(counts, p);
 }
 // Lista unica del piano: tutto quello che compri, crafti e vendi, sommato tra i metodi (stessi conti del guadagno atteso).
@@ -304,13 +320,16 @@ function planList(counts, p) {
   x.sell.forEach(s => craft[s.v]?.use.push(fmt(s.q) + " da vendere"));
   const buyRows = x.buy.sort((a, b) => b.cost - a.cost).map(b => `<tr><td>${nm(b.v)}</td><td><b>${fmt(b.q)}</b></td><td>${short(b.cost)}${b.w ? (b.w.short > 0 ? ' <span class="warn">non bastano</span>' : `<br><span class="muted">fino a ${fmt(b.w.top)}</span>`) : ""}</td></tr>`).join("");
   const craftRows = Object.entries(craft).map(([v, c]) => `<tr><td>${nm(v)}${c.use.length ? `<br><span class="muted">${c.use.join(" · ")}</span>` : ""}</td><td><b>${fmt(c.q)}</b></td></tr>`).join("");
-  const sellRows = x.sell.map(s => `<tr><td>${nm(s.v)}</td><td><b>${fmt(s.q)}</b></td><td>${fmt(s.price)}${s.est ? ' <span class="muted">(stima)</span>' : ""}</td><td>${short(s.price * s.q)}</td></tr>`).join("");
+  const inH = s => { if (!(soldDay[s.v] > 0)) return "-"; const h = hoursToSell(s.v, Date.now(), (s.ahead || 0) + s.q + (myStock[s.v] || 0), soldDay[s.v]); return h == null ? "oltre 7 g" : h < 1 ? "<1 h" : h + " h"; },
+    ofDay = s => { const q = s.q + (myStock[s.v] || 0); return soldDay[s.v] > 0 ? `<br><span class="${q / soldDay[s.v] > 0.5 ? "warn" : "muted"}">${Math.round(q / soldDay[s.v] * 100)}% del giorno</span>` : ""; },
+    has = s => myStock[s.v] ? `<br><span class="muted">+ ${fmt(myStock[s.v])} che hai già in vendita</span>` : "";
+  const sellRows = x.sell.map(s => `<tr><td>${nm(s.v)}${has(s)}</td><td><b>${fmt(s.q)}</b></td><td>${fmt(s.price)}${s.noDemand ? ' <span class="muted">(appena sotto il minimo: in questa fascia oraria arrivano più annunci di quanti se ne vendono)</span>' : s.est ? ' <span class="muted">(stima)</span>' : ""}</td><td>${short(s.price * s.q)}<br><span class="muted">${Math.round(s.price * s.q / x.gross * 100)}%</span></td><td>${inH(s)}${ofDay(s)}</td></tr>`).join("");
   el.innerHTML = `<h3 style="margin:16px 0 0;font-size:15px">Cosa ti serve per tutto il piano</h3>
     <div class="wrap"><table><tr><th>Da comprare</th><th>Totale</th><th>Costo</th></tr>${buyRows}
       <tr><td><b>Totale</b></td><td></td><td><b>${short(x.cost)}</b></td></tr></table></div>
     ${craftRows ? `<div class="wrap"><table><tr><th>Da craftare</th><th>Totale</th></tr>${craftRows}</table></div>` : ""}
-    <div class="wrap"><table><tr><th>Da vendere</th><th>Pezzi</th><th>A</th><th>Incasso</th></tr>${sellRows}
-      <tr><td colspan="3">Commissione da tenere da parte</td><td>${short(x.fee)}</td></tr></table></div>
+    <div class="wrap"><table><tr><th>Da vendere</th><th>Pezzi</th><th>A</th><th>Incasso</th><th>Si vende in</th></tr>${sellRows}
+      <tr><td colspan="3">Commissione da tenere da parte</td><td>${short(x.fee)}</td><td></td></tr></table></div>
     <button id="savePlan" style="margin-top:10px">Salva il piano nel Bilancio</button>
     <span class="muted" id="savePlanMsg"></span>`;
   // Un lotto per ogni prodotto da vendere. Costo: ogni metodo porta il suo (costo da solo, riscalato perché la somma
