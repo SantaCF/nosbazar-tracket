@@ -141,12 +141,17 @@ const demandCache = new Map();
 // win = ore in cui puoi vendere: il tempo per produrre (i pezzi escono man mano) + "vendere entro" dopo l'ultimo.
 function demand(v, win) { const w = Math.round(win * 4) / 4, k = v + "|" + w; if (!demandCache.has(k)) demandCache.set(k, expectedSold(v, Date.now(), w, soldDay[v])); return demandCache.get(k); }
 function sellFor(v, n, fallback, win = hours()) {
-  const a = book?.[v], dm = demand(v, win), day = dm.units;
+  const a = book?.[v], dm = demand(v, win);
+  // Domanda netta zero nella finestra ma il prodotto si vende (media al giorno > 0): uso metà della media sulla stessa
+  // durata invece di lasciare la quantità senza limite (un metodo nuovo, con pochi giorni di dati, finiva con centinaia di pezzi).
+  const day = dm.units > 0 ? dm.units : (soldDay[v] || 0) * win / 24 * 0.5;
   if (!a || !a.length) return { price: fallback(v), est: true };
   // Nessuna domanda netta nella finestra (arrivano più annunci al minimo di quanti se ne vendono): non posso stimare
   // a che prezzo vendi in tempo, quindi prendo il più prudente, appena sotto il minimo, invece del prezzo abituale.
-  n += myStock[v] || 0;   // vendi anche quello che hai già in vendita, allo stesso prezzo
+  const mine = myStock[v] || 0, nNew = n;
+  n += mine;   // vendi anche quello che hai già in vendita, allo stesso prezzo
   if (!(day > 0)) return { price: Math.max(1, Math.min(a[0][0] - 1, fallback(v) || Infinity)), est: true, ahead: 0, noDemand: true };
+  const half = !(dm.units > 0);
   const total = a.reduce((t, x) => t + x[1], 0);
   let below = 0, best = a[0][0] - 1, ahead = 0;
   for (let i = 0; i < a.length; i++) {
@@ -154,7 +159,10 @@ function sellFor(v, n, fallback, win = hours()) {
     if (i > 0 && pr !== a[i - 1][0]) { if (below + n <= day && below <= total / 10) { best = pr - 1; ahead = below; } else break; }
     below += am;
   }
-  return { price: Math.max(1, best), est: false, ahead, basis: dm.est };
+  // Pezzi nuovi che si vendono davvero entro il tempo: prima quelli più economici davanti, poi i tuoi già in vendita.
+  // Il resto non conta nell'incasso (non lo vendi entro il tempo scelto), così il piano non produce più di quanto si vende.
+  const sold = Math.max(0, Math.min(nNew, day - ahead - mine));
+  return { price: Math.max(1, best), est: false, ahead, basis: dm.est, half, sold };
 }
 function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craft
   let cost = 0, gross = 0, ok = true; const buy = [], sell = [];
@@ -165,7 +173,7 @@ function plan(m, n, p) {   // costo reale, ricavo reale e commissione per n craf
   }
   let fee = 0;   // commissione per prodotto: 0,5% dell'incasso, minimo 500 per annuncio (stack da 999)
   const win = n / m.perH + hours();
-  for (const [v, q] of OUTS[m.name]) { const s = sellFor(v, q * n, p.s, win), g = s.price * q * n; gross += g; sell.push({ v, q, ...s });
+  for (const [v, q] of OUTS[m.name]) { const s = sellFor(v, q * n, p.s, win), g = s.price * (s.sold ?? q * n); gross += g; sell.push({ v, q, ...s });
     if (n && !medal) fee += Math.max(g * TAX, 500 * Math.ceil(q * n / 999)); }
   return { n, cost, gross, fee, net: gross - fee, profit: gross - fee - cost, buy, sell, ok };
 }
@@ -213,7 +221,7 @@ function portfolio(counts, p, detail) {
   for (const [v, q] of Object.entries(need)) { const w = book && walk(v, q), c = w ? w.cost + Math.max(0, w.short) * (w.top || p.b(v)) : p.b(v) * q; cost += c; if (detail) buy.push({ v, q, cost: c, w }); }
   let gross = 0, fee = 0, held = 0; const tops = [];
   const win = METHODS.reduce((a, m, i) => a + (counts[i] || 0) / m.perH, 0) + hours();
-  for (const [v, q] of Object.entries(out)) { const s = sellFor(v, q, p.s, win), g = s.price * q; gross += g; if (g > 0) tops.push(g + s.price * (myStock[v] || 0)); held += s.price * (myStock[v] || 0); if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); if (detail) sell.push({ v, q, ...s }); }
+  for (const [v, q] of Object.entries(out)) { const s = sellFor(v, q, p.s, win), g = s.price * (s.sold ?? q); gross += g; if (g > 0) tops.push(g + s.price * (myStock[v] || 0)); held += s.price * (myStock[v] || 0); if (!medal) fee += Math.max(g * TAX, 500 * Math.ceil(q / 999)); if (detail) sell.push({ v, q, ...s }); }
   // Quota dei prodotti del piano su tutto quello che venderai (piano + annunci che hai già, anche di prodotti che il piano non fa).
   // Il limite vale per i prodotti che il piano ti fa vendere: un prodotto che hai già oltre il limite non blocca il resto
   // del piano, impedisce solo di farne altro.
