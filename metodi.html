@@ -205,6 +205,10 @@ async function capacity(metric) {
   await loadBook(); await loadFlow(); demandCache.clear();
   const p = priceAt(times[times.length - 1], metric);
   const rows = METHODS.map(m => best(m, p)).filter(r => r && r.top.n > 0 && r.top.profit > 0).sort((a, b) => b.top.profit - a.top.profit);
+  // Metodi in perdita (non le conversioni): li mostro lo stesso in fondo, con la perdita per un craft, così vedi quanto mancano.
+  const lossRows = METHODS.map(m => !m.support && best(m, p)).filter(r => r && !(r.top.n > 0 && r.top.profit > 0))
+    .map(r => ({ ...r, top: plan(r.m, 1, p), loss: true })).filter(r => isFinite(r.top.profit)).sort((a, b) => b.top.profit - a.top.profit);
+  rows.push(...lossRows);
   // Oro all'ora dell'ultimo giro facendo il numero consigliato (o 1 se il metodo è in perdita), con costi e vendite per quantità.
   const cls = n => n == null ? "" : n > 0 ? "pos" : "neg";
   const live = METHODS.map(m => { const r = best(m, p), n = r && r.top.n > 0 ? r.top.n : 1, x = plan(m, n, p);
@@ -214,7 +218,7 @@ async function capacity(metric) {
       `<tr><td>${r.m.name}</td><td class="${cls(r.v)}">${fmt(r.v)}</td><td>${r.v == null ? "mancano prezzi" : fmt(r.n) + " " + (r.m.unit === "run" ? "run" : "craft")}</td></tr>`).join("");
   const t = n => { n = Math.round(n); return n >= 60 ? Math.floor(n / 60) + "h " + (n % 60) + "m" : n + " min"; };
   document.getElementById("k").innerHTML = "<tr><th>Metodo</th><th>Massimo</th><th>Consigl.</th><th>Guadagno</th><th>Tempo</th></tr>" +
-    rows.map((r, i) => `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.top.n)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.top.profit)}${(() => { const w = worstOf(r.top, r.top.n).profit; return `<br><span class="${w >= 0 ? "muted" : "neg"}">peggio ${short(w)}</span>`; })()}</td><td>${t(r.top.n / r.m.perH * 60)}</td></tr>`).join("")
+    rows.map((r, i) => r.loss ? `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td class="muted">in perdita</td><td class="neg">${short(r.top.profit)}<br><span class="muted">a ${r.m.unit === "run" ? "run" : "craft"}</span></td><td></td></tr>` : `<tr data-i="${i}"><td>${r.m.name}</td><td>${fmt(r.max)} ${r.m.unit === "run" ? "run" : ""}</td><td>${fmt(r.top.n)}${r.limited ? ' <span class="muted">(vendite)</span>' : ""}</td><td class="pos">${short(r.top.profit)}${(() => { const w = worstOf(r.top, r.top.n).profit; return `<br><span class="${w >= 0 ? "muted" : "neg"}">peggio ${short(w)}</span>`; })()}</td><td>${t(r.top.n / r.m.perH * 60)}</td></tr>`).join("")
     || '<tr><td class="muted">Nessun metodo in guadagno all\'ultimo giro.</td></tr>';
   document.getElementById("k").onclick = e => { const tr = e.target.closest("tr[data-i]"); if (tr) shopping(rows[+tr.dataset.i], p); };
   renderPlan(p);
