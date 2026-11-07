@@ -23,6 +23,11 @@
   <div class="wrap"><table id="mine"></table></div>
   <details class="how"><summary>Come funziona</summary><p id="mineNote">"Valore" = quanto incassi vendendo tutti i pezzi ai prezzi dei tuoi annunci (commissione tolta) e la sua parte sul totale "In vendita ora". "Davanti" = pezzi più economici dei tuoi messi in vendita da altri. "Si vende in" = quanto ci vuole a vendere i pezzi davanti a te più i tuoi, stimato dalle stesse ore dei giorni passati (la sera si vende più che di notte), con la fiducia scelta in Impostazioni. Finché per quella fascia oraria ci sono meno di 3 giorni di dati uso tutte le finestre della stessa durata delle ultime 72 ore ("ultime 72h": vede che le vendite arrivano a blocchi, non ancora la differenza sera/notte), e se non bastano la media delle ultime 24 ore ("media 24h"). Oltre il limite che hai scelto in <a href="impostazioni.html">Impostazioni</a> propongo il prezzo più alto che vende tutto in tempo.</p></details>
 
+  <h2 id="riskH" hidden>Rischio del magazzino</h2>
+  <div class="tiles" id="riskTiles"></div>
+  <div class="wrap"><table id="risk"></table></div>
+  <details class="how" id="riskHow" hidden><summary>Come funziona</summary><p>Per ogni prodotto che hai in vendita: quanta parte del tuo patrimonio (oro dell'ultimo Bilancio + annunci) è ferma lì, in quanto tempo si smaltisce al ritmo delle stesse ore dei giorni passati, quanto perderesti se il prezzo scendesse al caso peggiore (il prezzo di vendita più basso nel 10% dei giri degli ultimi 7 giorni) e il pareggio dei tuoi lotti nel Bilancio. "Il solito" = mediana del prezzo di vendita dei 7 giorni. Il consiglio: se per vendere in tempo devi scendere ancora dentro il solito, abbassa; se dovresti scendere sotto il solito (mercato in stallo o pieno di ribassi), valuta di tenere e aspettare che torni, soprattutto se abbassando andresti sotto il pareggio.</p></details>
+
   <h2>Metodi adesso</h2>
   <div class="wrap"><table id="meth"></table></div>
   <details class="how"><summary>Come funziona</summary><p>Margine su un solo craft (o run) con i prezzi dell'ultimo giro: compri al prezzo lotto 2%, vendi al prezzo realistico, commissione tolta. Non dice quanto farne: comprando tanto i prezzi salgono e vendendo tanto scendono. Per quanto fare e come dividere l'oro c'è il <a href="metodi.html">piano consigliato in Metodi</a>.</p></details>
@@ -96,6 +101,41 @@ async function gz(url) {
     : !rows.length ? '<tr><td class="muted">Nessun annuncio tuo nell\'ultimo giro.</td></tr>'
     : "<tr><th>Item</th><th>Pezzi</th><th>Tuo prezzo</th><th class='hide-s'>Minimo</th><th>Valore</th><th>Davanti</th><th>Si vende in</th></tr>" +
       rows.map(r => `<tr><td>${r.it.name}${r.price != null ? `<br><span class="warn">abbassa a <b>${fmt(r.price)}</b></span>` : ""}</td><td>${fmt(r.units)}</td><td>${fmt(r.top)}${r.low !== r.top ? `<br><span class="muted">da ${fmt(r.low)}</span>` : ""}</td><td class="hide-s">${fmt(r.it.min)}</td><td>${short(r.value)}<br><span class="muted">${listed ? Math.round(r.value / listed * 100) : 0}%</span></td><td>${fmt(r.ahead)}</td><td class="${!r.basis ? "" : r.hours == null || r.hours > H ? "warn" : "pos"}">${!r.basis ? "-" : r.hours == null ? "oltre 7 giorni" : "≈ " + dur(r.hours)}${r.basis === "media24" ? '<br><span class="muted">media 24h</span>' : r.basis === "finestre" ? '<br><span class="muted">ultime 72h</span>' : ""}</td></tr>`).join("");
+
+  // Rischio del magazzino: concentrazione, tempi di smaltimento, caso peggiore e consiglio abbassa/tieni.
+  if (rows.length) (async () => {
+    const st = {}; try {
+      const t = await (await fetch("data/sell.csv?" + Date.now())).text(), from = new Date(ts - 7 * 864e5).toISOString();
+      t.trim().split(/\r?\n/).slice(1).forEach(l => { const [x, v, p] = l.split(","); if (x >= from && +p > 0 && mine[v]) (st[v] ??= []).push(+p); });
+      Object.values(st).forEach(a => a.sort((x, y) => x - y));
+    } catch (e) {}
+    const q = (a, f) => a && a.length >= 8 ? a[Math.floor(a.length * f)] : null;
+    const golds2 = (bil.moves || []).filter(m => m.kind === "gold").sort((a, b) => a.t.localeCompare(b.t)), g = golds2[golds2.length - 1];
+    const wealth = (g ? g.amount : 0) + listed;
+    let worstLoss = 0;
+    const rk = rows.map(r => {
+      const usual = q(st[r.v], 0.5), worst = q(st[r.v], 0.1), lc = lotCost[r.v], even = lc && lc.q ? lc.c / lc.q / (1 - TAX) : null;
+      const loss = worst != null ? mine[r.v].reduce((t, [p, n]) => t + Math.max(0, p - worst) * n, 0) * (1 - TAX) : 0; worstLoss += loss;
+      let tip = '<span class="pos">ok, vende in tempo</span>';
+      if (r.price != null) {
+        const under = usual ? r.price / usual - 1 : 0;
+        if (even && r.price < even) tip = `<span class="warn">tieni</span><br><span class="muted">per vendere in tempo andresti a ${fmt(r.price)}, sotto il tuo pareggio ${fmt(even)}</span>`;
+        else if (usual && under < -0.03) tip = `<span class="warn">abbassa a ${fmt(r.price)} o tieni</span><br><span class="muted">${fmt(r.price)} è ${Math.round(-under * 100)}% sotto il solito (${fmt(usual)}): se non ti serve l'oro, aspetta</span>`;
+        else tip = `<span class="warn">abbassa a ${fmt(r.price)}</span><br><span class="muted">resta nel solito${usual ? " (" + fmt(usual) + ")" : ""}</span>`;
+      }
+      return { r, share: wealth ? r.value / wealth : null, usual, worst, loss, even, tip };
+    }).sort((a, b) => b.r.value - a.r.value);
+    const top = rk[0];
+    document.getElementById("riskH").hidden = document.getElementById("riskHow").hidden = false;
+    document.getElementById("riskTiles").innerHTML = [
+      ["Fermo in vendita", wealth && g ? Math.round(listed / wealth * 100) + "%" : "-", g ? "del patrimonio (oro + annunci)" : "aggiorna l'oro nel Bilancio"],
+      ["Prodotto più pesante", top.share != null ? Math.round(top.share * 100) + "%" : "-", top.r.it.name],
+      ["Se tutto scende al peggiore", worstLoss ? "−" + short(worstLoss) : "-", wealth ? Math.round(worstLoss / wealth * 100) + "% del patrimonio" : ""],
+      ["Tempo per smaltire tutto", (() => { const h = rk.map(x => x.r.hours); return h.some(x => x == null) ? "oltre 7 giorni" : "≈ " + dur(Math.max(...h)); })(), "al ritmo di adesso"]]
+      .map(([l, n, c]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b><span class="muted">${c}</span></div>`).join("");
+    document.getElementById("risk").innerHTML = "<tr><th>Item</th><th>Quota</th><th>Si smaltisce in</th><th>Caso peggiore</th><th>Consiglio</th></tr>" +
+      rk.map(x => `<tr><td><a href="prezzi.html#v=${x.r.v}">${x.r.it.name}</a></td><td>${x.share != null ? Math.round(x.share * 100) + "%" : "-"}</td><td>${x.r.hours == null ? "oltre 7 giorni" : "≈ " + dur(x.r.hours)}</td><td>${x.worst != null ? fmt(x.worst) + `<br><span class="${x.loss ? "neg" : "muted"}">${x.loss ? "−" + short(x.loss) : "nessuna perdita"}</span>` : "-"}${x.even ? `<br><span class="muted">pareggio ${fmt(x.even)}</span>` : ""}</td><td>${x.tip}</td></tr>`).join("");
+  })();
 
   // Metodi su un pezzo.
   // le conversioni (support) contano solo nel piano
