@@ -9,4 +9,4 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/vtest.py
+      - run: mkdir -p data && time python3 scripts/collect.py > out.txt && grep -c annunci out.txt && zcat data/listings/*/*.csv.gz | wc -l

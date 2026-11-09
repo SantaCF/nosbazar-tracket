@@ -1,9 +1,142 @@
 # Una ricerca per riga, in italiano (come nel gioco). Righe con # sono ignorate.
 # Ogni ricerca traccia fino a 5 item che contengono quel testo nel nome.
+# Lotto di riferimento: di default è il 2% dei pezzi in vendita. Per fissarlo scrivi "| pezzi", es. "Mezza luna | 60".
 # Puoi anche scrivere direttamente il numero dell'item (vnum), es. 1028 = Cristallo di luna nuova.
 Pietra Gillion
 Polvere del sottosuolo
 1028
 Mezza luna
 Piuma d'angelo
-Pietra per la PTS
+1092
+# 1092 = Pezzo spazio-temporale (gruppo), pietra PTS
+# Dal file "Stima guadagni PTS" di Alessio:
+1012
+# 1012 = Seme della potenza (semi di ingresso/produzione PTS)
+1016
+1027
+# Attrezzi per gemme non tracciati: prezzo NPC fisso 5.000 da Malcom Mix
+# Aggiunti su richiesta di Alessio (05/11):
+1030
+# 1030 = Cristallo di luna piena (50 polvere + 5 mezze lune + 1 attrezzo, da nosapki)
+2196
+# 2196 = Sgombro; pozioni che lo usano: 1242 Pozione divina (3), 1245 Pozione SP base (5), 1249 Pozione esperienza (7)
+1242
+1245
+1249
+1429
+# 1429 = Perla Arcobaleno
+5911
+# 5911 = Fiore di ghiaccio
+# Ingredienti pozioni con sgombro (ricette nosapki craft_profit):
+1011
+# 2029 Bottiglia vuota: NPC 500, non tracciata
+# 2097 Pozione magica: NPC 100, non tracciata
+1241
+2206
+2214
+2208
+2215
+
+# Upgrade SP (materiali da nosapki, simulatore "Card upgrade")
+2283
+2511
+2622
+2284
+2512
+2620
+2285
+2513
+2621
+2630
+2748
+1363
+1364
+# Upgrade equipaggiamento (simulatore "Equipment upgrade")
+1015
+2774
+1218
+5369
+
+# Item da NosMall (nosdollari) più scambiati: scansione di tutto il bazar del 05/11
+1428
+1296
+1285
+2173
+1900
+1246
+1247
+1248
+4194
+285
+286
+8581
+4106
+284
+4264
+4340
+4341
+# Arbitraggi con i prodotti della PTS (06/11, ricette nosapki):
+5500
+# 5500 = Sigillo raid di Lord Draco (20 Gillion + 20 Sabbia + 20 Semi della potenza, da Grande mago Kan)
+# Altri prodotti delle risorse principali (06/11, ricette nosapki): prima solo prezzi, poi metodi se convengono
+# 5512 Sigillo Glacerus = 20 Semi + 20 Cubetti di ghiaccio (2307) + 20 Fiori di ghiaccio (Felix Frost)
+5512
+2307
+# Sigilli raid con Pezzo spazio-temporale raid (1094): 1127 Mamma Cuby (2 Semi, 2 Luna nuova, 30 Fagioli 2006),
+# 1128 Ginseng (4 Semi, 2 Mezze, 40 Vetro verde 2010), 1129 Castra (6 Semi, 3 Mezze, 30 Vetro rosso 2011),
+# 1130 Ragno nero (8 Semi, 4 Mezze, 30 Ragnatele 2091, 3 Occhi 2092), 1131 Slade (10 Semi, 5 Mezze, 40 Perle oscurità 2094, 30 Artigli 2172)
+1127
+1128
+1129
+1130
+1131
+1094
+2006
+2010
+2011
+# Pezzi di cristallo rosso/blu/bianco: 1 Luna nuova + 1 attrezzo + 5 Pozioni magiche -> 4 pezzi
+1031
+1032
+1033
+# Ingredienti sigilli Ragno nero (2091 Ragnatela x30, 2092 Occhio del Re dei Ragni x3) e Slade (2094 Perla dell'oscurità x40, 2172 Artiglio di Slade x30)
+2091
+2092
+2094
+2172
+# Resistenze (guanti/scarpe splendenti, ricette nosapki 06/11). Lv45 376-379 guanti, 384-387 scarpe: 30 Sabbia + 10 pezzi cristallo + ricetta A + 10 vetro verde + 30 materiale alta qualità + 10 extra.
+# Lv70 380-383 guanti, 388-391 scarpe: 50 Sabbia + 5 Lune piene + ricetta B + 20 vetro verde + 10 extra (2201-2204) + 5 pietra elemento (2209-2212).
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+1237
+1238
+1239
+1240
+1034
+2036
+2040
+2044
+2048
+2201
+2202
+2203
+2204
+2205
+2207
+2209
+2210
+2211
+2212
