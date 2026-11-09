@@ -22,6 +22,7 @@
     <label class="muted">Guadagno minimo <input id="fmin" inputmode="decimal" style="width:4em" value="0"> % dell'oro</label>
     <label class="muted"><input type="checkbox" id="medal"> Medaglia NosBazar</label>
   </div>
+  <a class="muted" href="simulazione.html" style="display:inline-block;margin-top:8px">Come sarebbe andata seguendo questi consigli: simulazione sullo storico ›</a>
   <h2>Compra e rivendi subito</h2>
   <div class="wrap"><table id="now"></table></div>
   <details class="how"><summary>Come funziona</summary><p>Compri gli annunci più economici e rimetti in vendita appena sotto il prezzo che resta. Per ogni item provo tutte le quantità e tengo quella col guadagno più alto, con due vincoli. Il primo: i pezzi davanti ai tuoi, più i tuoi, devono vendersi entro il tempo scelto secondo la stima dei venduti al giorno. Il secondo: non vendi sopra il prezzo sotto cui sta il 25% dei pezzi, né sopra il livello più alto toccato di solito dal prezzo più basso nelle ultime 24 ore (perché oltre, di solito, qualcuno rimette annunci più bassi). Eccezione per gli item molto liquidi: se nella fascia oraria di adesso si vendono almeno 3 volte i pezzi davanti ai tuoi più i tuoi, il secondo limite non vale (anche se qualcuno ti passa davanti, vendi lo stesso). Mostro solo i guadagni da almeno l'1% e almeno pari al "Guadagno minimo". Commissione compresa, oro disponibile rispettato.</p></details>
@@ -45,7 +46,12 @@ const csv = t => { const [h, ...ls] = t.trim().split(/\r?\n/), k = parse(h); ret
 const get = (u, opt) => fetch(u + "?" + Date.now()).then(r => r.ok ? r.text() : (opt ? "" : Promise.reject(u)));
 const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
 
-let items = {}, book = {}, sellHist = {}, lastTs;
+let items = {}, book = {}, sellHist = {}, lastTs, learn = {};
+// Quello che la simulazione sullo storico ha imparato per item e tipo (data/sim_learn.csv, scripts/sim.py).
+const simOf = r => learn[r.it.vnum]?.[r.kind];
+const simTag = r => { const x = simOf(r); if (!x) return "";
+  const n = +x.trades, ok = +x.sold, bad = ok / n < 0.5;
+  return `<br><span class="${bad ? "neg" : ok < n ? "warn" : "muted"}" style="font-size:12px;font-weight:400">${bad ? "⚠ " : ""}simulazione: ${ok}/${n} vendute${x.med_hours ? " in ~" + hrs(+x.med_hours) : ""}</span>`; };
 const capital = () => +String(document.getElementById("cap").value).replace(/[^0-9]/g, "") || 0;
 const hours = () => +document.getElementById("hz").value;
 // Guadagno minimo in % dell'oro disponibile (es. 1 = con 25M almeno 250k a operazione).
@@ -58,6 +64,7 @@ const feeFor = (gross, q) => medal() ? 0 : Math.max(gross * 0.005, 500 * Math.ce
   latest.forEach(r => items[r.vnum] = { vnum: r.vnum, name: r.name, day: +r.sold_day || 0, wp10: +r.wp10, wp25: +r.wp25, qty: +r.quantity });
   lastTs = latest[0]?.ts;
   csv(await get("data/sell.csv", true) || "ts,vnum,sell\n").forEach(r => (sellHist[r.vnum] ??= []).push([r.ts, +r.sell]));
+  csv(await get("data/sim_learn.csv", true) || "vnum,kind\n").forEach(r => (learn[r.vnum] ??= {})[r.kind] = r);
   const ts = new Date(lastTs), pad = n => String(n).padStart(2, "0");
   const res = await fetch(`data/listings/${ts.getUTCFullYear()}-${pad(ts.getUTCMonth() + 1)}-${pad(ts.getUTCDate())}/${pad(ts.getUTCHours())}${pad(ts.getUTCMinutes())}.csv.gz`);
   const buf = await res.arrayBuffer(); let text;
@@ -169,7 +176,7 @@ function render() {
   sorted(rowsNow, "now"); sorted(rowsHold, "hold");
   const head = (id, last) => { const [sk, sd] = fsort[id].split(":");
     return "<tr>" + FCOLS.map(([k, l]) => `<th data-sort="${k}" style="cursor:pointer;${k === sk ? "color:var(--fg)" : ""}"${k === "extra" ? ' class="hide-s"' : ""}>${l || last}${k === sk ? (+sd > 0 ? " ▲" : " ▼") : ""}</th>`).join("") + "</tr>"; };
-  const row = (r, i, extra) => `<tr data-i="${i}"><td>${r.it.name}</td><td>${fmt(r.q)}<br><span class="muted">fino a ${fmt(r.top)}</span></td><td>${fmt(r.sell)}</td><td class="pos">${short(r.profit)}</td><td>${pct(r.profit / r.cost)}</td><td class="hide-s">${extra}</td></tr>`;
+  const row = (r, i, extra) => `<tr data-i="${i}"><td>${r.it.name}${simTag(r)}</td><td>${fmt(r.q)}<br><span class="muted">fino a ${fmt(r.top)}</span></td><td>${fmt(r.sell)}</td><td class="pos">${short(r.profit)}</td><td>${pct(r.profit / r.cost)}</td><td class="hide-s">${extra}</td></tr>`;
   document.getElementById("now").innerHTML = rowsNow.length ? head("now", "Vendi in") + rowsNow.map((r, i) => row(r, i, hrs(r.extraV))).join("")
     : '<tr><td class="muted">Nessuna rivendita in guadagno adesso con questi parametri.</td></tr>';
   document.getElementById("hold").innerHTML = rowsHold.length ? head("hold", "Solito") + rowsHold.map((r, i) => row(r, i, fmt(r.extraV))).join("")
@@ -205,6 +212,7 @@ function detail(r) {
     <tr><td><b>Guadagno</b></td><td class="pos"><b>${fmt(r.profit)}</b> (${pct(r.profit / r.cost)})</td></tr>
     ${r.kind === "now" ? `<tr><td>Tempo stimato per vendere</td><td>${hrs(hoursToSell(r.it.vnum, Date.now(), r.ahead + r.q, r.it.day))}</td></tr>` : ""}
     <tr><td>Venduti attesi nelle prossime ${hours()} ore</td><td>${fmt(expectedSold(r.it.vnum, Date.now(), hours(), r.it.day).units)}<br><span class="muted">stima prudente su questa fascia oraria dei giorni passati</span></td></tr>
+    ${simOf(r) ? `<tr><td>Nella simulazione</td><td>${simOf(r).sold}/${simOf(r).trades} operazioni vendute entro 48 ore${simOf(r).med_hours ? `, di solito in ${hrs(+simOf(r).med_hours)}` : ""}, resa media ${pct(+simOf(r).avg_pct)}<br><span class="muted">tempo vero ${(+simOf(r).time_factor).toLocaleString("it-IT", { maximumFractionDigits: 1 })}× la stima semplice · <a href="simulazione.html">dettagli</a></span></td></tr>` : ""}
     <tr><td>Venduti al giorno (media)</td><td>${fmt(r.it.day)}<br><span class="muted">conta anche gli annunci ritirati: è per eccesso</span></td></tr>
     <tr><td>Pezzi in vendita ora</td><td>${fmt(r.it.qty)}</td></tr></table>
     <h3 style="margin:16px 0 0;font-size:15px">Il prezzo di rivendita è normale o un caso?</h3>

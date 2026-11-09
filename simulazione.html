@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="icons/manifest.webmanifest">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
+<title>Simulazione flipping</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1>Simulazione di flipping</h1>
+  <div id="nav"></div><script src="nav.js"></script>
+  <div class="muted" id="updated">Caricamento…</div>
+  <p class="muted" style="margin:6px 0 0">Cosa sarebbe successo seguendo Flipping dal primo giorno, partendo con <b id="g0">25M</b>: compra a ogni giro sugli annunci veri, rivende solo quando nei giri dopo qualcuno ha davvero venduto a quel prezzo o più.</p>
+  <div class="tiles" id="tiles"></div>
+  <h2>Oro libero e oro fermo in merce</h2>
+  <p class="muted" style="margin:0">Tocca il grafico per vedere in cosa era investito l'oro in quel momento (★ = comprato in quel giro).</p>
+  <div class="chart"><canvas id="ch"></canvas></div>
+  <h2>In vendita adesso</h2>
+  <div class="wrap"><table id="open"></table></div>
+  <h2>Cosa ha imparato</h2>
+  <div class="wrap"><table id="learn"></table></div>
+  <details class="how"><summary>Come lo usa</summary><p>Per ogni item e tipo di operazione confronta il tempo che ci ha messo davvero con quello stimato, e conta quante vendite sono andate in porto prima delle 48 ore. Quando sceglie tra più occasioni divide il guadagno atteso per le ore attese: vince chi fa girare l'oro più in fretta e, a parità, chi rende di più. Con poche operazioni su un item si fida soprattutto della media di tutti. Le stesse informazioni compaiono in Flipping sotto il nome dell'item.</p></details>
+  <h2>Operazioni chiuse</h2>
+  <div class="wrap"><table id="closed"></table></div>
+  <details class="how"><summary>Come funziona</summary><p>A ogni giro, usando solo i dati fino a quel momento: prima vende quello che ha in vendita, poi cerca le occasioni con le regole di Flipping ("compra e rivendi subito" e "sotto il solito") sugli annunci di quel giro. Tiene solo quelle che rendono almeno l'1% del patrimonio (oro più merce al costo) e mette al massimo il 30% del patrimonio in una sola operazione. Un item alla volta.</p>
+  <p>Vendita: i pezzi si vendono solo se in quel giro qualcuno ha venduto a quel prezzo o più, e solo se sotto non restano annunci più economici che c'erano già al giro prima (altrimenti era un ritiro, o un compratore che ha scelto proprio quello stack). Dopo 48 ore quello che resta si vende al prezzo di vendita realistico del momento: è l'"uscita forzata". Niente commissioni (medaglia).</p>
+  <p>Esclusi: perle con pet, fata o mezzo dentro, scarpe e guanti con resistenze. Il prezzo dipende da cosa contengono, e la raccolta non lo vede.</p>
+  <p>È un'approssimazione: in gioco altri potrebbero comprare prima di te gli stessi annunci, e i tuoi acquisti cambierebbero un po' il mercato.</p></details>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const fmt = n => n == null || isNaN(n) ? "-" : Math.round(n).toLocaleString("it-IT");
+const short = n => n == null ? "-" : Math.abs(n) >= 1e6 ? (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "M" : Math.abs(n) >= 1e3 ? Math.round(n / 1e3) + "k" : Math.round(n);
+const pct = x => (x > 0 ? "+" : "") + (x * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
+const hrs = h => h < 1 ? Math.max(1, Math.round(h * 60)) + " min" : h < 48 ? h.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " h" : Math.round(h / 24) + " g";
+const when = t => new Date(t).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const kindTxt = k => k === "now" ? "rivendi subito" : "sotto il solito";
+fetch("data/sim.json?" + Date.now()).then(r => r.ok ? r.json() : Promise.reject("simulazione non ancora calcolata")).then(d => {
+  document.getElementById("updated").textContent = `Dal ${when(d.start)} al ${when(d.end)}`;
+  document.getElementById("g0").textContent = short(d.gold0);
+  const c = d.closed, eq = d.gold + d.stock_value, days = (new Date(d.end) - new Date(d.start)) / 864e5;
+  const real = c.reduce((a, x) => a + x.profit, 0), forced = c.filter(x => x.forced);
+  const share = d.series.reduce((a, s) => a + s[2] / (s[1] + s[2]), 0) / d.series.length;
+  const costH = c.reduce((a, x) => a + x.cost, 0), wH = costH ? c.reduce((a, x) => a + x.hours * x.cost, 0) / costH : 0;
+  const med = c.length ? c.map(x => x.hours).sort((a, b) => a - b)[Math.floor(c.length / 2)] : 0;
+  const tiles = [
+    ["Patrimonio adesso", short(eq), `<span class="${eq >= d.gold0 ? "pos" : "neg"}">${pct(eq / d.gold0 - 1)}</span> <span class="muted">in ${fmt(days)} giorni · merce ai prezzi di adesso</span>`],
+    ["Guadagno incassato", short(real), `<span class="muted">${c.length} operazioni chiuse${forced.length ? `, ${forced.length} in uscita forzata (${short(forced.reduce((a, x) => a + x.profit, 0))})` : ""}</span>`],
+    ["Oro fermo in merce", Math.round(share * 100) + "%", `<span class="muted">del patrimonio, in media nel tempo</span>`],
+    ["Tempo per rivendere", hrs(wH), `<span class="muted">medio pesato sull'oro · mediana ${hrs(med)}</span>`]];
+  document.getElementById("tiles").innerHTML = tiles.map(([l, n, x]) => `<div class="tile"><span class="muted">${l}</span><b>${n}</b>${x}</div>`).join("");
+
+  const o = d.open.slice().sort((a, b) => b.cost - a.cost);
+  document.getElementById("open").innerHTML = o.length ? "<tr><th>Item</th><th>Pezzi</th><th>A</th><th>Da</th><th>Esito ora</th></tr>" + o.map(p => {
+    const res = p.got + p.left * p.now - p.cost;
+    return `<tr><td><a href="prezzi.html#v=${p.vnum}">${p.name}</a><br><span class="muted">${kindTxt(p.kind)}</span></td><td>${fmt(p.left)}<span class="muted"> / ${fmt(p.q)}</span></td><td>${fmt(p.price)}</td><td>${hrs((new Date(d.end) - new Date(p.t)) / 36e5)}</td><td class="${res >= 0 ? "pos" : "neg"}">${short(res)}</td></tr>`; }).join("")
+    : '<tr><td class="muted">Niente in vendita adesso.</td></tr>';
+
+  const L = {};
+  c.forEach(x => { const k = x.vnum + x.kind; (L[k] ??= { name: x.name, vnum: x.vnum, kind: x.kind, rows: [] }).rows.push(x); });
+  const lr = Object.values(L).map(g => { const ok = g.rows.filter(x => !x.forced), f = ok.map(x => x.hours / Math.max(x.est_h, .25)).sort((a, b) => a - b);
+    return { ...g, n: g.rows.length, ok: ok.length, h: ok.length ? ok.map(x => x.hours).sort((a, b) => a - b)[Math.floor(ok.length / 2)] : null,
+      f: f.length ? f[Math.floor(f.length / 2)] : null, p: g.rows.reduce((a, x) => a + x.profit, 0), r: g.rows.reduce((a, x) => a + x.pct, 0) / g.rows.length }; })
+    .sort((a, b) => b.p - a.p);
+  document.getElementById("learn").innerHTML = lr.length ? "<tr><th>Item</th><th>Vendute</th><th>Tempo</th><th>Resa</th><th>Totale</th></tr>" + lr.map(g =>
+    `<tr><td><a href="prezzi.html#v=${g.vnum}">${g.name}</a><br><span class="muted">${kindTxt(g.kind)}</span></td><td class="${g.ok === g.n ? "" : g.ok / g.n < .5 ? "neg" : "warn"}">${g.ok}/${g.n}</td><td>${g.h == null ? "-" : hrs(g.h)}${g.f ? `<br><span class="muted">${g.f.toLocaleString("it-IT", { maximumFractionDigits: 1 })}× la stima</span>` : ""}</td><td class="${g.r >= 0 ? "pos" : "neg"}">${pct(g.r)}</td><td class="${g.p >= 0 ? "pos" : "neg"}">${short(g.p)}</td></tr>`).join("")
+    : '<tr><td class="muted">Ancora nessuna operazione chiusa.</td></tr>';
+
+  document.getElementById("closed").innerHTML = c.length ? "<tr><th>Item</th><th>Comprato</th><th>Venduto in</th><th>Guadagno</th></tr>" + c.slice().reverse().map(x =>
+    `<tr><td><a href="prezzi.html#v=${x.vnum}">${x.name}</a><br><span class="muted">${kindTxt(x.kind)}</span></td><td>${fmt(x.q)} per ${short(x.cost)}<br><span class="muted">${when(x.t)}</span></td><td>${hrs(x.hours)}${x.forced ? '<br><span class="neg">uscita forzata</span>' : ""}</td><td class="${x.profit >= 0 ? "pos" : "neg"}">${short(x.profit)}<br><span class="muted">${pct(x.pct)}</span></td></tr>`).join("")
+    : '<tr><td class="muted">Ancora nessuna operazione chiusa.</td></tr>';
+
+  if (typeof Chart === "undefined") return;
+  const css = getComputedStyle(document.documentElement), col = k => css.getPropertyValue(k).trim();
+  const s = d.series, area = (label, data, color) => ({ label, data, borderColor: color, backgroundColor: color + "55", fill: true, pointRadius: 0, borderWidth: 1.5, tension: .2 });
+  new Chart(document.getElementById("ch"), { type: "line",
+    data: { labels: s.map(x => when(x[0])), datasets: [area("Merce (al costo)", s.map(x => x[2]), col("--acc")), area("Oro libero", s.map(x => x[1]), col("--up"))] },
+    options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { labels: { color: col("--fg"), boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + short(c.parsed.y),
+        // Le posizioni aperte in quel punto (★ = comprata in quel giro), dalla più grossa.
+        footer: it => { const p = (s[it[0].dataIndex][3] || []).slice().sort((a, b) => b[2] - a[2]);
+          return p.length ? ["In merce:"].concat(p.slice(0, 8).map(x => `${x[3] ? "★ " : ""}${d.names[x[0]] || x[0]}: ${fmt(x[1])} pz, ${short(x[2])}`), p.length > 8 ? [`… altre ${p.length - 8}`] : []) : ["Niente in merce"]; } } } },
+      scales: { x: { ticks: { color: col("--muted"), maxTicksLimit: 5 } }, y: { stacked: true, beginAtZero: true, ticks: { color: col("--muted"), callback: short } } } } });
+}).catch(e => { document.getElementById("updated").textContent = "Dati non disponibili: " + e; });
+</script>
+<script src="stato.js"></script>
+</body>
+</html>
