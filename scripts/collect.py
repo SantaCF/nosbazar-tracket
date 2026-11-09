@@ -8,7 +8,7 @@ Writes:
   data/latest.csv               only the last run's rows of prices.csv (read by the Google Sheet calculator)
   data/items_resolved.json      which items each search line matched
 """
-import collections, csv, gzip, json, os, statistics, sys, time, urllib.parse, urllib.request
+import collections, concurrent.futures, csv, gzip, json, os, statistics, sys, time, urllib.parse, urllib.request
 from datetime import datetime, timezone
 
 API = "https://nosbazar.com/api"
@@ -17,6 +17,9 @@ UA = "nosbazar-tracker (personal price history, github.com/SantaCF/nosbazar-trac
 PAGE = 30
 MAX_PAGES = 100
 MAX_MATCHES = 5
+# Item cercati in parallelo. Ogni pagina di nosbazar risponde in ~1,7 s (di sera anche di più): uno per volta il giro
+# arrivava a 20 minuti e veniva interrotto (09/11). Ogni ricerca resta di una pagina al secondo, come prima.
+WORKERS = int(os.environ.get("NOS_WORKERS", "4"))
 
 
 def call(path, body=None):
@@ -171,6 +174,9 @@ def main():
     ppath = "data/prices.csv"
     new_p = not os.path.exists(ppath)
     latest = []
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS)
+    found = {vnum: pool.submit(search, name, vnum) for vnum, name in items.items()}
+    pool.shutdown(wait=True)
     with gzip.open(lpath, "wt", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf, \
             open(ppath, "a", newline="", encoding="utf-8") as pf:
         lw, sw, pw = csv.writer(lf), csv.writer(sf), csv.writer(pf)
@@ -181,7 +187,7 @@ def main():
             sw.writerow(["ts", "vnum", "name", "listings", "quantity", "min", "p20", "median", "p80", "max"])
         for vnum, name in items.items():
             try:
-                rows = search(name, vnum)
+                rows = found[vnum].result()
             except Exception as e:
                 print(f"search failed for {name}: {e}", file=sys.stderr)
                 continue
