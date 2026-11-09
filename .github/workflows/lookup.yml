@@ -9,4 +9,4 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/scan.py --cats
+      - run: python3 scripts/vtest.py
