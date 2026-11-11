@@ -184,7 +184,8 @@ def owners_write(rows, rebuild):
 
 
 def main():
-    files = sorted(glob.glob("data/listings/*/*.csv.gz"))
+    # Salto i giri vuoti (solo intestazione): nosbazar fermo, prima che collect.py smettesse di salvarli (11/11).
+    files = [f for f in sorted(glob.glob("data/listings/*/*.csv.gz")) if os.path.getsize(f) > 200]
     names = {}
     if os.path.exists("data/latest.csv"):
         for r in csv.DictReader(open("data/latest.csv", encoding="utf-8")):

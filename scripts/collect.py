@@ -20,6 +20,7 @@ MAX_MATCHES = 5
 # Item cercati in parallelo. Ogni pagina di nosbazar risponde in ~1,7 s (di sera anche di più): uno per volta il giro
 # arrivava a 20 minuti e veniva interrotto (09/11). Ogni ricerca resta di una pagina al secondo, come prima.
 WORKERS = int(os.environ.get("NOS_WORKERS", "4"))
+MAX_FAILED = 0.05   # oltre il 5% di item non trovati il giro non si salva
 
 
 def call(path, body=None):
@@ -177,6 +178,28 @@ def main():
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS)
     found = {vnum: pool.submit(search, name, vnum) for vnum, name in items.items()}
     pool.shutdown(wait=True)
+    results, failed = {}, {}
+    for vnum, fut in found.items():
+        try:
+            results[vnum] = fut.result()
+        except Exception as e:
+            failed[vnum] = e
+    # Un secondo tentativo, uno alla volta, per gli item andati male (errori di rete passeggeri).
+    if failed and len(failed) <= MAX_FAILED * len(items):
+        time.sleep(10)
+        for vnum in list(failed):
+            try:
+                results[vnum] = search(items[vnum], vnum)
+                del failed[vnum]
+            except Exception as e:
+                failed[vnum] = e
+    # Se nosbazar non risponde (11/11 mattina: "No search worker is available", manutenzione), un giro con pochi o
+    # zero annunci farebbe sembrare venduto tutto quello che sparisce, e i file vuoti bloccavano sales.py. Meglio
+    # saltare il giro: il watchdog avvisa se la raccolta resta ferma.
+    if len(failed) > MAX_FAILED * len(items):
+        print(f"Giro saltato: {len(failed)} item su {len(items)} non trovati "
+              f"(es. {next(iter(failed.values()))}). Nessun dato salvato.", file=sys.stderr)
+        return
     with gzip.open(lpath, "wt", newline="", encoding="utf-8") as lf, open(spath, "a", newline="", encoding="utf-8") as sf, \
             open(ppath, "a", newline="", encoding="utf-8") as pf:
         lw, sw, pw = csv.writer(lf), csv.writer(sf), csv.writer(pf)
@@ -187,7 +210,9 @@ def main():
             sw.writerow(["ts", "vnum", "name", "listings", "quantity", "min", "p20", "median", "p80", "max"])
         for vnum, name in items.items():
             try:
-                rows = found[vnum].result()
+                if vnum in failed:
+                    raise failed[vnum]
+                rows = results[vnum]
             except Exception as e:
                 print(f"search failed for {name}: {e}", file=sys.stderr)
                 continue
