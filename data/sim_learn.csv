@@ -1,6 +1,6 @@
 vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1012,Seme della potenza,now,3,3,37.2,10.09,0.83,0.5262,1314399
-1013,Pietra Gillion,hold,1,1,5.0,13.78,1.0,0.0407,296784
+1013,Pietra Gillion,hold,1,1,5.0,7.56,1.0,0.0407,296784
 1013,Pietra Gillion,now,1,1,2.8,4.74,0.74,0.0622,499168
 1028,Cristallo della luna nuova,now,3,2,8.4,5.23,0.66,0.1417,1008787
 1029,Cristallo di mezza Luna,now,1,1,11.8,8.13,0.74,0.0533,323861
@@ -17,8 +17,9 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 2282,Piuma d'angelo,now,1,1,0.8,5.16,0.74,0.0999,314104
 2307,Cubetti di ghiaccio,now,1,0,,5.85,0.49,0.058,94254
 2621,Anima raggiante degli Eroi leggendari,now,2,2,20.5,15.59,0.8,0.1528,731853
-2630,Gemma del drago,hold,1,1,7.8,9.63,1.0,0.1515,1136205
+2630,Gemma del drago,hold,1,1,7.8,3.41,1.0,0.1515,1136205
 2630,Gemma del drago,now,2,2,12.1,7.13,0.8,0.1043,791505
+2748,Frammenti di Dimensiolite,hold,1,1,0.8,2.68,1.0,0.2309,488940
 2748,Frammenti di Dimensiolite,now,3,2,2.1,5.19,0.66,0.237,2255620
 2774,Polvere di forza dimensionale di Nezarun,now,1,1,7.0,5.86,0.74,0.1246,314055
 284,Amuleto del rafforzamento,now,2,1,0.2,3.58,0.6,0.5997,1488993
