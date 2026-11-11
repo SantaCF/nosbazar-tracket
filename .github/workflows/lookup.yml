@@ -6,7 +6,14 @@ on:
 jobs:
   lookup:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - run: mkdir -p data && time python3 scripts/collect.py > out.txt && grep -c annunci out.txt && zcat data/listings/*/*.csv.gz | wc -l
+      - run: |
+          for u in https://nosbazar.com/ https://nosbazar.com/api/servers https://nosbazar.com/api/items/static/1013; do
+            echo "== $u"; curl -s -o /tmp/b -w "%{http_code} %{time_total}s\n" -A "Mozilla/5.0" "$u"; head -c 300 /tmp/b; echo
+          done
+          echo "== search UA tracker"
+          curl -s -o /tmp/b -w "%{http_code}\n" -A "nosbazar-tracker (personal price history, github.com/SantaCF/nosbazar-tracket)" -H "Content-Type: application/json" -d '{"server":1,"filters":{"index":0,"category":0,"sub_category":0,"level":0,"rare":0,"upgrade":0,"order":0,"vnum":[]},"lang":"IT","name":"Pietra Gillion"}' https://nosbazar.com/api/search; head -c 300 /tmp/b; echo
+          echo "== search UA browser"
+          curl -s -o /tmp/b -w "%{http_code}\n" -A "Mozilla/5.0" -H "Content-Type: application/json" -d '{"server":1,"filters":{"index":0,"category":0,"sub_category":0,"level":0,"rare":0,"upgrade":0,"order":0,"vnum":[]},"lang":"IT","name":"Pietra Gillion"}' https://nosbazar.com/api/search; head -c 300 /tmp/b; echo
+          curl -sI https://nosbazar.com/ | head -20
