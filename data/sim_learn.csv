@@ -1,14 +1,14 @@
 vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1011,Pozione ricostituente gigante,now,1,1,1.8,2.72,0.71,0.2279,583352
 1012,Seme della potenza,now,3,3,37.2,8.84,0.81,0.5262,1314399
-1013,Pietra Gillion,hold,1,1,5.0,8.11,1.0,0.0407,296784
+1013,Pietra Gillion,hold,1,1,5.0,7.84,1.0,0.0407,296784
 1013,Pietra Gillion,now,1,1,2.8,2.86,0.71,0.0622,499168
 1028,Cristallo della luna nuova,now,3,2,8.4,3.98,0.64,0.1417,1008787
 1029,Cristallo di mezza Luna,now,1,1,11.8,6.26,0.71,0.0533,323861
-1030,Cristallo di luna piena,hold,1,1,2.2,4.15,1.0,0.1747,448544
+1030,Cristallo di luna piena,hold,1,1,2.2,3.87,1.0,0.1747,448544
 1030,Cristallo di luna piena,now,6,5,5.5,3.53,0.76,0.0622,2101968
 1092,Pezzo spazio-temporale (gruppo),now,5,3,2.0,3.0,0.61,0.123,3267329
-1131,Sigillo del raid dello Slade gigante,hold,1,1,1.2,3.25,1.0,0.087,441488
+1131,Sigillo del raid dello Slade gigante,hold,1,1,1.2,2.97,1.0,0.087,441488
 1247,Pozione difensiva,now,2,2,4.3,2.91,0.77,0.2404,904890
 1249,Pozione dell'esperienza,now,1,0,,3.35,0.46,-0.1141,-940053
 1428,Profumo,now,1,0,,3.35,0.46,-0.0462,-143026
@@ -17,18 +17,18 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 2010,Pezzo di vetro verde,now,1,1,22.9,6.43,0.71,1.0245,405223
 2091,Tela di ragno,now,1,0,,3.35,0.46,0.3032,460144
 2092,Occhio del Re ragno,now,1,0,,3.35,0.46,-0.4519,-925082
-2094,Perla delle tenebre,hold,1,1,35.5,7.5,1.0,0.3003,700486
+2094,Perla delle tenebre,hold,1,1,35.5,7.23,1.0,0.3003,700486
 2196,Sgombro,now,1,0,,3.35,0.46,-0.2517,-922752
 2282,Piuma d'angelo,now,2,1,0.8,3.24,0.57,0.0674,395887
 2307,Cubetti di ghiaccio,now,1,0,,3.35,0.46,0.058,94254
 2621,Anima raggiante degli Eroi leggendari,now,2,2,20.5,14.09,0.77,0.1528,731853
-2630,Gemma del drago,hold,1,1,7.8,3.96,1.0,0.1515,1136205
+2630,Gemma del drago,hold,1,1,7.8,3.69,1.0,0.1515,1136205
 2630,Gemma del drago,now,3,2,12.1,6.2,0.64,0.0352,-342271
-2748,Frammenti di Dimensiolite,hold,1,1,0.8,3.23,1.0,0.2309,488940
+2748,Frammenti di Dimensiolite,hold,2,2,2.6,2.69,1.0,0.1677,1258238
 2748,Frammenti di Dimensiolite,now,3,2,2.1,3.93,0.64,0.237,2255620
 2774,Polvere di forza dimensionale di Nezarun,now,1,1,7.0,3.98,0.71,0.1246,314055
 284,Amuleto del rafforzamento,now,3,2,0.9,1.89,0.64,0.7105,2420992
-4264,Amuleto eroico della benedizione (statico),hold,1,1,4.0,5.19,1.0,0.2,999999
+4264,Amuleto eroico della benedizione (statico),hold,1,1,4.0,4.92,1.0,0.2,999999
 4340,Speedbooster magico (1 giorno),now,3,2,8.7,5.07,0.64,0.1052,871853
 5500,Sigillo del raid di Lord Draco,now,1,0,,3.35,0.46,0.0956,428980
 5512,Sigillo del raid di Glacerus,now,3,1,4.0,5.25,0.48,0.1185,898977
