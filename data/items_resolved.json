@@ -764,5 +764,23 @@
       "vnum": 2226,
       "name": "Freccia contaminata"
     }
+  ],
+  "1269": [
+    {
+      "vnum": 1269,
+      "name": "Coupon durabilitŕ"
+    }
+  ],
+  "1270": [
+    {
+      "vnum": 1270,
+      "name": "Coupon ricompensa"
+    }
+  ],
+  "1271": [
+    {
+      "vnum": 1271,
+      "name": "Coupon produzione"
+    }
   ]
 }
