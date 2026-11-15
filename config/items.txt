@@ -162,3 +162,7 @@ Piuma d'angelo
 # 2037 Metallo raro, 2041 Legno raro, 2045 Stoffa rara, 2049 Pelle rara, 2213 Metallo leggendario, 2216 Pelle leggendaria,
 # 9356 Giocherellone, 2200 Ago, 2261 Gemma nera, 2195 Verme, 2199 Mithrill, 2194 Foglia rara, 2198 Ascia,
 # 2231 Punta di spada, 2193 Oriharcon, 2197 Martello, 2226 Freccia contaminata
+1269
+1270
+1271
+# Coupon minigiochi: 1269 Coupon durabilità, 1270 Coupon ricompensa (premio doppio), 1271 Coupon produzione (+500 punti)
