@@ -41,8 +41,15 @@
   <input type="hidden" id="metric" value="real">
   <div class="wrap"><table id="st"></table></div>
   <details class="how"><summary>Come funziona</summary><p>Guadagno su un solo craft (o run) a ogni giro, senza contare la quantità: serve a capire se il margine di adesso è quello solito o un picco. Con "realistico" compri al prezzo lotto 2% e vendi al prezzo realistico. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. ▲/▼ = ultimo giro molto sopra/sotto la media 24h.</p></details>
+  <h2>Minigiochi: quale fare (livelli 4 e 5)</h2>
+  <div class="wrap"><table id="mg"></table></div>
+  <h3 style="margin:14px 0 4px;font-size:15px">I loot dei minigiochi</h3>
+  <div class="wrap"><table id="mgLoot"></table></div>
+  <details class="how"><summary>Come funziona</summary><p>Valore atteso di una partita = per ogni loot del livello, probabilità × pezzi × prezzo di vendita realistico dell'ultimo giro (senza commissione se hai la medaglia). Le probabilità sono quelle delle tabelle del gioco; dove non sommano a 100 le tratto come pesi (una ricompensa a partita). Ogni partita costa 50 punti produzione in tutti i minigiochi, quindi il confronto è per partita. Conviene il livello 5 solo se riesci a farlo: altrimenti guarda il valore del livello 4.</p>
+  <p>"Si vende poco": meno di 50 pezzi venduti al giorno sul bazar, rischi di restare con la merce in mano. I loot senza prezzo (nessun annuncio) non contano nel valore.</p></details>
 </main>
 <script src="ricette.js"></script>
+<script src="minigiochi.js"></script>
 <script src="flow.js"></script>
 <script>
 // Commissione bazar 0,5% (minimo 500 per annuncio); con la medaglia del NosBazar attiva non si paga.
@@ -553,6 +560,29 @@ function draw(metric) {
   stability(series);
   capacity(metric);
 }
+</script>
+<script>
+// Minigiochi: sezione a parte, legge da sola data/latest.csv.
+fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t => {
+  if (!t) return;
+  const [h, ...ls] = t.trim().split(/\r?\n/), k = parse(h), items = {};
+  ls.forEach(l => { const v = parse(l), o = {}; k.forEach((x, i) => o[x] = v[i]);
+    items[o.vnum] = { name: o.name, sell: +o.sell || 0, wp10: +o.wp10 || 0, day: +o.sold_day || 0 }; });
+  const rows = minigiochiRows(items, TAX), best = rows[0];
+  const pctTxt = x => Math.round(x * 100) + "%";
+  document.getElementById("mg").innerHTML = "<tr><th>Minigioco</th><th>A partita</th><th>Da dove viene il valore</th></tr>" + rows.map(r =>
+    `<tr><td>${r.game}<br><span class="muted">livello ${r.lv}</span></td><td class="${r === best ? "pos" : ""}"><b>${short(r.ev)}</b></td>` +
+    `<td>${r.parts.slice(0, 3).map(x => `${x.q}× ${x.name} <span class="muted">${pctTxt(x.val / r.ev)}</span>${x.noData ? ' <span class="muted">vendite ancora da misurare</span>' : x.day < 50 ? ' <span class="warn">si vende poco</span>' : ""}`).join("<br>")}` +
+    `${r.missing.length ? `<br><span class="muted">${r.missing.length} loot senza prezzo</span>` : ""}</td></tr>`).join("");
+  // Loot: prezzo, quanto si vende, in quali minigiochi esce (liv. 4-5) e quanto pesa nel valore di quella partita.
+  const L = {};
+  rows.forEach(r => r.parts.forEach(x => { const o = (L[x.v] ??= { name: x.name, price: x.price, day: x.day, noData: x.noData, where: [], best: 0 });
+    o.where.push(`${r.game.split(" ")[0]} ${r.lv}`); o.best = Math.max(o.best, x.val / r.ev); }));
+  const loot = Object.values(L).sort((a, b) => b.best - a.best);
+  document.getElementById("mgLoot").innerHTML = "<tr><th>Loot</th><th>Prezzo</th><th>Venduti/giorno</th><th>Dove</th></tr>" + loot.map(o =>
+    `<tr><td>${o.name}<br><span class="${o.best >= 0.2 && o.day >= 50 ? "pos" : o.best < 0.05 ? "muted" : ""}">${o.best >= 0.2 && o.day >= 50 ? "utile, vendilo" : o.best >= 0.2 && o.noData ? "vale, vendite da verificare" : o.best >= 0.2 ? "vale, ma si vende poco" : o.best < 0.05 ? "conta poco" : "nella media"}</span></td>` +
+    `<td>${fmt(o.price)}</td><td>${o.noData ? '<span class="muted">da domani</span>' : o.day ? "≈ " + fmt(o.day) : "0"}</td><td class="muted">${o.where.join(", ")}</td></tr>`).join("");
+});
 </script>
 <script src="stato.js"></script>
 </body>
