@@ -2,7 +2,7 @@
 // Ogni livello: [vnum, pezzi, probabilità %] come nelle tabelle del gioco. Le probabilità non sempre sommano a 100
 // (es. Stagno liv. 5 = 88%): le tratto come pesi, cioè una ricompensa a partita, scelta in proporzione.
 // Ogni partita dà il premio a due pg (chi gioca + l'host) e costa uguale in tutti i minigiochi (Alessio 15/11):
-// 120 punti produzione (96 con la fata −20%), 30 di durabilità del minigioco dell'host (1 = 100 oro, max 12.000).
+// 100 punti produzione (80 con la fata −20%; 2.000 al giorno per pg), 30 di durabilità del minigioco dell'host (1 = 100 oro, max 12.000).
 const MINIGIOCHI = {
   "Stagno magnifico": {
     4: [[2037, 4, 2], [2041, 4, 1], [2045, 4, 20], [2049, 4, 2], [2196, 2, 20], [2200, 2, 10], [1028, 2, 25], [1029, 2, 25]],
@@ -18,7 +18,7 @@ const MINIGIOCHI = {
     5: [[2213, 1, 2], [2214, 1, 1], [2215, 1, 1], [2216, 1, 1], [2193, 2, 40], [2201, 1, 5], [1030, 2, 35], [9356, 1, 1]] },
 };
 
-const MG_COST = { rewards: 2, pp: 120, ppFairy: 96, dur: 30, durGold: 100, durMax: 12000, ppCoupon: 500, durCoupon: 300 };
+const MG_COST = { rewards: 2, pp: 100, ppFairy: 80, dur: 30, durGold: 100, durMax: 12000, ppCoupon: 500, durCoupon: 300 };
 const MG_COUPON = { prod: 1271, dur: 1269, reward: 1270 };
 
 // Loot aggiunti alla raccolta il 15/11: per qualche giorno le vendite al giorno non sono ancora misurate.
