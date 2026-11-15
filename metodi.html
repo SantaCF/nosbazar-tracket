@@ -43,9 +43,11 @@
   <details class="how"><summary>Come funziona</summary><p>Guadagno su un solo craft (o run) a ogni giro, senza contare la quantità: serve a capire se il margine di adesso è quello solito o un picco. Con "realistico" compri al prezzo lotto 2% e vendi al prezzo realistico. "Peggiore" = il giro peggiore delle ultime 24 ore; "In guadagno" = quota dei giri degli ultimi 7 giorni in cui il metodo era positivo. ▲/▼ = ultimo giro molto sopra/sotto la media 24h.</p></details>
   <h2>Minigiochi: quale fare (livelli 4 e 5)</h2>
   <div class="wrap"><table id="mg"></table></div>
+  <h3 style="margin:14px 0 4px;font-size:15px">Coupon</h3>
+  <div class="wrap"><table id="mgCoupon"></table></div>
   <h3 style="margin:14px 0 4px;font-size:15px">I loot dei minigiochi</h3>
   <div class="wrap"><table id="mgLoot"></table></div>
-  <details class="how"><summary>Come funziona</summary><p>Valore atteso di una partita = per ogni loot del livello, probabilità × pezzi × prezzo di vendita realistico dell'ultimo giro (senza commissione se hai la medaglia). Le probabilità sono quelle delle tabelle del gioco; dove non sommano a 100 le tratto come pesi (una ricompensa a partita). Ogni partita costa 50 punti produzione in tutti i minigiochi, quindi il confronto è per partita. Conviene il livello 5 solo se riesci a farlo: altrimenti guarda il valore del livello 4.</p>
+  <details class="how"><summary>Come funziona</summary><p>Valore atteso di una partita = per ogni loot del livello, probabilità × pezzi × prezzo di vendita realistico dell'ultimo giro (senza commissione se hai la medaglia). Le probabilità sono quelle delle tabelle del gioco; dove non sommano a 100 le tratto come pesi (una ricompensa a partita). Ogni partita dà il premio a due pg (chi gioca e l'host), quindi vale il doppio di un premio. Costa uguale in tutti i minigiochi: 120 punti produzione (96 con la fata) e 30 di durabilità del minigioco dell'host, che si ricarica a 100 oro l'una (3.000 oro a partita). "Netto" toglie la durabilità e i punti pagati con il Coupon produzione. Conviene il livello 5 solo se riesci a farlo: altrimenti guarda il valore del livello 4.</p>
   <p>"Si vende poco": meno di 50 pezzi venduti al giorno sul bazar, rischi di restare con la merce in mano. I loot senza prezzo (nessun annuncio) non contano nel valore.</p></details>
 </main>
 <script src="ricette.js"></script>
@@ -570,10 +572,16 @@ fetch("data/latest.csv?" + Date.now()).then(r => r.ok ? r.text() : "").then(t =>
     items[o.vnum] = { name: o.name, sell: +o.sell || 0, wp10: +o.wp10 || 0, day: +o.sold_day || 0 }; });
   const rows = minigiochiRows(items, TAX), best = rows[0];
   const pctTxt = x => Math.round(x * 100) + "%";
-  document.getElementById("mg").innerHTML = "<tr><th>Minigioco</th><th>A partita</th><th>Da dove viene il valore</th></tr>" + rows.map(r =>
-    `<tr><td>${r.game}<br><span class="muted">livello ${r.lv}</span></td><td class="${r === best ? "pos" : ""}"><b>${short(r.ev)}</b></td>` +
+  const cp = minigiochiCoupons(items, rows);
+  document.getElementById("mg").innerHTML = "<tr><th>Minigioco</th><th>Netto a partita</th><th>Da dove viene il valore</th></tr>" + rows.map(r =>
+    `<tr><td>${r.game}<br><span class="muted">livello ${r.lv}</span></td><td class="${r === best ? "pos" : ""}"><b>${short(cp.net(r))}</b><br><span class="muted">2 premi da ${short(r.ev)}</span></td>` +
     `<td>${r.parts.slice(0, 3).map(x => `${x.q}× ${x.name} <span class="muted">${pctTxt(x.val / r.ev)}</span>${x.noData ? ' <span class="muted">vendite ancora da misurare</span>' : x.day < 50 ? ' <span class="warn">si vende poco</span>' : ""}`).join("<br>")}` +
     `${r.missing.length ? `<br><span class="muted">${r.missing.length} loot senza prezzo</span>` : ""}</td></tr>`).join("");
+  const C = MG_COST;
+  document.getElementById("mgCoupon").innerHTML = "<tr><th>Coupon</th><th>Prezzo</th><th>Conviene?</th></tr>" +
+    `<tr><td>Produzione<br><span class="muted">+${C.ppCoupon} punti</span></td><td>${fmt(cp.prod)}</td><td>${cp.ppGame == null ? "-" : `<span class="pos">Sì, sempre</span><br><span class="muted">${fmt(cp.ppGame)} oro a partita (${fmt(cp.ppGameF)} con la fata), mentre anche il minigioco peggiore rende ${short(cp.net(rows[rows.length - 1]))} netti a partita. Ogni coupon sono ${Math.floor(C.ppCoupon / C.pp)} partite (${Math.floor(C.ppCoupon / C.ppFairy)} con la fata).</span>`}</td></tr>` +
+    `<tr><td>Durabilità<br><span class="muted">+${C.durCoupon} durabilità</span></td><td>${fmt(cp.dur)}</td><td>${cp.durCouponPer == null ? "-" : cp.durCouponPer < C.durGold ? `<span class="pos">Sì</span><br><span class="muted">${fmt(cp.durCouponPer)} oro per punto, l'oro ne costa ${C.durGold}</span>` : `<span class="neg">No, paga in oro</span><br><span class="muted">${fmt(cp.durCouponPer)} oro per punto, in oro costa ${C.durGold}. Conviene sotto ${fmt(C.durGold * C.durCoupon)}.</span>`}</td></tr>` +
+    `<tr><td>Ricompensa<br><span class="muted">premio doppio</span></td><td>${fmt(cp.rew)}</td><td>${cp.rew == null ? "-" : `<span class="warn">Solo sui premi grossi</span><br><span class="muted">Te lo chiede solo se ce l'hai nell'inventario. Raddoppia un premio solo se vale più di ${short(cp.rew)}${cp.big.length ? ": " + cp.big.map(x => `${x.q}× ${x.name} (${short(x.val)}${x.noData || x.day < 50 ? ", mercato da verificare" : ""})`).join(", ") : ": adesso nessuno"}. A caso non conviene.</span>`}</td></tr>`;
   // Loot: prezzo, quanto si vende, in quali minigiochi esce (liv. 4-5) e quanto pesa nel valore di quella partita.
   const L = {};
   rows.forEach(r => r.parts.forEach(x => { const o = (L[x.v] ??= { name: x.name, price: x.price, day: x.day, noData: x.noData, where: [], best: 0 });
