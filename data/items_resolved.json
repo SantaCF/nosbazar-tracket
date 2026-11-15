@@ -662,5 +662,107 @@
       "vnum": 2212,
       "name": "Pietra dell'ombra"
     }
+  ],
+  "2037": [
+    {
+      "vnum": 2037,
+      "name": "Metallo raro"
+    }
+  ],
+  "2041": [
+    {
+      "vnum": 2041,
+      "name": "Legno raro"
+    }
+  ],
+  "2045": [
+    {
+      "vnum": 2045,
+      "name": "Stoffa rara"
+    }
+  ],
+  "2049": [
+    {
+      "vnum": 2049,
+      "name": "Pelle rara"
+    }
+  ],
+  "2213": [
+    {
+      "vnum": 2213,
+      "name": "Metallo leggendario"
+    }
+  ],
+  "2216": [
+    {
+      "vnum": 2216,
+      "name": "Pelle leggendaria"
+    }
+  ],
+  "9356": [
+    {
+      "vnum": 9356,
+      "name": "Giocherellone"
+    }
+  ],
+  "2200": [
+    {
+      "vnum": 2200,
+      "name": "Ago"
+    }
+  ],
+  "2261": [
+    {
+      "vnum": 2261,
+      "name": "Gemma nera"
+    }
+  ],
+  "2195": [
+    {
+      "vnum": 2195,
+      "name": "Verme"
+    }
+  ],
+  "2199": [
+    {
+      "vnum": 2199,
+      "name": "Mithrill"
+    }
+  ],
+  "2194": [
+    {
+      "vnum": 2194,
+      "name": "Foglia rara"
+    }
+  ],
+  "2198": [
+    {
+      "vnum": 2198,
+      "name": "Ascia"
+    }
+  ],
+  "2231": [
+    {
+      "vnum": 2231,
+      "name": "Punta di spada"
+    }
+  ],
+  "2193": [
+    {
+      "vnum": 2193,
+      "name": "Oriharcon"
+    }
+  ],
+  "2197": [
+    {
+      "vnum": 2197,
+      "name": "Martello"
+    }
+  ],
+  "2226": [
+    {
+      "vnum": 2226,
+      "name": "Freccia contaminata"
+    }
   ]
 }
