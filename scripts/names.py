@@ -14,4 +14,6 @@ def run(name, vnum, by_vnum):
 for name, v in [("Ago", 2200), ("Gillion", 1013), ("Cristallo di luna piena", 1030), ("Giocherellone", 9356), ("Pozione del recupero degli SpP base", 1245), ("Mela", 2206)]:
     for bv in (False, True):
         t = time.time()
-        print(name, v, "vnum" if bv else "nome", run(name, v, bv), round(time.time() - t), "s", flush=True)
+        try: r = run(name, v, bv)
+        except Exception as e: r = "ERR " + str(e) + " " + (e.read().decode()[:200] if hasattr(e, "read") else "")
+        print(name, v, "vnum" if bv else "nome", r, round(time.time() - t), "s", flush=True)
