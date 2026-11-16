@@ -166,3 +166,5 @@ Piuma d'angelo
 1270
 1271
 # Coupon minigiochi: 1269 Coupon durabilità, 1270 Coupon ricompensa (premio doppio), 1271 Coupon produzione (+500 punti)
+2192
+# 2192 Carpa (Stagno)
