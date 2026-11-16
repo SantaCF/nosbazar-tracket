@@ -46,10 +46,12 @@ def resolve(query):
 
 
 def search(name, vnum):
+    # Per numero item, non per nome: con nomi corti ("Ago") nosbazar rifiuta la ricerca (oltre 50 item),
+    # e con nomi comuni legge anche gli annunci di altri item. Stessi annunci, meno pagine (prova 16/11).
     out = []
     for page in range(MAX_PAGES):
         body = {"server": SERVER, "filters": {"index": page, "category": 0, "sub_category": 0, "level": 0,
-                "rare": 0, "upgrade": 0, "order": 0, "vnum": []}, "lang": "IT", "name": name}
+                "rare": 0, "upgrade": 0, "order": 0, "vnum": [vnum]}, "lang": "IT", "name": ""}
         items = call("/search", body).get("items", [])
         out += [i for i in items if i.get("item_vnum") == vnum]
         time.sleep(1)
