@@ -5,10 +5,11 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1013,Pietra Gillion,now,2,2,13.1,4.36,0.76,0.0744,1274388
 1014,Polvere del sottosuolo,now,1,0,,3.08,0.45,-0.0088,-38612
 1016,Pietra dell'anima completa,hold,1,0,,4.15,0.64,-0.2076,-151698
+1027,Sabbia del Fiume di Tuono,now,1,0,,3.08,0.45,6.3741,260937
 1028,Cristallo della luna nuova,now,5,3,1.8,2.86,0.6,0.089,1365946
 1029,Cristallo di mezza Luna,now,1,1,11.8,6.05,0.7,0.0533,323861
 1030,Cristallo di luna piena,hold,3,3,2.2,4.15,0.93,0.1114,2437642
-1030,Cristallo di luna piena,now,6,5,5.5,3.44,0.76,0.0622,2101968
+1030,Cristallo di luna piena,now,6,5,5.5,3.44,0.75,0.0622,2101968
 1092,Pezzo spazio-temporale (gruppo),now,7,4,4.6,2.89,0.58,0.1092,4691204
 1127,Sigillo del raid di Madre Cuby,hold,1,0,,4.15,0.64,-0.0075,-90499
 1131,Sigillo del raid dello Slade gigante,hold,1,1,1.2,3.25,0.89,0.087,441488
@@ -27,19 +28,19 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 2196,Sgombro,now,1,0,,3.08,0.45,-0.2517,-922752
 2204,Balena,hold,1,1,18.6,4.83,0.89,0.7726,1058063
 2282,Piuma d'angelo,hold,1,1,0.2,3.36,0.89,0.0923,645963
-2282,Piuma d'angelo,now,3,2,13.3,5.01,0.64,0.0725,1028094
+2282,Piuma d'angelo,now,3,2,13.3,5.01,0.63,0.0725,1028094
 2307,Cubetti di ghiaccio,now,1,0,,3.08,0.45,0.058,94254
 2621,Anima raggiante degli Eroi leggendari,hold,1,1,14.7,4.35,0.89,0.2964,646999
-2621,Anima raggiante degli Eroi leggendari,now,4,3,4.0,10.11,0.69,0.2592,2225122
+2621,Anima raggiante degli Eroi leggendari,now,4,3,4.0,10.11,0.68,0.2592,2225122
 2630,Gemma del drago,hold,2,2,25.2,6.42,0.91,0.147,1848777
-2630,Gemma del drago,now,4,3,6.8,5.01,0.69,0.0493,310642
+2630,Gemma del drago,now,4,3,6.8,5.01,0.68,0.0493,310642
 2748,Frammenti di Dimensiolite,hold,2,2,2.6,2.91,0.91,0.1677,1258238
-2748,Frammenti di Dimensiolite,now,3,2,2.1,3.8,0.64,0.237,2255620
+2748,Frammenti di Dimensiolite,now,3,2,2.1,3.8,0.63,0.237,2255620
 2774,Polvere di forza dimensionale di Nezarun,now,1,1,7.0,3.78,0.7,0.1246,314055
-284,Amuleto del rafforzamento,now,4,3,1.5,1.71,0.69,0.587,3100994
+284,Amuleto del rafforzamento,now,4,3,1.5,1.71,0.68,0.587,3100994
 4264,Amuleto eroico della benedizione (statico),hold,1,1,4.0,5.19,0.89,0.2,999999
 4264,Amuleto eroico della benedizione (statico),now,2,2,0.5,2.0,0.76,184210.1263,8499980
-4340,Speedbooster magico (1 giorno),now,3,2,8.7,4.94,0.64,0.1052,871853
+4340,Speedbooster magico (1 giorno),now,3,2,8.7,4.94,0.63,0.1052,871853
 5500,Sigillo del raid di Lord Draco,now,1,0,,3.08,0.45,0.0956,428980
 5512,Sigillo del raid di Glacerus,hold,1,0,,4.15,0.64,-0.0511,-518063
 5512,Sigillo del raid di Glacerus,now,3,1,4.0,5.11,0.47,0.1185,898977
