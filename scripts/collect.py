@@ -16,6 +16,7 @@ SERVER = int(os.environ.get("NOS_SERVER", "1"))  # 1 = EU-Dragonveil
 UA = "nosbazar-tracker (personal price history, github.com/SantaCF/nosbazar-tracket)"
 PAGE = 30
 MAX_PAGES = 100
+TIMEOUT = int(os.environ.get("NOS_TIMEOUT", "60"))  # secondi per richiesta: nei giorni lenti nosbazar ne impiega 15-25
 MAX_MATCHES = 5
 # Item cercati in parallelo. Ogni pagina di nosbazar risponde in ~1,7 s (di sera anche di più): uno per volta il giro
 # arrivava a 20 minuti e veniva interrotto (09/11). Ogni ricerca resta di una pagina al secondo, come prima.
@@ -28,7 +29,7 @@ def call(path, body=None):
     req = urllib.request.Request(API + path, data=data, headers={"User-Agent": UA, "Content-Type": "application/json"})
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
                 return json.load(r)
         except Exception as e:  # network hiccup: retry with backoff
             if attempt == 2:

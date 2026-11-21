@@ -14,14 +14,14 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 55   # nosbazar a volte risponde in 15-25 s a richiesta (21/11): il giro arriva a ~35 min
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main   # sempre l'ultima versione, non quella del momento in cui il giro è stato richiesto
       - name: Ricostruisce prices.csv se manca o ha un formato vecchio
         run: head -1 data/prices.csv 2>/dev/null | grep -q lot_price || python3 scripts/backfill_prices.py
-      - run: python3 scripts/collect.py
+      - run: python3 -u scripts/collect.py
         env:
           NOS_SERVER: '1'   # 1 = EU-Dragonveil
       - name: Stima vendite tra questo giro e il precedente
