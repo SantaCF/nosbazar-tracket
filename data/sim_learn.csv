@@ -6,10 +6,10 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1014,Polvere del sottosuolo,now,3,2,5.1,4.13,0.61,0.1184,5456399
 1016,Pietra dell'anima completa,hold,1,0,,4.15,0.62,-0.2076,-151698
 1027,Sabbia del Fiume di Tuono,now,1,0,,4.21,0.41,6.3741,260937
-1028,Cristallo della luna nuova,now,6,3,1.8,3.23,0.52,0.0826,1573315
+1028,Cristallo della luna nuova,now,6,3,1.8,3.23,0.51,0.0826,1573315
 1029,Cristallo di mezza Luna,now,2,1,11.8,8.52,0.53,-0.0174,-410850
 1030,Cristallo di luna piena,hold,3,3,2.2,4.15,0.91,0.1114,2437642
-1030,Cristallo di luna piena,now,8,6,5.9,4.59,0.7,0.0553,4272508
+1030,Cristallo di luna piena,now,8,6,5.9,4.59,0.69,0.0553,4272508
 1092,Pezzo spazio-temporale (gruppo),now,7,4,4.6,3.23,0.56,0.1092,4691204
 1127,Sigillo del raid di Madre Cuby,hold,1,0,,4.15,0.62,-0.0075,-90499
 1131,Sigillo del raid dello Slade gigante,hold,1,1,1.2,3.25,0.87,0.087,441488
@@ -36,7 +36,7 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 2621,Anima raggiante degli Eroi leggendari,hold,1,1,14.7,4.35,0.87,0.2964,646999
 2621,Anima raggiante degli Eroi leggendari,now,4,3,4.0,10.6,0.66,0.2592,2225122
 2630,Gemma del drago,hold,2,2,25.2,6.42,0.9,0.147,1848777
-2630,Gemma del drago,now,5,4,4.6,5.1,0.71,0.0465,1074983
+2630,Gemma del drago,now,6,4,4.6,5.16,0.63,0.0393,1093851
 2748,Frammenti di Dimensiolite,hold,2,2,2.6,2.91,0.9,0.1677,1258238
 2748,Frammenti di Dimensiolite,now,5,3,4.0,6.58,0.58,0.1379,2338259
 2774,Polvere di forza dimensionale di Nezarun,now,2,1,7.0,4.88,0.53,0.0373,-789775
