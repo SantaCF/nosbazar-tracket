@@ -1,54 +1,54 @@
 vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
-1011,Pozione ricostituente gigante,now,3,1,1.8,2.35,0.44,0.1337,1288422
-1012,Seme della potenza,now,3,3,37.2,9.09,0.78,0.5262,1314399
+1011,Pozione ricostituente gigante,now,3,1,1.8,2.29,0.44,0.1337,1288422
+1012,Seme della potenza,now,3,3,37.2,9.03,0.78,0.5262,1314399
 1013,Pietra Gillion,hold,1,1,5.0,8.08,0.88,0.0407,296784
-1013,Pietra Gillion,now,4,2,13.1,5.23,0.52,-0.0059,-553373
-1014,Polvere del sottosuolo,now,4,3,7.2,4.11,0.66,0.1068,6499681
+1013,Pietra Gillion,now,4,2,13.1,5.18,0.52,-0.0059,-553373
+1014,Polvere del sottosuolo,now,4,3,7.2,4.07,0.67,0.1068,6499681
 1016,Pietra dell'anima completa,hold,1,0,,4.11,0.63,-0.2076,-151698
-1027,Sabbia del Fiume di Tuono,now,1,0,,3.85,0.41,6.3741,260937
-1028,Cristallo della luna nuova,now,6,3,1.8,3.1,0.52,0.0826,1573315
-1029,Cristallo di mezza Luna,now,2,1,11.8,8.3,0.53,-0.0174,-410850
+1027,Sabbia del Fiume di Tuono,now,1,0,,3.73,0.42,6.3741,260937
+1028,Cristallo della luna nuova,now,6,3,1.8,3.07,0.52,0.0826,1573315
+1029,Cristallo di mezza Luna,now,2,1,11.8,8.23,0.53,-0.0174,-410850
 1030,Cristallo di luna piena,hold,3,3,2.2,4.13,0.92,0.1114,2437642
-1030,Cristallo di luna piena,now,9,7,5.5,3.68,0.72,0.0613,5084312
-1092,Pezzo spazio-temporale (gruppo),now,7,4,4.6,3.12,0.56,0.1092,4691204
+1030,Cristallo di luna piena,now,10,8,5.2,3.26,0.74,0.0714,6180167
+1092,Pezzo spazio-temporale (gruppo),now,7,4,4.6,3.08,0.57,0.1092,4691204
 1127,Sigillo del raid di Madre Cuby,hold,1,0,,4.11,0.63,-0.0075,-90499
 1131,Sigillo del raid dello Slade gigante,hold,1,1,1.2,3.22,0.88,0.087,441488
-1247,Pozione difensiva,now,2,2,4.3,3.21,0.73,0.2404,904890
-1249,Pozione dell'esperienza,now,1,0,,3.85,0.41,-0.1141,-940053
-1271,Coupon produzione,now,1,0,,3.85,0.41,-0.017,-135095
-1296,Amplificatore della fata,now,1,1,34.1,7.15,0.66,0.0775,780176
+1247,Pozione difensiva,now,2,2,4.3,3.14,0.73,0.2404,904890
+1249,Pozione dell'esperienza,now,1,0,,3.73,0.42,-0.1141,-940053
+1271,Coupon produzione,now,1,0,,3.73,0.42,-0.017,-135095
+1296,Amplificatore della fata,now,1,1,34.1,7.06,0.67,0.0775,780176
 1364,Pergamena protettiva SP (alto),hold,1,1,6.8,6.39,0.88,0.0357,499940
-1428,Profumo,now,2,0,,3.85,0.33,-0.0025,620291
+1428,Profumo,now,2,0,,3.73,0.33,-0.0025,620291
 1429,Perla Arcobaleno,hold,1,1,30.8,17.58,0.88,0.0616,683084
-1429,Perla Arcobaleno,now,5,2,8.4,11.07,0.46,0.0332,2661126
-2006,Fagiolo piccolo,now,2,1,3.5,2.81,0.53,-0.1194,-1477687
-2010,Pezzo di vetro verde,now,1,1,22.9,6.81,0.66,1.0245,405223
-2040,Legno di alta qualitŕ,now,1,1,6.9,3.54,0.66,0.0539,1246308
-2091,Tela di ragno,now,1,0,,3.85,0.41,0.3032,460144
-2092,Occhio del Re ragno,now,1,0,,3.85,0.41,-0.4519,-925082
+1429,Perla Arcobaleno,now,5,2,8.4,11.02,0.46,0.0332,2661126
+2006,Fagiolo piccolo,now,2,1,3.5,2.74,0.53,-0.1194,-1477687
+2010,Pezzo di vetro verde,now,1,1,22.9,6.72,0.67,1.0245,405223
+2040,Legno di alta qualitŕ,now,1,1,6.9,3.46,0.67,0.0539,1246308
+2091,Tela di ragno,now,1,0,,3.73,0.42,0.3032,460144
+2092,Occhio del Re ragno,now,1,0,,3.73,0.42,-0.4519,-925082
 2094,Perla delle tenebre,hold,1,1,35.5,7.47,0.88,0.3003,700486
-2172,Artiglio di Slade,now,1,0,,3.85,0.41,0.2494,855860
+2172,Artiglio di Slade,now,1,0,,3.73,0.42,0.2494,855860
 2195,Verme,hold,1,1,2.7,3.83,0.88,2.0,1399993
-2196,Sgombro,now,1,0,,3.85,0.41,-0.2517,-922752
+2196,Sgombro,now,1,0,,3.73,0.42,-0.2517,-922752
 2204,Balena,hold,1,1,18.6,4.79,0.88,0.7726,1058063
 2213,Metallo leggendario,hold,2,2,6.3,3.9,0.9,2.0798,4676095
 2282,Piuma d'angelo,hold,1,1,0.2,3.33,0.88,0.0923,645963
-2282,Piuma d'angelo,now,4,2,13.3,5.62,0.52,0.0482,551492
-2307,Cubetti di ghiaccio,now,1,0,,3.85,0.41,0.058,94254
+2282,Piuma d'angelo,now,4,2,13.3,5.57,0.52,0.0482,551492
+2307,Cubetti di ghiaccio,now,1,0,,3.73,0.42,0.058,94254
 2621,Anima raggiante degli Eroi leggendari,hold,1,1,14.7,4.32,0.88,0.2964,646999
-2621,Anima raggiante degli Eroi leggendari,now,5,3,4.0,11.06,0.58,0.1264,796702
+2621,Anima raggiante degli Eroi leggendari,now,5,3,4.0,11.01,0.58,0.1264,796702
 2630,Gemma del drago,hold,2,2,25.2,6.4,0.9,0.147,1848777
-2630,Gemma del drago,now,7,5,6.8,4.52,0.67,0.0399,2157401
+2630,Gemma del drago,now,7,5,6.8,4.48,0.67,0.0399,2157401
 2748,Frammenti di Dimensiolite,hold,2,2,2.6,2.88,0.9,0.1677,1258238
-2748,Frammenti di Dimensiolite,now,5,3,4.0,6.44,0.58,0.1379,2338259
-2774,Polvere di forza dimensionale di Nezarun,now,2,1,7.0,4.66,0.53,0.0373,-789775
-284,Amuleto del rafforzamento,now,5,3,1.5,1.87,0.58,0.5225,3840995
+2748,Frammenti di Dimensiolite,now,5,3,4.0,6.4,0.58,0.1379,2338259
+2774,Polvere di forza dimensionale di Nezarun,now,2,1,7.0,4.59,0.53,0.0373,-789775
+284,Amuleto del rafforzamento,now,5,3,1.5,1.83,0.58,0.5225,3840995
 4264,Amuleto eroico della benedizione (statico),hold,2,2,4.9,4.91,0.9,0.2034,2199998
-4264,Amuleto eroico della benedizione (statico),now,2,2,0.5,2.45,0.73,184210.1263,8499980
-4340,Speedbooster magico (1 giorno),now,3,2,8.7,5.32,0.61,0.1052,871853
-5500,Sigillo del raid di Lord Draco,now,2,0,,3.85,0.33,4.4341,2394020
+4264,Amuleto eroico della benedizione (statico),now,2,2,0.5,2.39,0.73,184210.1263,8499980
+4340,Speedbooster magico (1 giorno),now,3,2,8.7,5.26,0.61,0.1052,871853
+5500,Sigillo del raid di Lord Draco,now,2,0,,3.73,0.33,4.4341,2394020
 5512,Sigillo del raid di Glacerus,hold,1,0,,4.11,0.63,-0.0511,-518063
-5512,Sigillo del raid di Glacerus,now,4,2,4.1,4.12,0.52,0.1008,1890801
+5512,Sigillo del raid di Glacerus,now,4,2,4.1,4.08,0.52,0.1008,1890801
 5749,Scrigno del caso Piuma d'angelo,hold,1,0,,4.11,0.63,0.2102,329999
 5911,Fiore di ghiaccio,hold,1,1,4.8,3.58,0.88,0.0546,500045
-5911,Fiore di ghiaccio,now,1,0,,3.85,0.41,-0.1711,-1281630
+5911,Fiore di ghiaccio,now,1,0,,3.73,0.42,-0.1711,-1281630
