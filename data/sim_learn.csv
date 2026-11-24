@@ -9,7 +9,7 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1028,Cristallo della luna nuova,now,6,3,1.8,3.18,0.52,0.0826,1573315
 1029,Cristallo di mezza Luna,now,2,1,11.8,8.44,0.54,-0.0174,-410850
 1030,Cristallo di luna piena,hold,3,3,2.2,4.02,0.9,0.1114,2437642
-1030,Cristallo di luna piena,now,10,8,5.2,3.34,0.75,0.0714,6180167
+1030,Cristallo di luna piena,now,10,8,5.2,3.34,0.74,0.0714,6180167
 1092,Pezzo spazio-temporale (gruppo),now,8,5,3.2,3.17,0.61,0.1213,9098816
 1127,Sigillo del raid di Madre Cuby,hold,1,0,,3.89,0.59,-0.0075,-90499
 1131,Sigillo del raid dello Slade gigante,hold,1,1,1.2,3.06,0.84,0.087,441488
@@ -45,10 +45,10 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 2748,Frammenti di Dimensiolite,hold,2,2,2.6,2.76,0.88,0.1677,1258238
 2748,Frammenti di Dimensiolite,now,5,3,4.0,6.53,0.59,0.1379,2338259
 2774,Polvere di forza dimensionale di Nezarun,now,2,1,7.0,4.8,0.54,0.0373,-789775
-284,Amuleto del rafforzamento,now,5,3,1.5,1.96,0.59,0.5225,3840995
+284,Amuleto del rafforzamento,now,6,3,1.5,1.82,0.52,0.4839,4562991
 4264,Amuleto eroico della benedizione (statico),hold,2,2,4.9,4.78,0.88,0.2034,2199998
 4264,Amuleto eroico della benedizione (statico),now,2,2,0.5,2.6,0.74,184210.1263,8499980
-4340,Speedbooster magico (1 giorno),now,3,2,8.7,5.44,0.62,0.1052,871853
+4340,Speedbooster magico (1 giorno),now,3,2,8.7,5.44,0.61,0.1052,871853
 5369,Pergamena dorata protettiva dell'equipaggiamento,now,1,0,,4.08,0.42,-0.0099,-208313
 5500,Sigillo del raid di Lord Draco,now,2,0,,4.08,0.34,4.4341,2394020
 5512,Sigillo del raid di Glacerus,hold,1,0,,3.89,0.59,-0.0511,-518063
