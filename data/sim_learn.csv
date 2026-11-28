@@ -1,6 +1,6 @@
 vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1011,Pozione ricostituente gigante,now,5,3,1.8,1.65,0.59,0.2161,8323298
-1012,Seme della potenza,now,3,3,37.2,8.66,0.79,0.5262,1314399
+1012,Seme della potenza,now,3,3,37.2,8.66,0.78,0.5262,1314399
 1013,Pietra Gillion,hold,2,2,3.3,6.49,0.83,0.0996,1543392
 1013,Pietra Gillion,now,4,2,13.1,4.87,0.53,-0.0059,-553373
 1014,Polvere del sottosuolo,now,4,3,7.2,3.75,0.67,0.1068,6499681
@@ -14,7 +14,8 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1092,Pezzo spazio-temporale (gruppo),now,8,5,3.2,2.87,0.61,0.1213,9098816
 1127,Sigillo del raid di Madre Cuby,hold,1,0,,3.89,0.54,-0.0075,-90499
 1131,Sigillo del raid dello Slade gigante,hold,1,1,1.2,3.06,0.79,0.087,441488
-1247,Pozione difensiva,now,3,3,3.9,2.41,0.79,0.2603,2639190
+1218,Pergamena protettiva per l'equipaggiamento,now,1,0,,2.99,0.43,-0.1358,-4400006
+1247,Pozione difensiva,now,3,3,3.9,2.41,0.78,0.2603,2639190
 1249,Pozione dell'esperienza,now,1,0,,2.99,0.43,-0.1141,-940053
 1269,Coupon durabilitŕ,hold,1,0,,3.89,0.54,0.0,0
 1271,Coupon produzione,hold,1,1,11.0,4.39,0.79,0.651,2386320
@@ -22,7 +23,7 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 1296,Amplificatore della fata,now,2,1,34.1,8.61,0.54,0.0478,1101169
 1363,Pergamena protettiva SP (basso),now,1,0,,2.99,0.43,-0.2511,-3740978
 1364,Pergamena protettiva SP (alto),hold,1,1,6.8,6.23,0.79,0.0357,499940
-1428,Profumo,now,5,2,8.0,3.53,0.47,0.0268,4554714
+1428,Profumo,now,5,2,8.0,3.53,0.46,0.0268,4554714
 1429,Perla Arcobaleno,hold,1,1,30.8,17.42,0.79,0.0616,683084
 1429,Perla Arcobaleno,now,7,4,8.4,5.89,0.57,0.0576,6185988
 2006,Fagiolo piccolo,now,2,1,3.5,2.3,0.54,-0.1194,-1477687
@@ -49,7 +50,7 @@ vnum,name,kind,trades,sold,med_hours,time_factor,p_sold,avg_pct,profit
 2630,Gemma del drago,hold,4,3,17.2,8.36,0.74,0.1209,3198609
 2630,Gemma del drago,now,7,5,6.8,4.26,0.67,0.0399,2157401
 2748,Frammenti di Dimensiolite,hold,3,3,4.5,2.76,0.86,0.2357,2439677
-2748,Frammenti di Dimensiolite,now,6,4,2.8,4.01,0.64,0.1296,3716063
+2748,Frammenti di Dimensiolite,now,6,4,2.8,4.01,0.63,0.1296,3716063
 2774,Polvere di forza dimensionale di Nezarun,now,3,2,4.6,3.22,0.62,0.1115,533207
 284,Amuleto del rafforzamento,now,6,3,1.5,1.46,0.52,0.4839,4562991
 4264,Amuleto eroico della benedizione (statico),hold,2,2,4.9,4.78,0.83,0.2034,2199998
